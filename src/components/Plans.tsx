@@ -289,7 +289,7 @@ export default function Plans({ basePlan = 1 }: { basePlan?: number } = {}) {
     { name: 'Builder', multiple: `${parseFloat(builderPlan.joiningAmount || '4')}x`, cost: builderCost, color: 'text-accent-blue border-accent-blue/30 bg-accent-blue/5' },
     { name: 'Leader', multiple: `${parseFloat(leaderPlan.joiningAmount || '16')}x`, cost: leaderCost, color: 'text-accent-orange border-accent-orange/30 bg-accent-orange/5' },
     { name: 'Champion', multiple: `${parseFloat(championPlan.joiningAmount || '64')}x`, cost: championCost, color: 'text-accent-purple border-accent-purple/30 bg-accent-purple/5' },
-    { name: 'Main Plan', multiple: '100x', cost: mainPlanCost, color: 'text-green-600 border-green-500/30 bg-green-500/5' },
+    { name: 'Main Plan (Coming Soon)', multiple: '100x', cost: mainPlanCost, color: 'text-green-600 border-green-500/30 bg-green-500/5' },
   ];
 
   const [openFaq, setOpenFaq] = useState<number | null>(null);
@@ -437,7 +437,12 @@ export default function Plans({ basePlan = 1 }: { basePlan?: number } = {}) {
                   <Layers size={24} />
                 </div>
                 <div>
-                  <h3 id="main-header-title" className="text-xl font-bold text-prime">Main Plan ({mainPlanCost.toFixed(0)} USDT Entry)</h3>
+                  <h3 id="main-header-title" className="text-xl font-bold text-prime flex items-center gap-3">
+                    Main Plan ({mainPlanCost.toFixed(0)} USDT Entry)
+                    <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-black bg-accent-orange/10 text-accent-orange border border-accent-orange/20 uppercase tracking-wider">
+                      Coming Soon
+                    </span>
+                  </h3>
                   <p id="main-header-desc" className="text-xs text-sub mt-1">Multi-tiered matrix engine with high-volume pool spillovers</p>
                 </div>
               </div>

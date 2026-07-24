@@ -57,7 +57,7 @@ export default function Hero({ onCtaClick, onConnectWallet }: HeroProps) {
             variants={itemVariants} 
             className="mt-6 text-4xl font-black tracking-tight text-prime sm:text-6xl lg:text-7xl leading-[1.08]"
           >
-            Maximize Your Web3 Wealth with <span className="bg-gradient-to-r from-accent-red via-red-500 to-accent-orange bg-clip-text text-transparent">SimpleOn</span>
+            <span className="bg-gradient-to-r from-accent-red via-red-500 to-accent-orange bg-clip-text text-transparent">SimpleOn</span> Start Small. Grow Smart. Build bigger.
           </motion.h1>
 
           {/* Subtitle */}
