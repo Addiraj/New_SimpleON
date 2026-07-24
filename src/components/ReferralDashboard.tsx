@@ -1,8 +1,4 @@
-<<<<<<< HEAD
 import React, { useState, useEffect } from 'react';
-=======
-import React, { useState } from 'react';
->>>>>>> fe05ef7be215c289d9c2e81e5d2ca052e3956485
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   Users, UserCheck, Copy, Check, QrCode, Share2, Search, Filter, 
@@ -11,159 +7,7 @@ import {
   UserPlus, ShieldCheck, Zap, RefreshCw, Eye, Info, CheckCircle2, AlertCircle
 } from 'lucide-react';
 import { useWeb3Store } from '../store/useWeb3Store';
-<<<<<<< HEAD
 import { referralApi } from '../services/api';
-=======
->>>>>>> fe05ef7be215c289d9c2e81e5d2ca052e3956485
-
-// Mock Referral Member Interface
-interface ReferralMember {
-  id: string;
-  address: string;
-  level: number; // 1 = Direct, 2+ = Indirect
-  tier: 'STARTER' | 'BUILDER' | 'LEADER' | 'VIP';
-  tierAmount: number;
-  status: 'ACTIVE' | 'INACTIVE' | 'SPILLOVER';
-  joinedDate: string;
-  directsCount: number;
-  volumeGenerated: number;
-  commissionEarned: number;
-  matrixPosition: string; // e.g., "Node #1.2"
-  children?: ReferralMember[];
-}
-
-// Tree Mock Data (Root + Level 1 Directs + Level 2/3 Indirects)
-const referralTreeData: ReferralMember = {
-  id: 'root-user',
-  address: '0x71C7656EC7ab88b098defB751B7401B5f6d8976F',
-  level: 0,
-  tier: 'VIP',
-  tierAmount: 1000,
-  status: 'ACTIVE',
-  joinedDate: '2026-01-15',
-  directsCount: 14,
-  volumeGenerated: 142500,
-  commissionEarned: 2450,
-  matrixPosition: 'Root Node',
-  children: [
-    {
-      id: 'member-1',
-      address: '0x8f3C91029381A063b4f8a2910d',
-      level: 1,
-      tier: 'LEADER',
-      tierAmount: 500,
-      status: 'ACTIVE',
-      joinedDate: '2026-02-01',
-      directsCount: 5,
-      volumeGenerated: 24500,
-      commissionEarned: 490,
-      matrixPosition: 'L1 - Position 1',
-      children: [
-        {
-          id: 'member-1-1',
-          address: '0x3a2b1c0d9e8f7a6b5c4d3e2f',
-          level: 2,
-          tier: 'BUILDER',
-          tierAmount: 250,
-          status: 'ACTIVE',
-          joinedDate: '2026-02-10',
-          directsCount: 3,
-          volumeGenerated: 8500,
-          commissionEarned: 120,
-          matrixPosition: 'L2 - Node 1.1'
-        },
-        {
-          id: 'member-1-2',
-          address: '0x9e8f7a6b5c4d3e2f1a098765',
-          level: 2,
-          tier: 'STARTER',
-          tierAmount: 100,
-          status: 'SPILLOVER',
-          joinedDate: '2026-02-14',
-          directsCount: 2,
-          volumeGenerated: 4200,
-          commissionEarned: 65,
-          matrixPosition: 'L2 - Node 1.2'
-        }
-      ]
-    },
-    {
-      id: 'member-2',
-      address: '0x4e5d6c7b8a901234567890ab',
-      level: 1,
-      tier: 'BUILDER',
-      tierAmount: 250,
-      status: 'ACTIVE',
-      joinedDate: '2026-02-05',
-      directsCount: 4,
-      volumeGenerated: 18200,
-      commissionEarned: 364,
-      matrixPosition: 'L1 - Position 2',
-      children: [
-        {
-          id: 'member-2-1',
-          address: '0x11223344556677889900aabb',
-          level: 2,
-          tier: 'STARTER',
-          tierAmount: 100,
-          status: 'ACTIVE',
-          joinedDate: '2026-02-18',
-          directsCount: 1,
-          volumeGenerated: 2100,
-          commissionEarned: 40,
-          matrixPosition: 'L2 - Node 2.1'
-        }
-      ]
-    },
-    {
-      id: 'member-3',
-      address: '0x1234567890abcdef12345678',
-      level: 1,
-      tier: 'STARTER',
-      tierAmount: 100,
-      status: 'SPILLOVER',
-      joinedDate: '2026-02-12',
-      directsCount: 2,
-      volumeGenerated: 6400,
-      commissionEarned: 128,
-      matrixPosition: 'L1 - Position 3',
-      children: [
-        {
-          id: 'member-3-1',
-          address: '0xbbccddeeff00112233445566',
-          level: 2,
-          tier: 'STARTER',
-          tierAmount: 100,
-          status: 'INACTIVE',
-          joinedDate: '2026-03-01',
-          directsCount: 0,
-          volumeGenerated: 0,
-          commissionEarned: 0,
-          matrixPosition: 'L2 - Node 3.1'
-        }
-      ]
-    }
-  ]
-};
-
-// Flattened member list for Table view
-const allMembersList: ReferralMember[] = [
-  { id: 'm1', address: '0x8f3C91029381A063b4f8a2910d', level: 1, tier: 'LEADER', tierAmount: 500, status: 'ACTIVE', joinedDate: '2026-02-01', directsCount: 5, volumeGenerated: 24500, commissionEarned: 490, matrixPosition: 'L1 - Pos 1' },
-  { id: 'm2', address: '0x4e5d6c7b8a901234567890ab', level: 1, tier: 'BUILDER', tierAmount: 250, status: 'ACTIVE', joinedDate: '2026-02-05', directsCount: 4, volumeGenerated: 18200, commissionEarned: 364, matrixPosition: 'L1 - Pos 2' },
-  { id: 'm3', address: '0x1234567890abcdef12345678', level: 1, tier: 'STARTER', tierAmount: 100, status: 'SPILLOVER', joinedDate: '2026-02-12', directsCount: 2, volumeGenerated: 6400, commissionEarned: 128, matrixPosition: 'L1 - Pos 3' },
-  { id: 'm4', address: '0x3a2b1c0d9e8f7a6b5c4d3e2f', level: 2, tier: 'BUILDER', tierAmount: 250, status: 'ACTIVE', joinedDate: '2026-02-10', directsCount: 3, volumeGenerated: 8500, commissionEarned: 120, matrixPosition: 'L2 - Pos 1.1' },
-  { id: 'm5', address: '0x9e8f7a6b5c4d3e2f1a098765', level: 2, tier: 'STARTER', tierAmount: 100, status: 'SPILLOVER', joinedDate: '2026-02-14', directsCount: 2, volumeGenerated: 4200, commissionEarned: 65, matrixPosition: 'L2 - Pos 1.2' },
-  { id: 'm6', address: '0x11223344556677889900aabb', level: 2, tier: 'STARTER', tierAmount: 100, status: 'ACTIVE', joinedDate: '2026-02-18', directsCount: 1, volumeGenerated: 2100, commissionEarned: 40, matrixPosition: 'L2 - Pos 2.1' },
-  { id: 'm7', address: '0xbbccddeeff00112233445566', level: 2, tier: 'STARTER', tierAmount: 100, status: 'INACTIVE', joinedDate: '2026-03-01', directsCount: 0, volumeGenerated: 0, commissionEarned: 0, matrixPosition: 'L2 - Pos 3.1' },
-  { id: 'm8', address: '0x778899aabbccddeeff001122', level: 3, tier: 'VIP', tierAmount: 1000, status: 'ACTIVE', joinedDate: '2026-03-05', directsCount: 8, volumeGenerated: 45000, commissionEarned: 750, matrixPosition: 'L3 - Pos 1.1.1' },
-];
-
-export default function ReferralDashboard() {
-<<<<<<< HEAD
-  const { address, isAuthenticated, openWalletModal } = useWeb3Store();
-=======
-  const { address, openWalletModal } = useWeb3Store();
->>>>>>> fe05ef7be215c289d9c2e81e5d2ca052e3956485
 
   const [copiedLink, setCopiedLink] = useState(false);
   const [copiedCode, setCopiedCode] = useState(false);
@@ -175,7 +19,6 @@ export default function ReferralDashboard() {
   const [selectedNodeDetails, setSelectedNodeDetails] = useState<ReferralMember | null>(null);
   const [customInviteMsg, setCustomInviteMsg] = useState('Hey! Join my SimpleOn Web3 Matrix team on BNB Smart Chain and start earning 20% direct referral commissions + 13-Level team spillover!');
 
-<<<<<<< HEAD
   // Live Referral Data State
   const [summaryData, setSummaryData] = useState<any>(null);
   const [treeData, setTreeData] = useState<any>(referralTreeData);
@@ -262,11 +105,6 @@ export default function ReferralDashboard() {
   const userAddress = address || '0x71C7656EC7ab88b098defB751B7401B5f6d8976F';
   const referralCode = summaryData?.referralCode || (address ? address.slice(-8).toUpperCase() : 'F6D8976F');
   const referralUrl = summaryData?.referralUrl || `${window.location.origin}/?ref=${referralCode}`;
-=======
-  const userAddress = address || '0x71C7656EC7ab88b098defB751B7401B5f6d8976F';
-  const referralCode = address ? address.slice(-8).toUpperCase() : 'F6D8976F';
-  const referralUrl = `${window.location.origin}/?ref=${userAddress}`;
->>>>>>> fe05ef7be215c289d9c2e81e5d2ca052e3956485
 
   const copyUrl = () => {
     navigator.clipboard.writeText(referralUrl);
@@ -280,7 +118,6 @@ export default function ReferralDashboard() {
     setTimeout(() => setCopiedCode(false), 2000);
   };
 
-<<<<<<< HEAD
   const handleAssignSponsorSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!assignInput.trim()) return;
@@ -304,10 +141,6 @@ export default function ReferralDashboard() {
 
   // Filtered members list
   const filteredMembers = membersList.filter(m => {
-=======
-  // Filtered members list
-  const filteredMembers = allMembersList.filter(m => {
->>>>>>> fe05ef7be215c289d9c2e81e5d2ca052e3956485
     const matchesSearch = m.address.toLowerCase().includes(searchQuery.toLowerCase()) || m.matrixPosition.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesLevel = levelFilter === 'ALL' ? true : levelFilter === 'DIRECT' ? m.level === 1 : m.level > 1;
     const matchesTier = tierFilter === 'ALL' ? true : m.tier === tierFilter;
@@ -369,7 +202,6 @@ export default function ReferralDashboard() {
 
           <div className="flex items-center space-x-3 shrink-0">
             <button
-<<<<<<< HEAD
               onClick={() => setShowAssignModal(true)}
               className="p-3.5 rounded-2xl bg-surface-elevated hover:bg-surface border border-border-theme text-prime transition-colors flex items-center space-x-2 text-xs font-bold"
             >
@@ -378,140 +210,6 @@ export default function ReferralDashboard() {
             </button>
 
             <button
-=======
->>>>>>> fe05ef7be215c289d9c2e81e5d2ca052e3956485
-              onClick={() => setShowInviteModal(true)}
-              className="px-6 py-3.5 rounded-2xl bg-accent-red text-white text-xs font-black shadow-lg shadow-accent-red/25 hover:bg-accent-red/90 transition-all flex items-center space-x-2"
-            >
-              <UserPlus size={16} />
-              <span>Invite Friends</span>
-            </button>
-
-            <button
-              onClick={() => setShowQrModal(true)}
-              className="p-3.5 rounded-2xl bg-surface-elevated hover:bg-surface border border-border-theme text-prime transition-colors flex items-center space-x-2 text-xs font-bold"
-            >
-              <QrCode size={18} />
-              <span className="hidden sm:inline">QR Code</span>
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {/* 1. REFERRAL LINK & QUICK COPY BANNER */}
-      <div className="p-6 sm:p-8 rounded-3xl bg-surface border border-border-theme shadow-xl space-y-6">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-border-theme">
-          <div>
-            <h2 className="text-lg font-black text-prime flex items-center space-x-2">
-              <Sparkles size={18} className="text-accent-red" />
-              <span>Your Unique Referral Assets</span>
-            </h2>
-            <p className="text-xs text-sub">Share your invite link to automatically register direct team partners on BNB Smart Chain</p>
-          </div>
-
-          <div className="flex items-center space-x-2 font-mono text-xs">
-            <span className="text-sub font-bold">Invite Code:</span>
-            <span className="bg-accent-red/10 border border-accent-red/20 text-accent-red font-black px-3 py-1 rounded-xl">
-              {referralCode}
-            </span>
-            <button
-              onClick={copyRefCode}
-              className="p-1.5 rounded-lg bg-surface-elevated hover:bg-surface text-sub hover:text-prime border border-border-theme"
-              title="Copy Referral Code"
-            >
-              {copiedCode ? <Check size={14} className="text-emerald-500" /> : <Copy size={14} />}
-            </button>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
-          
-          {/* Link Input Box (8 Cols) */}
-          <div className="lg:col-span-8 space-y-2">
-            <label className="text-xs font-mono font-bold text-sub uppercase">Personal Referral URL</label>
-            <div className="flex items-center space-x-2">
-              <input
-                type="text"
-                readOnly
-                value={referralUrl}
-                className="flex-1 p-3.5 rounded-2xl bg-surface-elevated border border-border-theme font-mono text-xs text-prime focus:outline-none truncate"
-              />
-              <button
-                onClick={copyUrl}
-                className="px-6 py-3.5 rounded-2xl bg-accent-red text-white text-xs font-black shadow-md hover:bg-accent-red/90 transition-all flex items-center space-x-1.5 shrink-0"
-              >
-                {copiedLink ? <Check size={16} /> : <Copy size={16} />}
-                <span>{copiedLink ? 'Copied Link!' : 'Copy Link'}</span>
-              </button>
-            </div>
-          </div>
-
-          {/* Share Buttons Row (4 Cols) */}
-          <div className="lg:col-span-4 space-y-2">
-            <label className="text-xs font-mono font-bold text-sub uppercase">Quick Social Share</label>
-            <div className="flex items-center space-x-2">
-              <button
-                onClick={handleShareTwitter}
-                className="flex-1 p-3 rounded-2xl bg-[#1DA1F2]/10 hover:bg-[#1DA1F2]/20 border border-[#1DA1F2]/30 text-[#1DA1F2] text-xs font-bold transition-all flex items-center justify-center space-x-1.5"
-                title="Share on Twitter / X"
-              >
-                <Twitter size={16} />
-                <span className="hidden sm:inline">X / Twitter</span>
-              </button>
-
-              <button
-                onClick={handleShareTelegram}
-                className="flex-1 p-3 rounded-2xl bg-[#0088cc]/10 hover:bg-[#0088cc]/20 border border-[#0088cc]/30 text-[#0088cc] text-xs font-bold transition-all flex items-center justify-center space-x-1.5"
-                title="Share on Telegram"
-              >
-                <Send size={16} />
-                <span className="hidden sm:inline">Telegram</span>
-              </button>
-
-              <button
-                onClick={handleShareWhatsApp}
-                className="flex-1 p-3 rounded-2xl bg-[#25D366]/10 hover:bg-[#25D366]/20 border border-[#25D366]/30 text-[#25D366] text-xs font-bold transition-all flex items-center justify-center space-x-1.5"
-                title="Share on WhatsApp"
-              >
-                <MessageSquare size={16} />
-                <span className="hidden sm:inline">WhatsApp</span>
-              </button>
-
-              <button
-                onClick={handleNativeShare}
-                className="p-3 rounded-2xl bg-surface-elevated hover:bg-surface border border-border-theme text-prime text-xs font-bold transition-all"
-                title="More Share Options"
-              >
-                <Share2 size={16} />
-              </button>
-            </div>
-          </div>
-
-        </div>
-      </div>
-
-      {/* 2. REFERRAL STATISTICS CARDS (4 KPIs) */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        
-        {/* Stat 1: Direct Referrals */}
-        <div className="p-6 rounded-3xl bg-surface border border-border-theme shadow-md space-y-2 relative overflow-hidden">
-          <div className="flex justify-between items-center text-sub">
-            <span className="text-[11px] font-mono font-bold uppercase">Direct Referrals</span>
-            <Users size={18} className="text-accent-red" />
-          </div>
-<<<<<<< HEAD
-          <div className="text-3xl font-black font-mono text-prime">
-            {summaryData ? `${summaryData.directReferralCount} Directs` : '14 Directs'}
-          </div>
-          <p className="text-[11px] text-emerald-500 font-bold flex items-center space-x-1">
-            <CheckCircle2 size={12} />
-            <span>{summaryData ? `${summaryData.qualifiedBuilders} Active / Qualified` : '9 Active / 5 Pending Upgrade'}</span>
-=======
-          <div className="text-3xl font-black font-mono text-prime">14 Directs</div>
-          <p className="text-[11px] text-emerald-500 font-bold flex items-center space-x-1">
-            <CheckCircle2 size={12} />
-            <span>9 Active / 5 Pending Upgrade</span>
->>>>>>> fe05ef7be215c289d9c2e81e5d2ca052e3956485
           </p>
         </div>
 
@@ -521,7 +219,6 @@ export default function ReferralDashboard() {
             <span className="text-[11px] font-mono font-bold uppercase">Indirect Referrals (L2-L13)</span>
             <Layers size={18} className="text-accent-blue" />
           </div>
-<<<<<<< HEAD
           <div className="text-3xl font-black font-mono text-accent-blue">
             {summaryData ? `${summaryData.indirectReferralCount} Members` : '86 Team Members'}
           </div>
@@ -554,32 +251,6 @@ export default function ReferralDashboard() {
           <div className="text-3xl font-black font-mono text-prime">
             {summaryData ? `${summaryData.qualifiedBuilders} Builders` : '82.5%'}
           </div>
-=======
-          <div className="text-3xl font-black font-mono text-accent-blue">86 Team Members</div>
-          <p className="text-[11px] text-sub">Spanning 13 Matrix Team Levels</p>
-        </div>
-
-        {/* Stat 3: Total Referral Earnings */}
-        <div className="p-6 rounded-3xl bg-surface border border-border-theme shadow-md space-y-2 relative overflow-hidden">
-          <div className="flex justify-between items-center text-sub">
-            <span className="text-[11px] font-mono font-bold uppercase">Total Referral Earnings</span>
-            <DollarSign size={18} className="text-emerald-500" />
-          </div>
-          <div className="text-3xl font-black font-mono text-emerald-500">$2,450.00 USDT</div>
-          <p className="text-[11px] text-emerald-500 font-bold flex items-center space-x-1">
-            <TrendingUp size={12} />
-            <span>+$240.00 earned this week</span>
-          </p>
-        </div>
-
-        {/* Stat 4: Qualification Rate */}
-        <div className="p-6 rounded-3xl bg-surface border border-border-theme shadow-md space-y-2 relative overflow-hidden">
-          <div className="flex justify-between items-center text-sub">
-            <span className="text-[11px] font-mono font-bold uppercase">Qualification Rate</span>
-            <Trophy size={18} className="text-amber-500" />
-          </div>
-          <div className="text-3xl font-black font-mono text-prime">82.5%</div>
->>>>>>> fe05ef7be215c289d9c2e81e5d2ca052e3956485
           <p className="text-[11px] text-sub">Qualifies for 100% Spillover Pool</p>
         </div>
 

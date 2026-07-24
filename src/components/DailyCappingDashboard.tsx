@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 import React, { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
 import { 
@@ -8,22 +7,11 @@ import {
 import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip } from 'recharts';
 import { useWeb3Store } from '../store/useWeb3Store';
 import { cappingApi } from '../services/api';
-=======
-import React, { useState } from 'react';
-import { motion } from 'motion/react';
-import { 
-  Zap, Trophy, AlertTriangle, ArrowUpRight, TrendingUp, CheckCircle2, 
-  ShieldCheck, Clock, Users, DollarSign, ChevronRight, Bell, Sparkles 
-} from 'lucide-react';
-import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip } from 'recharts';
-import { useWeb3Store } from '../store/useWeb3Store';
->>>>>>> fe05ef7be215c289d9c2e81e5d2ca052e3956485
 
 export default function DailyCappingDashboard() {
   const { setActiveView } = useWeb3Store();
 
   const [selectedPeriod, setSelectedPeriod] = useState<'TODAY' | 'WEEK' | 'MONTH'>('TODAY');
-<<<<<<< HEAD
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [cappingStatus, setCappingStatus] = useState<any>(null);
@@ -93,38 +81,10 @@ export default function DailyCappingDashboard() {
       </div>
     );
   }
-=======
-
-  const todaysEarnings = 320.00;
-  const currentCap = 500.00;
-  const remainingCap = currentCap - todaysEarnings;
-  const capUsagePercent = (todaysEarnings / currentCap) * 100;
-
-  const qualifiedBuilders = 4;
-  const nextTierRequirement = 5; // Need 5 qualified builders to unlock $1,000/day cap
-
-  const hourlyCappingData = [
-    { time: '00:00', earnings: 20 },
-    { time: '04:00', earnings: 60 },
-    { time: '08:00', earnings: 140 },
-    { time: '12:00', earnings: 230 },
-    { time: '16:00', earnings: 290 },
-    { time: '20:00', earnings: 320 },
-    { time: '23:59', earnings: 320 },
-  ];
-
-  const cappingLog = [
-    { id: 'log-1', time: '18:42:10', type: 'MATRIX_DISTRIBUTION', amount: '+40.00 USDT', capApplied: 'Pass (Limit Active)', status: 'APPROVED' },
-    { id: 'log-2', time: '15:10:05', type: 'DIRECT_REFERRAL_BONUS', amount: '+50.00 USDT', capApplied: 'Pass (Limit Active)', status: 'APPROVED' },
-    { id: 'log-3', time: '11:25:33', type: 'X5_MATRIX_RECYCLE', amount: '+80.00 USDT', capApplied: 'Pass (Limit Active)', status: 'APPROVED' },
-    { id: 'log-4', time: '08:05:12', type: 'LEVEL_POOL_SPILLOVER', amount: '+150.00 USDT', capApplied: 'Pass (Limit Active)', status: 'APPROVED' },
-  ];
->>>>>>> fe05ef7be215c289d9c2e81e5d2ca052e3956485
 
   return (
     <div className="py-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-10">
       
-<<<<<<< HEAD
       {error && (
         <div className="p-4 rounded-2xl bg-accent-red/10 border border-accent-red/20 flex items-center justify-between text-accent-red text-xs font-mono">
           <div className="flex items-center space-x-2">
@@ -140,57 +100,6 @@ export default function DailyCappingDashboard() {
         </div>
       )}
 
-=======
->>>>>>> fe05ef7be215c289d9c2e81e5d2ca052e3956485
-      {/* Top Banner */}
-      <div className="rounded-3xl bg-surface border border-border-theme p-8 shadow-xl relative overflow-hidden glass-panel">
-        <div className="absolute -right-20 -top-20 w-80 h-80 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
-
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 relative z-10">
-          <div className="space-y-2">
-            <div className="inline-flex items-center space-x-2 rounded-full bg-amber-500/10 px-3.5 py-1 text-xs font-bold text-amber-500 border border-amber-500/20">
-              <Zap size={14} />
-              <span>Real-Time Daily Earning Cap Guard</span>
-            </div>
-            <h1 className="text-3xl sm:text-4xl font-black text-prime tracking-tight">
-              Daily <span className="text-amber-500">Capping</span> & Limits Monitor
-            </h1>
-            <p className="text-xs sm:text-sm text-sub max-w-2xl leading-relaxed">
-              Protects system sustainability. Upgrade your team qualification to unlock higher daily earning thresholds (from $500/day up to $5,000/day).
-            </p>
-          </div>
-
-          <button
-            onClick={() => setActiveView('plans')}
-            className="px-6 py-3.5 rounded-2xl bg-amber-500 text-slate-950 font-black text-xs shadow-lg shadow-amber-500/20 hover:bg-amber-400 transition-all flex items-center space-x-2 shrink-0"
-          >
-            <Trophy size={16} />
-            <span>Increase Daily Cap</span>
-          </button>
-        </div>
-      </div>
-
-      {/* 4 Main KPI Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        
-        {/* Card 1: Today's Earnings */}
-        <div className="p-6 rounded-3xl bg-surface border border-border-theme shadow-md space-y-2">
-          <span className="text-[10px] font-mono font-bold text-sub uppercase">Today's Earnings</span>
-          <div className="text-3xl font-black font-mono text-emerald-500">${todaysEarnings.toFixed(2)} USDT</div>
-          <p className="text-[11px] text-sub">Resets at UTC 00:00:00</p>
-        </div>
-
-        {/* Card 2: Current Cap Limit */}
-        <div className="p-6 rounded-3xl bg-surface border border-border-theme shadow-md space-y-2">
-          <span className="text-[10px] font-mono font-bold text-sub uppercase">Current Daily Cap</span>
-          <div className="text-3xl font-black font-mono text-prime">${currentCap.toFixed(2)} USDT</div>
-          <p className="text-[11px] text-amber-500 font-bold flex items-center space-x-1">
-            <ShieldCheck size={12} />
-<<<<<<< HEAD
-            <span>{currentLevelName} Level Active</span>
-=======
-            <span>Tier 2 Builder Level Active</span>
->>>>>>> fe05ef7be215c289d9c2e81e5d2ca052e3956485
           </p>
         </div>
 
@@ -198,26 +107,18 @@ export default function DailyCappingDashboard() {
         <div className="p-6 rounded-3xl bg-surface border border-border-theme shadow-md space-y-2">
           <span className="text-[10px] font-mono font-bold text-sub uppercase">Remaining Cap Today</span>
           <div className="text-3xl font-black font-mono text-accent-blue">${remainingCap.toFixed(2)} USDT</div>
-<<<<<<< HEAD
           <p className="text-[11px] text-sub">{currentCap > 0 ? ((remainingCap / currentCap) * 100).toFixed(0) : 0}% limit available</p>
-=======
-          <p className="text-[11px] text-sub">{((remainingCap / currentCap) * 100).toFixed(0)}% limit available</p>
->>>>>>> fe05ef7be215c289d9c2e81e5d2ca052e3956485
         </div>
 
         {/* Card 4: Qualified Builders */}
         <div className="p-6 rounded-3xl bg-surface border border-border-theme shadow-md space-y-2">
           <span className="text-[10px] font-mono font-bold text-sub uppercase">Qualified Builders</span>
           <div className="text-3xl font-black font-mono text-prime">{qualifiedBuilders} / {nextTierRequirement}</div>
-<<<<<<< HEAD
           <p className="text-[11px] text-sub">
             {qualifiedBuilders >= nextTierRequirement
               ? 'Requirement Met for Higher Daily Cap'
               : `Need ${nextTierRequirement - qualifiedBuilders} more to unlock higher tier`}
           </p>
-=======
-          <p className="text-[11px] text-sub">Need 1 more to unlock $1,000/day</p>
->>>>>>> fe05ef7be215c289d9c2e81e5d2ca052e3956485
         </div>
 
       </div>
@@ -230,11 +131,7 @@ export default function DailyCappingDashboard() {
               <TrendingUp size={18} className="text-amber-500" />
               <span>24-Hour Capping Utilization Curve</span>
             </h2>
-<<<<<<< HEAD
             <p className="text-xs text-sub">Real-time hourly earnings progression towards the {currentCap.toFixed(0)} USDT limit</p>
-=======
-            <p className="text-xs text-sub">Real-time hourly earnings progression towards the 500 USDT limit</p>
->>>>>>> fe05ef7be215c289d9c2e81e5d2ca052e3956485
           </div>
 
           <div className="flex items-center space-x-2 text-xs font-mono">
@@ -253,11 +150,7 @@ export default function DailyCappingDashboard() {
           <div className="w-full bg-border-theme h-3.5 rounded-full overflow-hidden p-0.5">
             <div 
               className="bg-gradient-to-r from-emerald-500 via-amber-500 to-accent-red h-full rounded-full transition-all duration-700"
-<<<<<<< HEAD
               style={{ width: `${Math.min(100, capUsagePercent)}%` }}
-=======
-              style={{ width: `${capUsagePercent}%` }}
->>>>>>> fe05ef7be215c289d9c2e81e5d2ca052e3956485
             />
           </div>
         </div>
@@ -273,11 +166,7 @@ export default function DailyCappingDashboard() {
                 </linearGradient>
               </defs>
               <XAxis dataKey="time" stroke="#64748B" fontSize={11} />
-<<<<<<< HEAD
               <YAxis stroke="#64748B" fontSize={11} domain={[0, Math.max(100, currentCap)]} />
-=======
-              <YAxis stroke="#64748B" fontSize={11} domain={[0, 600]} />
->>>>>>> fe05ef7be215c289d9c2e81e5d2ca052e3956485
               <Tooltip 
                 contentStyle={{ backgroundColor: '#0F172A', borderColor: '#334155', borderRadius: '12px', color: '#FFF', fontSize: '12px' }}
               />
@@ -294,7 +183,6 @@ export default function DailyCappingDashboard() {
             <Clock size={18} className="text-sub" />
             <span>Today's Distribution Audit Log</span>
           </h2>
-<<<<<<< HEAD
           <span className="text-xs font-mono text-sub">{cappingLog.length} Verified Transactions</span>
         </div>
 
@@ -333,39 +221,6 @@ export default function DailyCappingDashboard() {
             </table>
           </div>
         )}
-=======
-          <span className="text-xs font-mono text-sub">4 Verified Transactions</span>
-        </div>
-
-        <div className="overflow-x-auto">
-          <table className="w-full text-left font-mono text-xs border-collapse">
-            <thead>
-              <tr className="border-b border-border-theme text-sub uppercase text-[10px] tracking-wider">
-                <th className="py-3 px-4">Time</th>
-                <th className="py-3 px-4">Transaction Type</th>
-                <th className="py-3 px-4">Amount</th>
-                <th className="py-3 px-4">Capping Status</th>
-                <th className="py-3 px-4 text-right">Result</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-border-theme">
-              {cappingLog.map((log) => (
-                <tr key={log.id} className="hover:bg-surface-elevated/50 transition-colors">
-                  <td className="py-3.5 px-4 text-sub">{log.time}</td>
-                  <td className="py-3.5 px-4 font-bold text-prime">{log.type}</td>
-                  <td className="py-3.5 px-4 font-bold text-emerald-500">{log.amount}</td>
-                  <td className="py-3.5 px-4 text-sub">{log.capApplied}</td>
-                  <td className="py-3.5 px-4 text-right">
-                    <span className="px-2.5 py-1 rounded-lg bg-emerald-500/10 text-emerald-500 font-bold text-[10px]">
-                      {log.status}
-                    </span>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
->>>>>>> fe05ef7be215c289d9c2e81e5d2ca052e3956485
       </div>
 
     </div>

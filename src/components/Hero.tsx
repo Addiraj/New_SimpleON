@@ -23,11 +23,7 @@ export default function Hero({ onCtaClick, onConnectWallet }: HeroProps) {
 
   const itemVariants = {
     hidden: { opacity: 0, y: 20 },
-<<<<<<< HEAD
     visible: { opacity: 1, y: 0, transition: { type: 'spring' as const, stiffness: 100 } },
-=======
-    visible: { opacity: 1, y: 0, transition: { type: 'spring', stiffness: 100 } },
->>>>>>> fe05ef7be215c289d9c2e81e5d2ca052e3956485
   };
 
   return (

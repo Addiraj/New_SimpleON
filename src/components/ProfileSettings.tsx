@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 import React, { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
 import { 
@@ -7,22 +6,12 @@ import {
 } from 'lucide-react';
 import { useWeb3Store } from '../store/useWeb3Store';
 import { userApi } from '../services/api';
-=======
-import React, { useState } from 'react';
-import { motion } from 'motion/react';
-import { 
-  User, ShieldCheck, Wallet, Bell, Globe, Moon, Sun, Key, 
-  Check, Copy, CheckCircle2, Lock, Smartphone, RefreshCw, FileText, AlertCircle 
-} from 'lucide-react';
-import { useWeb3Store } from '../store/useWeb3Store';
->>>>>>> fe05ef7be215c289d9c2e81e5d2ca052e3956485
 
 export default function ProfileSettings() {
   const { address, walletType, isConnected, openWalletModal } = useWeb3Store();
 
   const [activeTab, setActiveTab] = useState<'PROFILE' | 'WALLET' | 'SECURITY' | 'NOTIFICATIONS' | 'ACTIVITY'>('PROFILE');
   const [copiedAddress, setCopiedAddress] = useState(false);
-<<<<<<< HEAD
 
   // Profile data from backend
   const [profile, setProfile] = useState<any>(null);
@@ -84,14 +73,6 @@ export default function ProfileSettings() {
       isMounted = false;
     };
   }, [address]);
-=======
-  const [emailNotifs, setEmailNotifs] = useState(true);
-  const [telegramNotifs, setTelegramNotifs] = useState(true);
-  const [rewardNotifs, setRewardNotifs] = useState(true);
-  const [language, setLanguage] = useState('English (US)');
-
-  const userAddress = address || '0x71C7656EC7ab88b098defB751B7401B5f6d8976F';
->>>>>>> fe05ef7be215c289d9c2e81e5d2ca052e3956485
 
   const copyAddress = () => {
     navigator.clipboard.writeText(userAddress);
@@ -99,7 +80,6 @@ export default function ProfileSettings() {
     setTimeout(() => setCopiedAddress(false), 2000);
   };
 
-<<<<<<< HEAD
   const handleSaveSettings = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     setIsSubmitting(true);
@@ -144,12 +124,6 @@ export default function ProfileSettings() {
     { id: 1, action: 'SIWE Authentication Logged In', ip: '185.220.101.5', time: new Date().toISOString().replace('T', ' ').slice(0, 19), device: 'Chrome / macOS' },
     { id: 2, action: 'Updated Profile & Preferences', ip: '185.220.101.5', time: profile?.lastLoginAt ? new Date(profile.lastLoginAt).toISOString().replace('T', ' ').slice(0, 19) : '2026-07-22 14:22:05', device: 'Web3 Client Session' },
     { id: 3, action: 'Base Plan Booster Active', ip: '185.220.101.5', time: '2026-07-20 09:11:40', device: 'WalletConnect App' },
-=======
-  const activityLogs = [
-    { id: 1, action: 'SIWE Authentication Logged In', ip: '185.220.101.5', time: '2026-07-22 08:30:12', device: 'Chrome / macOS' },
-    { id: 2, action: 'Matrix X5 Payout Claimed (+80 USDT)', ip: '185.220.101.5', time: '2026-07-21 14:22:05', device: 'MetaMask Extension' },
-    { id: 3, action: 'Base Plan Booster Upgraded to $1.00', ip: '185.220.101.5', time: '2026-07-20 09:11:40', device: 'WalletConnect App' },
->>>>>>> fe05ef7be215c289d9c2e81e5d2ca052e3956485
     { id: 4, action: 'Signed SIWE Challenge Message', ip: '185.220.101.5', time: '2026-07-19 18:05:00', device: 'Chrome / macOS' },
   ];
 
@@ -166,11 +140,7 @@ export default function ProfileSettings() {
             <div>
               <div className="flex items-center space-x-2">
                 <h1 className="text-2xl sm:text-3xl font-black text-prime font-mono">
-<<<<<<< HEAD
                   {profile?.shortWalletAddress || `${userAddress.slice(0, 6)}...${userAddress.slice(-4)}`}
-=======
-                  {userAddress.slice(0, 6)}...{userAddress.slice(-4)}
->>>>>>> fe05ef7be215c289d9c2e81e5d2ca052e3956485
                 </h1>
                 <span className="px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-500 font-bold text-[10px] border border-emerald-500/20 flex items-center space-x-1">
                   <ShieldCheck size={12} />
@@ -178,11 +148,7 @@ export default function ProfileSettings() {
                 </span>
               </div>
               <p className="text-xs text-sub mt-1">
-<<<<<<< HEAD
                 Joined SimpleOn Matrix: <strong className="text-prime">{profile?.joiningDate ? new Date(profile.joiningDate).toLocaleDateString() : 'Jan 15, 2026'}</strong> • Chain: <strong className="text-prime">BNB Smart Chain (97)</strong>
-=======
-                Joined SimpleOn Matrix: <strong className="text-prime">Jan 15, 2026</strong> • Chain: <strong className="text-prime">BNB Smart Chain (97)</strong>
->>>>>>> fe05ef7be215c289d9c2e81e5d2ca052e3956485
               </p>
             </div>
           </div>
@@ -250,7 +216,6 @@ export default function ProfileSettings() {
         </button>
       </div>
 
-<<<<<<< HEAD
       {/* Feedback Alert Banner */}
       {feedback && (
         <motion.div
@@ -378,33 +343,10 @@ export default function ProfileSettings() {
                     <span className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
                   </div>
                 </div>
-=======
-      {/* TAB CONTENT 1: PROFILE */}
-      {activeTab === 'PROFILE' && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="p-6 rounded-3xl bg-surface border border-border-theme shadow-md space-y-4">
-            <h3 className="text-sm font-black text-prime uppercase tracking-wider font-mono">Account Identity</h3>
-            <div className="space-y-3 text-xs font-mono">
-              <div>
-                <span className="text-sub block text-[10px]">Primary Web3 Address</span>
-                <span className="font-bold text-prime break-all">{userAddress}</span>
-              </div>
-              <div>
-                <span className="text-sub block text-[10px]">Referral Sponsor</span>
-                <span className="font-bold text-emerald-500">0xRoot...Matrix</span>
-              </div>
-              <div>
-                <span className="text-sub block text-[10px]">KYC Verification Status</span>
-                <span className="inline-flex items-center space-x-1 font-bold text-emerald-500">
-                  <CheckCircle2 size={12} />
-                  <span>Web3 Wallet SIWE Signed (KYC Free)</span>
-                </span>
->>>>>>> fe05ef7be215c289d9c2e81e5d2ca052e3956485
               </div>
             </div>
           </div>
 
-<<<<<<< HEAD
           <div className="flex justify-end">
             <button
               type="submit"
@@ -425,35 +367,6 @@ export default function ProfileSettings() {
             </button>
           </div>
         </form>
-=======
-          <div className="p-6 rounded-3xl bg-surface border border-border-theme shadow-md space-y-4">
-            <h3 className="text-sm font-black text-prime uppercase tracking-wider font-mono">Preferences</h3>
-            <div className="space-y-4 text-xs font-mono">
-              <div>
-                <label className="text-sub block text-[10px] mb-1">Display Language</label>
-                <select
-                  value={language}
-                  onChange={(e) => setLanguage(e.target.value)}
-                  className="w-full p-3 rounded-2xl bg-surface-elevated border border-border-theme text-prime font-bold"
-                >
-                  <option>English (US)</option>
-                  <option>Spanish (Español)</option>
-                  <option>French (Français)</option>
-                  <option>Mandarin (中文)</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="text-sub block text-[10px] mb-1">Network Standard</label>
-                <div className="p-3 rounded-2xl bg-surface-elevated border border-border-theme text-prime font-bold flex justify-between items-center">
-                  <span>BNB Smart Chain Testnet (97)</span>
-                  <span className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
->>>>>>> fe05ef7be215c289d9c2e81e5d2ca052e3956485
       )}
 
       {/* TAB CONTENT 2: WALLET */}
@@ -522,7 +435,6 @@ export default function ProfileSettings() {
                 <span className="font-bold text-prime block">In-App Live Alerts</span>
                 <span className="text-sub">Receive instant toast popups when referrals join or matrix completes</span>
               </div>
-<<<<<<< HEAD
               <input
                 type="checkbox"
                 checked={inAppNotifs}
@@ -542,9 +454,6 @@ export default function ProfileSettings() {
                 onChange={(e) => setEmailNotifs(e.target.checked)}
                 className="w-4 h-4 accent-accent-red cursor-pointer"
               />
-=======
-              <input type="checkbox" checked={rewardNotifs} onChange={() => setRewardNotifs(!rewardNotifs)} className="w-4 h-4 accent-accent-red" />
->>>>>>> fe05ef7be215c289d9c2e81e5d2ca052e3956485
             </div>
 
             <div className="flex items-center justify-between p-4 rounded-2xl bg-surface-elevated border border-border-theme">
@@ -552,7 +461,6 @@ export default function ProfileSettings() {
                 <span className="font-bold text-prime block">Telegram Bot Alerts</span>
                 <span className="text-sub">Push notifications for wallet distributions</span>
               </div>
-<<<<<<< HEAD
               <input
                 type="checkbox"
                 checked={telegramNotifs}
@@ -581,11 +489,6 @@ export default function ProfileSettings() {
               )}
             </button>
           </div>
-=======
-              <input type="checkbox" checked={telegramNotifs} onChange={() => setTelegramNotifs(!telegramNotifs)} className="w-4 h-4 accent-accent-red" />
-            </div>
-          </div>
->>>>>>> fe05ef7be215c289d9c2e81e5d2ca052e3956485
         </div>
       )}
 

@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
@@ -7,15 +6,6 @@ import {
 } from 'lucide-react';
 import { useWeb3Store } from '../store/useWeb3Store';
 import { matrixApi } from '../services/api';
-=======
-import React, { useState } from 'react';
-import { motion, AnimatePresence } from 'motion/react';
-import { 
-  Layers, RefreshCw, CheckCircle2, Clock, Users, ArrowRight, ShieldCheck, 
-  Sparkles, ExternalLink, ChevronLeft, ChevronRight, Filter, Info, Zap, AlertCircle 
-} from 'lucide-react';
-import { useWeb3Store } from '../store/useWeb3Store';
->>>>>>> fe05ef7be215c289d9c2e81e5d2ca052e3956485
 
 interface MatrixNode {
   slotNumber: number;
@@ -30,7 +20,6 @@ interface MatrixNode {
   upgradeWalletAmount: number;
 }
 
-<<<<<<< HEAD
 interface CycleHistoryItem {
   cycle: number;
   id?: string;
@@ -65,20 +54,10 @@ export default function X5MatrixUI() {
     totalGeneratedEarnings: 0,
     activeCycleNumber: 1,
   });
-=======
-export default function X5MatrixUI() {
-  const { basePlan } = useWeb3Store();
-
-  const [selectedCycle, setSelectedCycle] = useState<number>(3); // Current Cycle #3
-  const [hoveredNode, setHoveredNode] = useState<MatrixNode | null>(null);
-  const [historyFilter, setHistoryFilter] = useState<'ALL' | 'COMPLETED' | 'IN_PROGRESS'>('ALL');
-  const [currentPage, setCurrentPage] = useState<number>(1);
->>>>>>> fe05ef7be215c289d9c2e81e5d2ca052e3956485
 
   const mainPlanCost = basePlan * 100;
   const x5PoolAmount = mainPlanCost * 0.15; // 15% of Main Plan
 
-<<<<<<< HEAD
   // Load Matrix Data from Backend API
   const fetchMatrixData = async () => {
     setLoading(true);
@@ -193,77 +172,6 @@ export default function X5MatrixUI() {
 
   const activeCount = displayNodes.filter(n => n.isFilled).length;
   const pendingCount = displayNodes.filter(n => !n.isFilled).length;
-=======
-  // Cycle 3 Current State (3 slots filled out of 5)
-  const currentNodes: MatrixNode[] = [
-    {
-      slotNumber: 1,
-      label: 'Position #1',
-      isFilled: true,
-      address: '0x8f3C91029381A063b4f8a2910d',
-      timestamp: '2026-07-20 14:32:00',
-      status: 'COMPLETED',
-      tierAmount: x5PoolAmount,
-      incomeGenerated: x5PoolAmount * 0.8,
-      reTopupAmount: x5PoolAmount * 0.2,
-      upgradeWalletAmount: 0
-    },
-    {
-      slotNumber: 2,
-      label: 'Position #2',
-      isFilled: true,
-      address: '0x4e5d6c7b8a901234567890ab',
-      timestamp: '2026-07-21 09:15:22',
-      status: 'COMPLETED',
-      tierAmount: x5PoolAmount,
-      incomeGenerated: x5PoolAmount * 0.8,
-      reTopupAmount: x5PoolAmount * 0.2,
-      upgradeWalletAmount: 0
-    },
-    {
-      slotNumber: 3,
-      label: 'Position #3',
-      isFilled: true,
-      address: '0x1234567890abcdef12345678',
-      timestamp: '2026-07-22 04:10:05',
-      status: 'ACTIVE',
-      tierAmount: x5PoolAmount,
-      incomeGenerated: x5PoolAmount * 0.8,
-      reTopupAmount: x5PoolAmount * 0.2,
-      upgradeWalletAmount: 0
-    },
-    {
-      slotNumber: 4,
-      label: 'Position #4',
-      isFilled: false,
-      status: 'PENDING',
-      tierAmount: x5PoolAmount,
-      incomeGenerated: 0,
-      reTopupAmount: 0,
-      upgradeWalletAmount: 0
-    },
-    {
-      slotNumber: 5,
-      label: 'Position #5 (Auto-Recycle)',
-      isFilled: false,
-      status: 'PENDING',
-      tierAmount: x5PoolAmount,
-      incomeGenerated: 0,
-      reTopupAmount: 0,
-      upgradeWalletAmount: 0
-    }
-  ];
-
-  // Matrix History Cycles
-  const matrixCyclesHistory = [
-    { cycle: 3, status: 'IN_PROGRESS', filledSlots: 3, totalSlots: 5, earnings: x5PoolAmount * 0.8 * 3, dateStarted: '2026-07-20' },
-    { cycle: 2, status: 'COMPLETED', filledSlots: 5, totalSlots: 5, earnings: x5PoolAmount * 0.8 * 5, dateStarted: '2026-06-12', dateCompleted: '2026-07-19' },
-    { cycle: 1, status: 'COMPLETED', filledSlots: 5, totalSlots: 5, earnings: x5PoolAmount * 0.4 * 5, dateStarted: '2026-05-01', dateCompleted: '2026-06-11' },
-  ];
-
-  const activeCount = currentNodes.filter(n => n.isFilled).length;
-  const pendingCount = currentNodes.filter(n => !n.isFilled).length;
->>>>>>> fe05ef7be215c289d9c2e81e5d2ca052e3956485
 
   return (
     <div className="py-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-10">
@@ -286,7 +194,6 @@ export default function X5MatrixUI() {
             </p>
           </div>
 
-<<<<<<< HEAD
           {/* Cycle Selector Cards & Refresh Action */}
           <div className="flex items-center space-x-3 shrink-0">
             <button
@@ -300,13 +207,6 @@ export default function X5MatrixUI() {
             <div className="p-3 rounded-2xl bg-surface-elevated border border-border-theme text-right">
               <span className="text-[10px] font-mono text-sub block uppercase font-bold">Active Cycle</span>
               <span className="text-2xl font-black font-mono text-accent-red">Cycle #{summaryData.activeCycleNumber}</span>
-=======
-          {/* Cycle Selector Cards */}
-          <div className="flex items-center space-x-3 shrink-0">
-            <div className="p-3 rounded-2xl bg-surface-elevated border border-border-theme text-right">
-              <span className="text-[10px] font-mono text-sub block uppercase font-bold">Active Cycle</span>
-              <span className="text-2xl font-black font-mono text-accent-red">Cycle #{selectedCycle}</span>
->>>>>>> fe05ef7be215c289d9c2e81e5d2ca052e3956485
             </div>
             <div className="p-3 rounded-2xl bg-surface-elevated border border-border-theme text-right">
               <span className="text-[10px] font-mono text-sub block uppercase font-bold">X5 Slot Value</span>
@@ -316,7 +216,6 @@ export default function X5MatrixUI() {
         </div>
       </div>
 
-<<<<<<< HEAD
       {/* Error Alert State */}
       {error && (
         <div className="p-4 rounded-2xl bg-accent-red/10 border border-accent-red/20 text-accent-red flex items-center justify-between text-xs font-mono">
@@ -341,49 +240,12 @@ export default function X5MatrixUI() {
         </div>
       )}
 
-=======
->>>>>>> fe05ef7be215c289d9c2e81e5d2ca052e3956485
-      {/* 4 Overview KPI Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        <div className="p-6 rounded-3xl bg-surface border border-border-theme shadow-md space-y-1">
-          <span className="text-[10px] font-mono font-bold text-sub uppercase">Filled Node Slots</span>
-          <div className="text-3xl font-black font-mono text-prime">{activeCount} / 5 Slots</div>
-          <div className="w-full bg-border-theme h-2 rounded-full overflow-hidden mt-2">
-            <div className="bg-accent-red h-full rounded-full transition-all duration-500" style={{ width: `${(activeCount / 5) * 100}%` }} />
-          </div>
-        </div>
-
-        <div className="p-6 rounded-3xl bg-surface border border-border-theme shadow-md space-y-1">
-          <span className="text-[10px] font-mono font-bold text-sub uppercase">Pending Node Slots</span>
-          <div className="text-3xl font-black font-mono text-amber-500">{pendingCount} Slots Open</div>
-<<<<<<< HEAD
-          <p className="text-[11px] text-sub">Next slot: Position #{activeCount < 5 ? activeCount + 1 : 5}</p>
-        </div>
-
-        <div className="p-6 rounded-3xl bg-surface border border-border-theme shadow-md space-y-1">
-          <span className="text-[10px] font-mono font-bold text-sub uppercase">Cycle #{selectedCycle} Generated Income</span>
-          <div className="text-3xl font-black font-mono text-emerald-500">${(summaryData.totalGeneratedEarnings || (x5PoolAmount * (selectedCycle === 1 ? 0.4 : 0.8) * activeCount)).toFixed(2)} USDT</div>
-          <p className="text-[11px] text-emerald-500 font-bold">{selectedCycle === 1 ? '40% Net Income (Cycle 1)' : '80% Net Payout Rate Active'}</p>
-=======
-          <p className="text-[11px] text-sub">Next slot: Position #{activeCount + 1}</p>
-        </div>
-
-        <div className="p-6 rounded-3xl bg-surface border border-border-theme shadow-md space-y-1">
-          <span className="text-[10px] font-mono font-bold text-sub uppercase">Cycle 3 Generated Income</span>
-          <div className="text-3xl font-black font-mono text-emerald-500">${(x5PoolAmount * 0.8 * activeCount).toFixed(2)} USDT</div>
-          <p className="text-[11px] text-emerald-500 font-bold">80% Net Payout Rate Active</p>
->>>>>>> fe05ef7be215c289d9c2e81e5d2ca052e3956485
         </div>
 
         <div className="p-6 rounded-3xl bg-surface border border-border-theme shadow-md space-y-1">
           <span className="text-[10px] font-mono font-bold text-sub uppercase">Completed Cycles</span>
-<<<<<<< HEAD
           <div className="text-3xl font-black font-mono text-accent-blue">{summaryData.totalCompletedCycles} Cycles Recycled</div>
           <p className="text-[11px] text-sub">{summaryData.totalFilledNodes} Total Placed Positions</p>
-=======
-          <div className="text-3xl font-black font-mono text-accent-blue">2 Cycles Recycling</div>
-          <p className="text-[11px] text-sub">10 Total Recycled Nodes</p>
->>>>>>> fe05ef7be215c289d9c2e81e5d2ca052e3956485
         </div>
       </div>
 
@@ -393,17 +255,12 @@ export default function X5MatrixUI() {
           <div>
             <h2 className="text-lg font-black text-prime flex items-center space-x-2">
               <Sparkles size={18} className="text-accent-red" />
-<<<<<<< HEAD
               <span>Interactive SVG X5 Matrix Node Map (Cycle #{selectedCycle})</span>
-=======
-              <span>Interactive SVG X5 Matrix Node Map</span>
->>>>>>> fe05ef7be215c289d9c2e81e5d2ca052e3956485
             </h2>
             <p className="text-xs text-sub">Hover over any position node to inspect live placement timestamps and wallet reward splits.</p>
           </div>
 
           <div className="flex items-center space-x-2">
-<<<<<<< HEAD
             {activeCount === 5 ? (
               <span className="px-3 py-1 rounded-xl bg-emerald-500/10 text-emerald-500 font-mono text-xs font-bold border border-emerald-500/20 flex items-center space-x-1.5">
                 <CheckCircle2 size={14} />
@@ -414,11 +271,6 @@ export default function X5MatrixUI() {
                 Auto Spillover Active
               </span>
             )}
-=======
-            <span className="px-3 py-1 rounded-xl bg-accent-red/10 text-accent-red font-mono text-xs font-bold border border-accent-red/20">
-              Auto Spillover Enabled
-            </span>
->>>>>>> fe05ef7be215c289d9c2e81e5d2ca052e3956485
           </div>
         </div>
 
@@ -444,11 +296,7 @@ export default function X5MatrixUI() {
             </g>
 
             {/* 5 Satellite Nodes */}
-<<<<<<< HEAD
             {displayNodes.map((node, index) => {
-=======
-            {currentNodes.map((node, index) => {
->>>>>>> fe05ef7be215c289d9c2e81e5d2ca052e3956485
               const xPositions = [80, 190, 300, 410, 520];
               const cx = xPositions[index];
               const cy = 230;
@@ -510,11 +358,7 @@ export default function X5MatrixUI() {
                     fontSize="10" 
                     fontFamily="monospace"
                   >
-<<<<<<< HEAD
                     {isFilled ? `${node.address?.slice(0, 4)}...${node.address?.slice(-4)}` : 'OPEN'}
-=======
-                    {isFilled ? `${node.address?.slice(0, 4)}...` : 'OPEN'}
->>>>>>> fe05ef7be215c289d9c2e81e5d2ca052e3956485
                   </text>
                 </g>
               );
@@ -542,17 +386,10 @@ export default function X5MatrixUI() {
                 {hoveredNode.isFilled ? (
                   <div className="space-y-1 text-sub">
                     <p><strong className="text-prime">Wallet:</strong> {hoveredNode.address}</p>
-<<<<<<< HEAD
                     <p><strong className="text-prime">Placed:</strong> {hoveredNode.timestamp || 'Recorded'}</p>
                     <p><strong className="text-prime">Slot Amount:</strong> ${hoveredNode.tierAmount.toFixed(2)} USDT</p>
                     <p className="text-emerald-500 font-bold">
                       Payout Net: +${hoveredNode.incomeGenerated.toFixed(2)} USDT
-=======
-                    <p><strong className="text-prime">Placed:</strong> {hoveredNode.timestamp}</p>
-                    <p><strong className="text-prime">Slot Amount:</strong> ${hoveredNode.tierAmount.toFixed(2)} USDT</p>
-                    <p className="text-emerald-500 font-bold">
-                      Payout (80% Net): +${hoveredNode.incomeGenerated.toFixed(2)} USDT
->>>>>>> fe05ef7be215c289d9c2e81e5d2ca052e3956485
                     </p>
                   </div>
                 ) : (
@@ -614,7 +451,6 @@ export default function X5MatrixUI() {
         </div>
 
         <div className="overflow-x-auto">
-<<<<<<< HEAD
           {matrixCyclesHistory.length === 0 ? (
             <div className="py-8 text-center text-sub font-mono text-xs">
               No matrix cycle records found yet. Active plan purchases will automatically start Cycle #1.
@@ -666,49 +502,6 @@ export default function X5MatrixUI() {
               </tbody>
             </table>
           )}
-=======
-          <table className="w-full text-left border-collapse font-mono text-xs">
-            <thead>
-              <tr className="border-b border-border-theme text-sub uppercase text-[10px] tracking-wider">
-                <th className="py-3 px-4">Cycle ID</th>
-                <th className="py-3 px-4">Status</th>
-                <th className="py-3 px-4">Slot Progress</th>
-                <th className="py-3 px-4">Total Income Generated</th>
-                <th className="py-3 px-4">Date Started</th>
-                <th className="py-3 px-4">Date Recycled</th>
-                <th className="py-3 px-4 text-right">Details</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-border-theme">
-              {matrixCyclesHistory
-                .filter(item => historyFilter === 'ALL' ? true : item.status === historyFilter)
-                .map((item) => (
-                  <tr key={item.cycle} className="hover:bg-surface-elevated/50 transition-colors">
-                    <td className="py-3.5 px-4 font-bold text-prime">Cycle #{item.cycle}</td>
-                    <td className="py-3.5 px-4">
-                      <span className={`px-2 py-0.5 rounded-md font-bold text-[10px] ${
-                        item.status === 'COMPLETED' ? 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/20' : 'bg-amber-500/10 text-amber-500 border border-amber-500/20'
-                      }`}>
-                        {item.status}
-                      </span>
-                    </td>
-                    <td className="py-3.5 px-4 text-prime font-bold">{item.filledSlots} / {item.totalSlots} Slots</td>
-                    <td className="py-3.5 px-4 font-bold text-emerald-500">${item.earnings.toFixed(2)} USDT</td>
-                    <td className="py-3.5 px-4 text-sub">{item.dateStarted}</td>
-                    <td className="py-3.5 px-4 text-sub">{item.dateCompleted || 'In Progress'}</td>
-                    <td className="py-3.5 px-4 text-right">
-                      <button 
-                        onClick={() => setSelectedCycle(item.cycle)}
-                        className="px-3 py-1 rounded-lg bg-surface-elevated hover:bg-surface border border-border-theme text-prime text-[11px] font-bold"
-                      >
-                        View Node Map
-                      </button>
-                    </td>
-                  </tr>
-              ))}
-            </tbody>
-          </table>
->>>>>>> fe05ef7be215c289d9c2e81e5d2ca052e3956485
         </div>
       </div>
 

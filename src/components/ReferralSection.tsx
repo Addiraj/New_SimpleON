@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 import React, { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
 import { Users, Copy, Check, Share2, Sparkles, PieChart, ArrowUpRight, Network } from 'lucide-react';
@@ -23,20 +22,6 @@ export default function ReferralSection() {
   const referralLink = liveLink || (address 
     ? `${window.location.origin}/?ref=${address}` 
     : 'https://simpleon.io/?ref=0x71C7656EC7ab88b098defB751B7401B5f6d8976F');
-=======
-import React, { useState } from 'react';
-import { motion } from 'motion/react';
-import { Users, Copy, Check, Share2, Sparkles, PieChart, ArrowUpRight, Network } from 'lucide-react';
-import { useWeb3Store } from '../store/useWeb3Store';
-
-export default function ReferralSection() {
-  const { address } = useWeb3Store();
-  const [copied, setCopied] = useState(false);
-
-  const referralLink = address 
-    ? `${window.location.origin}/?ref=${address}` 
-    : 'https://simpleon.io/?ref=0x71C7656EC7ab88b098defB751B7401B5f6d8976F';
->>>>>>> fe05ef7be215c289d9c2e81e5d2ca052e3956485
 
   const handleCopy = () => {
     navigator.clipboard.writeText(referralLink);

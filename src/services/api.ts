@@ -16,7 +16,6 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
-<<<<<<< HEAD
 let isRefreshing = false;
 let failedQueue: Array<{ resolve: (token: string) => void; reject: (err: any) => void }> = [];
 
@@ -90,12 +89,6 @@ api.interceptors.response.use(
       localStorage.removeItem('simpleon_web3_refresh_token');
     }
 
-=======
-// Response interceptor for error handling
-api.interceptors.response.use(
-  (response) => response.data,
-  (error) => {
->>>>>>> fe05ef7be215c289d9c2e81e5d2ca052e3956485
     const message = error.response?.data?.error?.message || error.message || 'API Request Failed';
     return Promise.reject(new Error(message));
   }

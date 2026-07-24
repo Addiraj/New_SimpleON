@@ -1,6 +1,5 @@
 import { Router } from 'express';
 import { AuthController } from '../controllers/auth.controller.js';
-<<<<<<< HEAD
 import { validateRequest } from '../middlewares/validateRequest.js';
 import { authenticateWeb3Token } from '../middlewares/authMiddleware.js';
 import { authLimiter } from '../middlewares/rateLimiter.js';
@@ -28,12 +27,5 @@ router.post('/logout', validateRequest(logoutSchema), AuthController.logout);
 
 // Current user profile
 router.get('/me', authenticateWeb3Token, AuthController.getCurrentUser);
-=======
-
-const router = Router();
-
-router.get('/nonce', AuthController.getNonce);
-router.post('/verify', AuthController.verifySignature);
->>>>>>> fe05ef7be215c289d9c2e81e5d2ca052e3956485
 
 export default router;

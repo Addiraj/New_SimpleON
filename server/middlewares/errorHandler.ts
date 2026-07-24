@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 import { Request, Response, NextFunction, ErrorRequestHandler } from 'express';
 import { ZodError } from 'zod';
 import { Prisma } from '@prisma/client';
@@ -8,22 +7,10 @@ import { env } from '../config/env.js';
 
 export const errorHandler: ErrorRequestHandler = (
   err: any,
-=======
-import { Request, Response, NextFunction } from 'express';
-import { logger } from '../utils/logger.js';
-
-export interface AppError extends Error {
-  statusCode?: number;
-}
-
-export const errorHandler = (
-  err: AppError,
->>>>>>> fe05ef7be215c289d9c2e81e5d2ca052e3956485
   req: Request,
   res: Response,
   _next: NextFunction
 ) => {
-<<<<<<< HEAD
   let statusCode = err.statusCode || 500;
   let message = err.message || 'Internal Server Error';
   let details = err.details || null;
@@ -81,29 +68,11 @@ export const errorHandler = (
       'Client API Error'
     );
   }
-=======
-  const statusCode = err.statusCode || 500;
-  const message = err.message || 'Internal Server Error';
-
-  logger.error(`API Error: ${req.method} ${req.originalUrl} - Status ${statusCode}: ${message}`, err.stack);
->>>>>>> fe05ef7be215c289d9c2e81e5d2ca052e3956485
 
   res.status(statusCode).json({
     success: false,
     error: {
       message,
       statusCode,
-<<<<<<< HEAD
       ...(details && { details }),
       ...(env.NODE_ENV === 'development' && { stack: err.stack }),
-=======
->>>>>>> fe05ef7be215c289d9c2e81e5d2ca052e3956485
-      timestamp: new Date().toISOString(),
-    },
-  });
-};
-<<<<<<< HEAD
-
-export default errorHandler;
-=======
->>>>>>> fe05ef7be215c289d9c2e81e5d2ca052e3956485

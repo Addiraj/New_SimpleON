@@ -1,12 +1,6 @@
-<<<<<<< HEAD
 // SimpleOn Protocol Prisma Schema for MySQL
 datasource db {
-  provider = "mysql"
-=======
-// SimpleOn Booster Plan Prisma Schema
-datasource db {
   provider = "postgresql"
->>>>>>> fe05ef7be215c289d9c2e81e5d2ca052e3956485
   url      = env("DATABASE_URL")
 }
 
@@ -14,7 +8,6 @@ generator client {
   provider = "prisma-client-js"
 }
 
-<<<<<<< HEAD
 // ==========================================
 // ENUMS
 // ==========================================
@@ -100,19 +93,10 @@ enum TransactionType {
   DEPOSIT
   WITHDRAWAL
   REVERSAL
-=======
-enum BoosterTier {
-  STARTER
-  BUILDER
-  LEADER
-  CHAMPION
-  MAIN_PLAN
->>>>>>> fe05ef7be215c289d9c2e81e5d2ca052e3956485
 }
 
 enum TransactionStatus {
   PENDING
-<<<<<<< HEAD
   PROCESSING
   COMPLETED
   FAILED
@@ -738,88 +722,4 @@ model SystemConfiguration {
   updated_at          DateTime @updatedAt @map("updated_at")
 
   @@map("system_configurations")
-=======
-  CONFIRMED
-  FAILED
-}
-
-model User {
-  id                    String        @id @default(uuid())
-  address               String        @unique
-  referrerAddress       String?
-  referrer              User?         @relation("Referrals", fields: [referrerAddress], references: [address])
-  referrals             User[]        @relation("Referrals")
-  
-  tier                  BoosterTier   @default(STARTER)
-  basePlanAmount        Float         @default(1.0)
-  totalEarningsUsdt     Float         @default(0.0)
-  directReferralsCount  Int           @default(0)
-  currentCycle          Int           @default(1)
-  dailyCappingLimit     Int           @default(5)
-  cyclesCompletedToday  Int           @default(0)
-  
-  nonces                AuthNonce[]
-  sessions              UserSession[]
-  transactions          Transaction[]
-  placements            MatrixPlacement[]
-  
-  createdAt             DateTime      @default(now())
-  updatedAt             DateTime      @updatedAt
-
-  @@index([address])
-  @@index([referrerAddress])
-}
-
-model AuthNonce {
-  id        String   @id @default(uuid())
-  address   String
-  nonce     String   @unique
-  expiresAt DateTime
-  user      User     @relation(fields: [address], references: [address], onDelete: Cascade)
-  createdAt DateTime @default(now())
-
-  @@index([address])
-}
-
-model UserSession {
-  id        String   @id @default(uuid())
-  address   String
-  token     String   @unique
-  user      User     @relation(fields: [address], references: [address], onDelete: Cascade)
-  expiresAt DateTime
-  createdAt DateTime @default(now())
-
-  @@index([address])
-}
-
-model MatrixPlacement {
-  id             String      @id @default(uuid())
-  userAddress    String
-  user           User        @relation(fields: [userAddress], references: [address])
-  parentAddress  String?
-  level          Int         @default(1)
-  positionIndex  Int
-  isSpillover    Boolean     @default(false)
-  matrixType     String      @default("FORCED_3X3") // FORCED_3X3, X5, X4
-  createdAt      DateTime    @default(now())
-
-  @@index([userAddress])
-  @@index([parentAddress])
-}
-
-model Transaction {
-  id             String            @id @default(uuid())
-  txHash         String            @unique
-  userAddress    String
-  user           User              @relation(fields: [userAddress], references: [address])
-  type           String            // REGISTER, BOOSTER_UPGRADE, MAIN_PLAN_ACTIVATE, REWARD_PAYOUT
-  amountUsdt     Float
-  tier           BoosterTier
-  status         TransactionStatus @default(CONFIRMED)
-  blockNumber    Int?
-  createdAt      DateTime          @default(now())
-
-  @@index([userAddress])
-  @@index([txHash])
->>>>>>> fe05ef7be215c289d9c2e81e5d2ca052e3956485
 }

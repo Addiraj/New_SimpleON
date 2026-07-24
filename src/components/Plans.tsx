@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 import React, { useState, useEffect, useCallback } from 'react';
 import { motion } from 'motion/react';
 import { 
@@ -187,24 +186,10 @@ export default function Plans({ basePlan = 1 }: { basePlan?: number } = {}) {
   const builderCost = basePlan * parseFloat(builderPlan.joiningAmount || '4');
   const leaderCost = basePlan * parseFloat(leaderPlan.joiningAmount || '16');
   const championCost = basePlan * parseFloat(championPlan.joiningAmount || '64');
-=======
-import React, { useState } from 'react';
-import { motion } from 'motion/react';
-import { Rocket, TrendingUp, Users, Trophy, ShieldCheck, ChevronDown, ChevronUp, Layers, Coins, Target } from 'lucide-react';
-
-export default function Plans({ basePlan = 1 }: { basePlan?: number } = {}) {
-  const [expandedSection, setExpandedSection] = useState<'booster' | 'main' | null>('booster');
-
-  const starterCost = basePlan * 1;
-  const builderCost = basePlan * 4;
-  const leaderCost = basePlan * 16;
-  const championCost = basePlan * 64;
->>>>>>> fe05ef7be215c289d9c2e81e5d2ca052e3956485
   const mainPlanCost = basePlan * 100;
 
   const boosterTiers = [
     {
-<<<<<<< HEAD
       slug: 'starter',
       name: 'Starter Booster',
       levelOrder: 1,
@@ -275,89 +260,24 @@ export default function Plans({ basePlan = 1 }: { basePlan?: number } = {}) {
   const levelPoolAmt = calculations?.mainPlan?.forcedLevelPool ?? mainPlanCost * 0.65;
   const x4Amt = calculations?.mainPlan?.x4MatrixAllocation ?? mainPlanCost * 0.20;
 
-=======
-      name: 'Starter Booster',
-      cost: `${starterCost.toFixed(2)} USDT`,
-      costFormula: '1 × Base Plan',
-      collection: `${(starterCost * 5).toFixed(2)} USDT`,
-      reSubscribe: `${starterCost.toFixed(2)} USDT`,
-      upgrade: `${builderCost.toFixed(2)} USDT`,
-      description: `Your entry ticket. Out of ${(starterCost * 5).toFixed(2)} USDT collected from 5 direct partners, ${starterCost.toFixed(2)} USDT is used to re-subscribe and ${builderCost.toFixed(2)} USDT automatically upgrades you to Builder.`,
-      accent: 'border-red-500 dark:border-red-600',
-      badgeBg: 'bg-red-50 text-red-600 dark:bg-red-950/25 dark:text-red-500',
-      icon: <Rocket size={20} className="text-red-600 dark:text-red-500" />
-    },
-    {
-      name: 'Builder Booster',
-      cost: `${builderCost.toFixed(2)} USDT`,
-      costFormula: '4 × Base Plan',
-      collection: `${(builderCost * 5).toFixed(2)} USDT`,
-      reSubscribe: `${builderCost.toFixed(2)} USDT`,
-      upgrade: `${leaderCost.toFixed(2)} USDT`,
-      description: `The second tier. Out of ${(builderCost * 5).toFixed(2)} USDT collected, ${builderCost.toFixed(2)} USDT is recycled into Builder re-subscription and ${leaderCost.toFixed(2)} USDT is used to auto-upgrade to Leader.`,
-      accent: 'border-blue-500 dark:border-blue-600',
-      badgeBg: 'bg-blue-50 text-blue-600 dark:bg-blue-950/25 dark:text-blue-500',
-      icon: <TrendingUp size={20} className="text-blue-600 dark:text-blue-500" />
-    },
-    {
-      name: 'Leader Booster',
-      cost: `${leaderCost.toFixed(2)} USDT`,
-      costFormula: '16 × Base Plan',
-      collection: `${(leaderCost * 5).toFixed(2)} USDT`,
-      reSubscribe: `${leaderCost.toFixed(2)} USDT`,
-      upgrade: `${championCost.toFixed(2)} USDT`,
-      description: `The high tier. ${(leaderCost * 5).toFixed(2)} USDT collected: ${leaderCost.toFixed(2)} USDT goes to Leader re-subscription and ${championCost.toFixed(2)} USDT automatically upgrades you to Champion.`,
-      accent: 'border-orange-500 dark:border-orange-600',
-      badgeBg: 'bg-orange-50 text-orange-600 dark:bg-orange-950/25 dark:text-orange-500',
-      icon: <Users size={20} className="text-orange-600 dark:text-orange-500" />
-    },
-    {
-      name: 'Champion Booster',
-      cost: `${championCost.toFixed(2)} USDT`,
-      costFormula: '64 × Base Plan',
-      collection: `${(championCost * 5).toFixed(2)} USDT`,
-      reSubscribe: `${championCost.toFixed(2)} USDT`,
-      upgrade: `${mainPlanCost.toFixed(2)} USDT (to Main Plan)`,
-      income: `${(basePlan * 156).toFixed(2)} USDT (Net Income)`,
-      description: `The peak of Booster. Total collection of ${(championCost * 5).toFixed(2)} USDT is distributed exactly: ${championCost.toFixed(2)} USDT for Champion re-topup, ${mainPlanCost.toFixed(2)} USDT to activate the Main Plan, leaving ${(basePlan * 156).toFixed(2)} USDT directly in your Wallet as "First Net Income".`,
-      accent: 'border-purple-500 dark:border-purple-600',
-      badgeBg: 'bg-purple-50 text-purple-600 dark:bg-purple-950/25 dark:text-purple-500',
-      icon: <Trophy size={20} className="text-purple-600 dark:text-purple-500" />
-    }
-  ];
-
->>>>>>> fe05ef7be215c289d9c2e81e5d2ca052e3956485
   const mainPlanAllocations = [
     {
       module: 'X5 Matrix Split',
       percentage: '15%',
-<<<<<<< HEAD
       amount: `${x5Amt.toFixed(2)} USDT`,
       formula: '15% × Main Plan Amount',
       description: 'A dedicated 5-position matrix. Payout cycle 1: 20% retopup, 40% upgrade wallet, 40% income. From cycle 2 onward: 20% retopup, 80% direct net income.',
-=======
-      amount: `${(mainPlanCost * 0.15).toFixed(2)} USDT`,
-      formula: '15% × Main Plan Amount',
-      description: 'A dedicated 5-position matrix. Payout cycle 1: 20% retopup, 40% upgrade wallet, 40% income. From cycle 2 onward: 20% retopup, 80% direct net income.'
->>>>>>> fe05ef7be215c289d9c2e81e5d2ca052e3956485
     },
     {
       module: '13-Level Forced Income Pool',
       percentage: '65%',
-<<<<<<< HEAD
       amount: `${levelPoolAmt.toFixed(2)} USDT`,
       formula: '65% × Main Plan Amount',
       description: `Distributed evenly as ${(levelPoolAmt / 13).toFixed(2)} USDT per level across 13 levels. Leverages a 3×3 forced matrix with automated spillover placement.`,
-=======
-      amount: `${(mainPlanCost * 0.65).toFixed(2)} USDT`,
-      formula: '65% × Main Plan Amount',
-      description: `Distributed evenly as ${(mainPlanCost * 0.65 / 13).toFixed(2)} USDT per level across 13 levels. Leverages a 3×3 forced matrix with automated spillover placement.`
->>>>>>> fe05ef7be215c289d9c2e81e5d2ca052e3956485
     },
     {
       module: 'X4 Matrix Allocation',
       percentage: '20%',
-<<<<<<< HEAD
       amount: `${x4Amt.toFixed(2)} USDT`,
       formula: '20% × Main Plan Amount',
       description: 'A 2×2 forced spillover matrix. Allocates 20.00 USDT for automated spillover recycling, unlimited cycles, and passive team placement.',
@@ -369,19 +289,6 @@ export default function Plans({ basePlan = 1 }: { basePlan?: number } = {}) {
     { name: 'Builder', multiple: `${parseFloat(builderPlan.joiningAmount || '4')}x`, cost: builderCost, color: 'text-accent-blue border-accent-blue/30 bg-accent-blue/5' },
     { name: 'Leader', multiple: `${parseFloat(leaderPlan.joiningAmount || '16')}x`, cost: leaderCost, color: 'text-accent-orange border-accent-orange/30 bg-accent-orange/5' },
     { name: 'Champion', multiple: `${parseFloat(championPlan.joiningAmount || '64')}x`, cost: championCost, color: 'text-accent-purple border-accent-purple/30 bg-accent-purple/5' },
-=======
-      amount: `${(mainPlanCost * 0.20).toFixed(2)} USDT`,
-      formula: '20% × Main Plan Amount',
-      description: 'A 2×2 forced spillover matrix. Allocates 20.00 USDT for automated spillover recycling, unlimited cycles, and passive team placement.'
-    }
-  ];
-
-  const ladderSteps = [
-    { name: 'Starter', multiple: '1x', cost: starterCost, color: 'text-accent-red border-accent-red/30 bg-accent-red/5' },
-    { name: 'Builder', multiple: '4x', cost: builderCost, color: 'text-accent-blue border-accent-blue/30 bg-accent-blue/5' },
-    { name: 'Leader', multiple: '16x', cost: leaderCost, color: 'text-accent-orange border-accent-orange/30 bg-accent-orange/5' },
-    { name: 'Champion', multiple: '64x', cost: championCost, color: 'text-accent-purple border-accent-purple/30 bg-accent-purple/5' },
->>>>>>> fe05ef7be215c289d9c2e81e5d2ca052e3956485
     { name: 'Main Plan', multiple: '100x', cost: mainPlanCost, color: 'text-green-600 border-green-500/30 bg-green-500/5' },
   ];
 
@@ -406,11 +313,7 @@ export default function Plans({ basePlan = 1 }: { basePlan?: number } = {}) {
     },
     {
       question: "What happens to my position if I stop referring new members?",
-<<<<<<< HEAD
       answer: "Because SimpleOn includes passive structures like the 13-Level forced pool and the X4 Matrix, your position can still receive passive spillover placements and distributions from active upline or downline members. However, active direct referrals are highly recommended to accelerate your booster tier upgrades and increase your daily capping limits."
-=======
-      answer: "Because SimpleOn includes passive structures like the 13-Level forced pool and the X4 Matrix, your position can still receive passive spillover placements and distributions from active upline or downline members. However, active direct referrals are highly recommended to accelerate your booster tier upgrades and increase your daily capping limits. Final behavior depends on live platform rules to be confirmed."
->>>>>>> fe05ef7be215c289d9c2e81e5d2ca052e3956485
     }
   ];
 
@@ -428,7 +331,6 @@ export default function Plans({ basePlan = 1 }: { basePlan?: number } = {}) {
           </p>
         </div>
 
-<<<<<<< HEAD
         {/* Error Banner with Retry */}
         {error && (
           <div className="mb-12 p-6 rounded-2xl border border-red-500/30 bg-red-500/5 text-center flex flex-col items-center justify-center space-y-3">
@@ -454,29 +356,10 @@ export default function Plans({ basePlan = 1 }: { basePlan?: number } = {}) {
           </div>
         )}
 
-=======
->>>>>>> fe05ef7be215c289d9c2e81e5d2ca052e3956485
-        {/* ===========================================
-            4. SLOT/LEVEL PRICING LADDER
-           =========================================== */}
-        <div id="pricing-ladder" className="mb-16">
-          <div className="bg-surface-elevated/40 border border-border-theme rounded-3xl p-6 md:p-8 shadow-sm">
-            <h3 className="text-lg font-extrabold text-prime mb-8 text-center sm:text-left flex items-center space-x-2">
-              <Target size={20} className="text-accent-red" />
-              <span>SimpleOn Pricing Ladder & Growth Multipliers</span>
-            </h3>
-
-            {/* Desktop / Tablet Timeline view */}
-            <div className="hidden md:flex items-center justify-between relative px-4">
-<<<<<<< HEAD
-=======
-              {/* Central connection line */}
->>>>>>> fe05ef7be215c289d9c2e81e5d2ca052e3956485
               <div className="absolute left-12 right-12 top-10 h-0.5 bg-dashed bg-border-theme z-0" />
 
               {ladderSteps.map((step, idx) => (
                 <React.Fragment key={idx}>
-<<<<<<< HEAD
 =======
                   {/* Step Card */}
 >>>>>>> fe05ef7be215c289d9c2e81e5d2ca052e3956485
@@ -492,9 +375,6 @@ export default function Plans({ basePlan = 1 }: { basePlan?: number } = {}) {
                   </div>
 
 <<<<<<< HEAD
-=======
-                  {/* Arrow connector between steps (not after the last one) */}
->>>>>>> fe05ef7be215c289d9c2e81e5d2ca052e3956485
                   {idx < ladderSteps.length - 1 && (
                     <div className="flex flex-col items-center justify-center text-xs font-black text-accent-red bg-surface-elevated px-2.5 py-1.5 rounded-xl border border-border-theme shadow-xs relative z-10 hover:scale-105 transition-transform">
                       <span>×4</span>
@@ -529,7 +409,6 @@ export default function Plans({ basePlan = 1 }: { basePlan?: number } = {}) {
           </div>
         </div>
 
-<<<<<<< HEAD
         {/* Payment Error Alert */}
         {paymentError && (
           <div className="mb-6 p-4 rounded-2xl bg-red-500/10 border border-red-500/30 text-xs text-red-500 font-bold flex items-center justify-between">
@@ -541,276 +420,6 @@ export default function Plans({ basePlan = 1 }: { basePlan?: number } = {}) {
           </div>
         )}
 
-=======
->>>>>>> fe05ef7be215c289d9c2e81e5d2ca052e3956485
-        {/* Section Accordions */}
-        <div id="plans-accordions" className="space-y-6">
-
-          {/* 1. Booster Plan */}
-          <div id="plans-accordion-booster" className="border border-border-theme rounded-3xl overflow-hidden bg-surface shadow-sm transition-colors duration-300">
-            <button
-              id="plans-accordion-booster-trigger"
-              onClick={() => setExpandedSection(expandedSection === 'booster' ? null : 'booster')}
-              className="w-full flex items-center justify-between p-6 md:p-8 text-left focus:outline-none hover:bg-surface-elevated transition-colors"
-            >
-              <div id="booster-header-group" className="flex items-center space-x-4">
-                <div id="booster-header-icon" className="p-3 rounded-2xl bg-accent-red/10 text-accent-red">
-                  <Rocket size={24} />
-                </div>
-                <div>
-                  <h3 id="booster-header-title" className="text-xl font-bold text-prime">Booster Plan (4 Upgrade Tiers)</h3>
-                  <p id="booster-header-desc" className="text-xs text-sub mt-1">Scale from 1 USDT to 64 USDT to trigger automatic Main Plan entry</p>
-                </div>
-              </div>
-              <div id="booster-header-toggle">
-                {expandedSection === 'booster' ? <ChevronUp size={20} className="text-sub" /> : <ChevronDown size={20} className="text-sub" />}
-              </div>
-            </button>
-
-            {expandedSection === 'booster' && (
-              <div id="plans-accordion-booster-content" className="p-6 md:p-8 border-t border-border-theme bg-surface-elevated/40">
-                <div id="booster-tiers-grid" className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-<<<<<<< HEAD
-                  {boosterTiers.map((tier, idx) => {
-                    const currentOrder = eligibilityData?.currentLevelOrder || 1;
-                    const isCurrentOrPassed = currentOrder >= tier.levelOrder;
-                    const isTargetLevel = tier.levelOrder === (eligibilityData?.targetLevelOrder || 1);
-                    const isEligibleForUpgrade = isTargetLevel && (eligibilityData?.eligible ?? true);
-                    const isLocked = tier.levelOrder > currentOrder + 1 || (isTargetLevel && !eligibilityData?.eligible);
-
-                    return (
-                      <div
-                        key={idx}
-                        id={`booster-tier-card-${idx}`}
-                        className={`flex flex-col rounded-2xl border bg-surface p-6 shadow-sm transition-transform hover:-translate-y-1 ${tier.accent}`}
-                      >
-                        <div id={`booster-tier-icon-group-${idx}`} className="flex items-center justify-between mb-4">
-                          <span id={`booster-tier-badge-${idx}`} className={`inline-flex items-center px-3 py-1 text-xs font-black rounded-lg ${tier.badgeBg}`}>
-                            {tier.costFormula}
-                          </span>
-                          <div id={`booster-tier-icon-${idx}`} className="p-2 bg-surface-elevated rounded-xl">
-                            {tier.icon}
-                          </div>
-                        </div>
-
-                        <h4 id={`booster-tier-name-${idx}`} className="text-lg font-bold text-prime mb-2">{tier.name}</h4>
-                        <p id={`booster-tier-desc-${idx}`} className="text-xs text-sub mb-4 flex-grow leading-relaxed">{tier.description}</p>
-
-                        {/* Requirements Badge */}
-                        <div className="mb-4 text-[10px] font-bold text-sub space-y-1 bg-surface-elevated/60 p-2.5 rounded-xl border border-border-theme">
-                          <div className="flex justify-between">
-                            <span>Direct Referrals Req:</span>
-                            <span className="text-prime font-black">{tier.requiredDirects}</span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span>Qualified Builders Req:</span>
-                            <span className="text-prime font-black">{tier.requiredBuilders}</span>
-                          </div>
-                        </div>
-
-                        <div id={`booster-tier-stats-${idx}`} className="space-y-3 pt-4 border-t border-border-theme text-xs font-bold text-prime">
-                          <div id={`booster-tier-stat-cost-${idx}`} className="flex justify-between">
-                            <span className="text-sub font-normal">Subscription</span>
-                            <span className="text-prime">{tier.cost}</span>
-                          </div>
-                          <div id={`booster-tier-stat-coll-${idx}`} className="flex justify-between">
-                            <span className="text-sub font-normal">Collection (5x)</span>
-                            <span className="text-prime">{tier.collection}</span>
-                          </div>
-                          <div id={`booster-tier-stat-up-${idx}`} className="flex justify-between">
-                            <span className="text-sub font-normal">Auto Upgrade</span>
-                            <span className="text-accent-red">{tier.upgrade}</span>
-                          </div>
-                          {tier.income && (
-                            <div id={`booster-tier-stat-inc-${idx}`} className="flex justify-between pt-2 border-t border-dashed border-border-theme">
-                              <span className="text-green-600">Net Profit</span>
-                              <span className="text-green-600 font-black">{tier.income}</span>
-                            </div>
-                          )}
-                        </div>
-
-                        {/* Plan Action Button (Disabled when ineligible) */}
-                        <div className="mt-6 pt-3 border-t border-border-theme space-y-3">
-                          <button
-                            disabled={isLocked || isCurrentOrPassed || actionLoadingSlug === tier.slug}
-                            onClick={() => {
-                              if (isEligibleForUpgrade) {
-                                const pType = currentOrder === 0 ? 'JOIN' : 'UPGRADE';
-                                handleCreateIntent(pType, tier.slug);
-                              }
-                            }}
-                            className={`w-full py-2.5 px-3 rounded-xl text-xs font-black flex items-center justify-center space-x-2 transition-all ${
-                              isCurrentOrPassed
-                                ? 'bg-green-500/10 text-green-600 dark:text-green-400 border border-green-500/30 cursor-default'
-                                : isEligibleForUpgrade
-                                ? 'bg-accent-red text-white hover:bg-accent-red/90 shadow-sm cursor-pointer'
-                                : 'bg-surface-elevated text-sub border border-border-theme opacity-60 cursor-not-allowed'
-                            }`}
-                          >
-                            {actionLoadingSlug === tier.slug ? (
-                              <>
-                                <RefreshCw size={14} className="animate-spin" />
-                                <span>Generating Intent...</span>
-                              </>
-                            ) : isCurrentOrPassed ? (
-                              <>
-                                <CheckCircle2 size={14} />
-                                <span>Active Tier</span>
-                              </>
-                            ) : isEligibleForUpgrade ? (
-                              <>
-                                <Rocket size={14} />
-                                <span>{currentOrder === 0 ? 'Join Tier' : 'Upgrade Tier'}</span>
-                              </>
-                            ) : (
-                              <>
-                                <Lock size={14} />
-                                <span>
-                                  {tier.requiredDirects > 0
-                                    ? `Locked (${tier.requiredDirects} Directs)`
-                                    : 'Ineligible'}
-                                </span>
-                              </>
-                            )}
-                          </button>
-
-                          {/* Active Pending Payment Intent Box for this tier */}
-                          {activePaymentIntent && activePaymentIntent.level?.slug === tier.slug && (
-                            <div className="p-3.5 rounded-xl bg-surface-elevated border border-amber-500/30 text-[11px] space-y-2 font-mono">
-                              <div className="flex justify-between items-center font-bold">
-                                <span className="text-amber-500">Payment Reference</span>
-                                <span className={`px-1.5 py-0.5 rounded text-[9px] uppercase font-bold ${
-                                  activePaymentIntent.status === 'CONFIRMED'
-                                    ? 'bg-green-500/20 text-green-500'
-                                    : activePaymentIntent.status === 'FAILED'
-                                    ? 'bg-red-500/20 text-red-500'
-                                    : 'bg-amber-500/20 text-amber-500'
-                                }`}>
-                                  {activePaymentIntent.status}
-                                </span>
-                              </div>
-                              <div className="font-extrabold text-prime truncate">{activePaymentIntent.paymentReference}</div>
-                              <div className="flex justify-between text-sub text-[10px]">
-                                <span>Expected Amount:</span>
-                                <span className="font-bold text-prime">{activePaymentIntent.expectedAmount} USDT</span>
-                              </div>
-                              <div className="flex justify-between text-sub text-[10px]">
-                                <span>Receiver:</span>
-                                <span className="font-bold text-prime truncate max-w-[120px]">{activePaymentIntent.receiverAddress}</span>
-                              </div>
-
-                              {activePaymentIntent.status !== 'CONFIRMED' && (
-                                <div className="pt-2 border-t border-border-theme/50 space-y-2 font-sans">
-                                  <label className="block text-[10px] text-sub font-bold">
-                                    Blockchain Transaction Hash (0x...):
-                                  </label>
-                                  <div className="flex space-x-1.5 font-mono">
-                                    <input
-                                      type="text"
-                                      value={txHashInput}
-                                      onChange={(e) => setTxHashInput(e.target.value)}
-                                      placeholder="0x..."
-                                      className="flex-1 bg-surface border border-border-theme rounded-lg px-2 py-1 text-[10px] text-prime focus:outline-none focus:border-amber-500"
-                                    />
-                                    <button
-                                      type="button"
-                                      onClick={() => handleVerifyPayment()}
-                                      disabled={verificationStep === 'wallet_confirm' || verificationStep === 'blockchain_pending' || verificationStep === 'backend_verifying'}
-                                      className="px-2.5 py-1 rounded-lg bg-amber-500 hover:bg-amber-600 text-black font-extrabold text-[10px] flex items-center space-x-1 disabled:opacity-50 transition-colors"
-                                    >
-                                      {verificationStep === 'wallet_confirm' || verificationStep === 'blockchain_pending' || verificationStep === 'backend_verifying' ? (
-                                        <RefreshCw size={11} className="animate-spin" />
-                                      ) : (
-                                        <CheckCircle2 size={11} />
-                                      )}
-                                      <span>Verify</span>
-                                    </button>
-                                  </div>
-
-                                  {/* Auto-fill test transaction hash helper */}
-                                  <button
-                                    type="button"
-                                    onClick={() => {
-                                      const mockHash = `0xmock${Date.now()}${Math.random().toString(16).substring(2, 10)}`;
-                                      setTxHashInput(mockHash);
-                                      handleVerifyPayment(mockHash);
-                                    }}
-                                    className="text-[9px] text-amber-500 hover:underline flex items-center space-x-1"
-                                  >
-                                    <span>Auto-fill & Verify Test Tx Hash</span>
-                                  </button>
-
-                                  {/* Verification Stepper */}
-                                  {verificationStep !== 'idle' && (
-                                    <div className={`p-2 rounded-lg text-[10px] border space-y-1 ${
-                                      verificationStep === 'confirmed'
-                                        ? 'bg-green-500/10 border-green-500/30 text-green-500'
-                                        : verificationStep === 'failed'
-                                        ? 'bg-red-500/10 border-red-500/30 text-red-500'
-                                        : 'bg-amber-500/10 border-amber-500/30 text-amber-500'
-                                    }`}>
-                                      <div className="flex items-center space-x-1.5 font-bold">
-                                        {(verificationStep === 'wallet_confirm' || verificationStep === 'blockchain_pending' || verificationStep === 'backend_verifying') && (
-                                          <RefreshCw size={12} className="animate-spin shrink-0" />
-                                        )}
-                                        {verificationStep === 'confirmed' && <CheckCircle2 size={12} className="shrink-0" />}
-                                        {verificationStep === 'failed' && <AlertCircle size={12} className="shrink-0" />}
-                                        <span className="uppercase font-mono text-[9px]">{verificationStep.replace('_', ' ')}</span>
-                                      </div>
-                                      <div className="text-[10px] leading-tight">{verifyStatusMessage}</div>
-                                    </div>
-                                  )}
-                                </div>
-                              )}
-                            </div>
-                          )}
-                        </div>
-
-                      </div>
-                    );
-                  })}
-=======
-                  {boosterTiers.map((tier, idx) => (
-                    <div
-                      key={idx}
-                      id={`booster-tier-card-${idx}`}
-                      className={`flex flex-col rounded-2xl border bg-surface p-6 shadow-sm transition-transform hover:-translate-y-1 ${tier.accent}`}
-                    >
-                      <div id={`booster-tier-icon-group-${idx}`} className="flex items-center justify-between mb-4">
-                        <span id={`booster-tier-badge-${idx}`} className={`inline-flex items-center px-3 py-1 text-xs font-black rounded-lg ${tier.badgeBg}`}>
-                          {tier.costFormula}
-                        </span>
-                        <div id={`booster-tier-icon-${idx}`} className="p-2 bg-surface-elevated rounded-xl">
-                          {tier.icon}
-                        </div>
-                      </div>
-
-                      <h4 id={`booster-tier-name-${idx}`} className="text-lg font-bold text-prime mb-2">{tier.name}</h4>
-                      <p id={`booster-tier-desc-${idx}`} className="text-xs text-sub mb-6 flex-grow leading-relaxed">{tier.description}</p>
-
-                      <div id={`booster-tier-stats-${idx}`} className="space-y-3 pt-4 border-t border-border-theme text-xs font-bold text-prime">
-                        <div id={`booster-tier-stat-cost-${idx}`} className="flex justify-between">
-                          <span className="text-sub font-normal">Subscription</span>
-                          <span className="text-prime">{tier.cost}</span>
-                        </div>
-                        <div id={`booster-tier-stat-coll-${idx}`} className="flex justify-between">
-                          <span className="text-sub font-normal">Collection (5x)</span>
-                          <span className="text-prime">{tier.collection}</span>
-                        </div>
-                        <div id={`booster-tier-stat-up-${idx}`} className="flex justify-between">
-                          <span className="text-sub font-normal">Auto Upgrade</span>
-                          <span className="text-accent-red">{tier.upgrade}</span>
-                        </div>
-                        {tier.income && (
-                          <div id={`booster-tier-stat-inc-${idx}`} className="flex justify-between pt-2 border-t border-dashed border-border-theme">
-                            <span className="text-green-600">Net Profit</span>
-                            <span className="text-green-600 font-black">{tier.income}</span>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  ))}
->>>>>>> fe05ef7be215c289d9c2e81e5d2ca052e3956485
                 </div>
               </div>
             )}
@@ -828,11 +437,7 @@ export default function Plans({ basePlan = 1 }: { basePlan?: number } = {}) {
                   <Layers size={24} />
                 </div>
                 <div>
-<<<<<<< HEAD
                   <h3 id="main-header-title" className="text-xl font-bold text-prime">Main Plan ({mainPlanCost.toFixed(0)} USDT Entry)</h3>
-=======
-                  <h3 id="main-header-title" className="text-xl font-bold text-prime">Main Plan (100 USDT Entry)</h3>
->>>>>>> fe05ef7be215c289d9c2e81e5d2ca052e3956485
                   <p id="main-header-desc" className="text-xs text-sub mt-1">Multi-tiered matrix engine with high-volume pool spillovers</p>
                 </div>
               </div>

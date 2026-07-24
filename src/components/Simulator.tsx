@@ -1,22 +1,12 @@
-<<<<<<< HEAD
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
-=======
-import React, { useState, useMemo } from 'react';
->>>>>>> fe05ef7be215c289d9c2e81e5d2ca052e3956485
 import { motion } from 'motion/react';
 import { 
   Rocket, TrendingUp, Users, Trophy, Layers, 
   HelpCircle, ChevronDown, ChevronUp, AlertTriangle, 
-<<<<<<< HEAD
   Coins, Info, ArrowUpRight, DollarSign, RefreshCw, AlertCircle 
 } from 'lucide-react';
 import { QualifiedReferrals, BoosterTierData, MainPlanBreakdown, LevelPoolRow } from '../types';
 import { boosterApi } from '../services/api';
-=======
-  Coins, Info, ArrowUpRight, DollarSign, RefreshCw 
-} from 'lucide-react';
-import { QualifiedReferrals, BoosterTierData, MainPlanBreakdown, LevelPoolRow } from '../types';
->>>>>>> fe05ef7be215c289d9c2e81e5d2ca052e3956485
 
 export default function Simulator({
   basePlan: propBasePlan,
@@ -38,7 +28,6 @@ export default function Simulator({
   const [selectedX5Cycle, setSelectedX5Cycle] = useState<number>(1);
   const [levelPoolCollapsed, setLevelPoolCollapsed] = useState<boolean>(true);
 
-<<<<<<< HEAD
   // Backend API Calculations state
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
@@ -138,94 +127,12 @@ export default function Simulator({
     const x5Amount = apiResult?.mainPlan?.x5MatrixSplit ?? mainPlanTotal * 0.15;
     const levelPoolAmount = apiResult?.mainPlan?.forcedLevelPool ?? mainPlanTotal * 0.65;
     const x4Amount = apiResult?.mainPlan?.x4MatrixAllocation ?? mainPlanTotal * 0.20;
-=======
-  // Constants
-  const X5_PERCENT = 0.15;
-  const LEVEL_POOL_PERCENT = 0.65;
-  const X4_PERCENT = 0.20;
-  const NUMBER_OF_LEVELS = 13;
-
-  // Scaling formulas & sanity checks
-  const calculations = useMemo(() => {
-    // Booster Amounts
-    const starterAmount = basePlan * 1;
-    const builderAmount = basePlan * 4;
-    const leaderAmount = basePlan * 16;
-    const championAmount = basePlan * 64;
-    const mainPlanAmount = basePlan * 100;
-
-    // Collections
-    const starterCollection = 5 * starterAmount;
-    const builderCollection = 5 * builderAmount;
-    const leaderCollection = 5 * leaderAmount;
-    const championCollection = 5 * championAmount;
-
-    // Daily caps based on referrals
-    const starterDailyCap = Math.max(5, qualified.builders);
-    const builderDailyCap = Math.max(5, qualified.leaders);
-    const leaderDailyCap = Math.max(5, qualified.champions);
-    const championDailyCap = leaderDailyCap; // champion cap always mirrors leader cap
-
-    // Booster Tier Data
-    const boosters: BoosterTierData[] = [
-      {
-        name: 'Starter',
-        amount: starterAmount,
-        collection: starterCollection,
-        retopup: starterAmount, // 1x
-        upgrade: builderAmount, // 4x
-        dailyCap: starterDailyCap,
-        accent: 'text-accent-red bg-accent-red/10 border-accent-red/25',
-        iconName: 'rocket'
-      },
-      {
-        name: 'Builder',
-        amount: builderAmount,
-        collection: builderCollection,
-        retopup: builderAmount, // 4x
-        upgrade: leaderAmount, // 16x
-        dailyCap: builderDailyCap,
-        accent: 'text-accent-blue bg-accent-blue/10 border-accent-blue/25',
-        iconName: 'trending-up'
-      },
-      {
-        name: 'Leader',
-        amount: leaderAmount,
-        collection: leaderCollection,
-        retopup: leaderAmount, // 16x
-        upgrade: championAmount, // 64x
-        dailyCap: leaderDailyCap,
-        accent: 'text-accent-orange bg-accent-orange/10 border-accent-orange/25',
-        iconName: 'users'
-      },
-      {
-        name: 'Champion',
-        amount: championAmount,
-        collection: championCollection,
-        retopup: championAmount, // 64x
-        upgrade: mainPlanAmount, // 100x
-        firstNetIncome: basePlan * 156, // 156x
-        dailyCap: championDailyCap,
-        accent: 'text-accent-purple bg-accent-purple/10 border-accent-purple/25',
-        iconName: 'trophy'
-      }
-    ];
-
-    // Main Plan Split
-    const x5Amount = mainPlanAmount * X5_PERCENT;
-    const levelPoolAmount = mainPlanAmount * LEVEL_POOL_PERCENT;
-    const x4Amount = mainPlanAmount * X4_PERCENT;
->>>>>>> fe05ef7be215c289d9c2e81e5d2ca052e3956485
 
     const mainPlan: MainPlanBreakdown = {
       x5Amount,
       levelPoolAmount,
       x4Amount,
-<<<<<<< HEAD
       mainPlanTotal,
-=======
-      mainPlanTotal: mainPlanAmount
->>>>>>> fe05ef7be215c289d9c2e81e5d2ca052e3956485
     };
 
     // 13 Level Pool
@@ -237,7 +144,6 @@ export default function Simulator({
         level,
         amount: perLevelAmount,
         members,
-<<<<<<< HEAD
         potentialIncome: members * perLevelAmount,
       };
     });
@@ -245,26 +151,12 @@ export default function Simulator({
     const championAmount = boosters[3]?.amount || basePlan * 64;
     const championCollection = boosters[3]?.collection || basePlan * 320;
     const isSanityCheckPassed = Math.abs(championCollection - (championAmount + mainPlanTotal + basePlan * 156)) < 0.0001;
-=======
-        potentialIncome: members * perLevelAmount
-      };
-    });
-
-    // Sanity Checks Assertion:
-    // championCollection === championRetopup + mainPlanPortion + firstNetIncome
-    // 320 * basePlan === 64 * basePlan + 100 * basePlan + 156 * basePlan
-    const isSanityCheckPassed = Math.abs(championCollection - (championAmount + mainPlanAmount + (basePlan * 156))) < 0.0001;
->>>>>>> fe05ef7be215c289d9c2e81e5d2ca052e3956485
 
     // X5 Matrix cycle split calculations
     const x5Split = {
       retopup: x5Amount * 0.20,
       upgradeWallet: selectedX5Cycle === 1 ? x5Amount * 0.40 : 0,
-<<<<<<< HEAD
       incomeWallet: selectedX5Cycle === 1 ? x5Amount * 0.40 : x5Amount * 0.80,
-=======
-      incomeWallet: selectedX5Cycle === 1 ? x5Amount * 0.40 : x5Amount * 0.80
->>>>>>> fe05ef7be215c289d9c2e81e5d2ca052e3956485
     };
 
     return {
@@ -274,7 +166,6 @@ export default function Simulator({
       perLevelAmount,
       isSanityCheckPassed,
       x5Split,
-<<<<<<< HEAD
       totalInvestedToReachMain: apiResult?.totalInvestedToMain ?? basePlan * 85,
     };
   }, [apiResult, basePlan, qualified, selectedX5Cycle]);
@@ -284,17 +175,6 @@ export default function Simulator({
     setQualified((prev) => ({
       ...prev,
       [tier]: value,
-=======
-      totalInvestedToReachMain: basePlan * 85, // 1 + 4 + 16 + 64 = 85
-    };
-  }, [basePlan, qualified, selectedX5Cycle]);
-
-  // Handle Referral Slider Inputs
-  const handleReferralsChange = (tier: keyof QualifiedReferrals, value: number) => {
-    setQualified(prev => ({
-      ...prev,
-      [tier]: value
->>>>>>> fe05ef7be215c289d9c2e81e5d2ca052e3956485
     }));
   };
 
@@ -312,7 +192,6 @@ export default function Simulator({
             Simulator — View Mode
           </h2>
           <p id="simulator-subheading" className="mt-3 text-sm text-sub max-w-2xl mx-auto leading-relaxed">
-<<<<<<< HEAD
             No signup or login required. Adjust the parameters below to dynamically preview and test how SimpleOn distributes rewards across all cycles using MySQL backend calculations.
           </p>
         </div>
@@ -342,12 +221,6 @@ export default function Simulator({
           </div>
         )}
 
-=======
-            No signup or login required. Adjust the parameters below to dynamically preview and test how SimpleOn distributes rewards across all cycles.
-          </p>
-        </div>
-
->>>>>>> fe05ef7be215c289d9c2e81e5d2ca052e3956485
         {/* Global Control Station */}
         <div id="simulator-controls" className="grid gap-8 lg:grid-cols-12 mb-12">
           
@@ -358,11 +231,7 @@ export default function Simulator({
                 <span>Simulation Parameters</span>
               </h3>
 
-<<<<<<< HEAD
               {/* Currency Engine */}
-=======
-              {/* Currency Engine (Phase 2 Warning) */}
->>>>>>> fe05ef7be215c289d9c2e81e5d2ca052e3956485
               <div className="mb-6">
                 <label className="block text-xs font-black text-sub uppercase tracking-wider mb-2">
                   Settlement Currency
@@ -494,11 +363,7 @@ export default function Simulator({
             <div className="p-4 rounded-xl border border-amber-100 bg-amber-50/50 text-[11px] text-amber-800 dark:border-amber-950/20 dark:bg-amber-950/10 dark:text-amber-500 flex space-x-2 leading-relaxed">
               <AlertTriangle size={16} className="flex-shrink-0 mt-0.5 text-amber-600 dark:text-amber-500" />
               <span>
-<<<<<<< HEAD
                 <strong>Simulation Disclaimer:</strong> Values are derived from MySQL level configuration database APIs and backend calculation engine. No real crypto transactions are initiated on-chain.
-=======
-                <strong>Simulation Disclaimer:</strong> This engine is for structural representation and marketing demo purposes only. No real crypto transactions are initiated on-chain.
->>>>>>> fe05ef7be215c289d9c2e81e5d2ca052e3956485
               </span>
             </div>
           </div>
@@ -527,11 +392,7 @@ export default function Simulator({
               <div className="rounded-2xl border border-border-theme bg-surface p-5 shadow-sm transition-all">
                 <span className="text-xs font-bold text-sub">Main Plan Subscription</span>
                 <div className="text-2xl font-black text-prime mt-1">
-<<<<<<< HEAD
                   {calculations.mainPlan.mainPlanTotal.toFixed(2)} <span className="text-xs font-bold text-sub">USDT</span>
-=======
-                  {(basePlan * 100).toFixed(2)} <span className="text-xs font-bold text-sub">USDT</span>
->>>>>>> fe05ef7be215c289d9c2e81e5d2ca052e3956485
                 </div>
                 <div className="text-[10px] text-sub mt-1">Activated from Champion upgrades</div>
               </div>
@@ -539,11 +400,7 @@ export default function Simulator({
 
             {/* Booster Tiers Breakdown Panel */}
             <div className="rounded-2xl border border-border-theme bg-surface p-6 shadow-sm transition-all">
-<<<<<<< HEAD
               <h3 className="text-base font-extrabold text-prime mb-4">Booster Tiers (Dynamic MySQL Calculations)</h3>
-=======
-              <h3 className="text-base font-extrabold text-prime mb-4">Booster Tiers (Dynamic Calculations)</h3>
->>>>>>> fe05ef7be215c289d9c2e81e5d2ca052e3956485
               
               <div className="grid sm:grid-cols-2 md:grid-cols-4 gap-4">
                 {calculations.boosters.map((tier, idx) => {
@@ -625,11 +482,7 @@ export default function Simulator({
                   <div className="flex justify-between items-center text-xs border-t border-border-theme pt-3">
                     <div>
                       <div className="font-bold text-prime">13-Level Income Pool (65%)</div>
-<<<<<<< HEAD
                       <div className="text-sub text-[10px]">{(calculations.mainPlan.levelPoolAmount / NUMBER_OF_LEVELS).toFixed(2)} USDT per level</div>
-=======
-                      <div className="text-sub text-[10px]">{(levelPoolAmount => levelPoolAmount / NUMBER_OF_LEVELS)(calculations.mainPlan.levelPoolAmount).toFixed(2)} USDT per level</div>
->>>>>>> fe05ef7be215c289d9c2e81e5d2ca052e3956485
                     </div>
                     <div className="text-right font-bold text-prime">
                       {calculations.mainPlan.levelPoolAmount.toFixed(2)} USDT
@@ -648,11 +501,7 @@ export default function Simulator({
                   </div>
 
                   <div className="text-center pt-3 border-t border-dashed border-border-theme text-[10px] text-sub">
-<<<<<<< HEAD
                     Backend Multipliers: 15% X5 + 65% Level Pool + 20% X4 = 100%
-=======
-                    Named Percentages: X5_PERCENT + LEVEL_POOL_PERCENT + X4_PERCENT = 100%
->>>>>>> fe05ef7be215c289d9c2e81e5d2ca052e3956485
                   </div>
                 </div>
               </div>

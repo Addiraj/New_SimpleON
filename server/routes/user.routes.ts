@@ -1,7 +1,6 @@
 import { Router } from 'express';
 import { UserController } from '../controllers/user.controller.js';
 import { authenticateWeb3Token } from '../middlewares/authMiddleware.js';
-<<<<<<< HEAD
 import { validateRequest } from '../middlewares/validateRequest.js';
 import {
   updateProfileSchema,
@@ -21,12 +20,6 @@ router.patch('/preferences', authenticateWeb3Token, validateRequest(updatePrefer
 router.put('/preferences', authenticateWeb3Token, validateRequest(updatePreferencesSchema), UserController.updatePreferences);
 
 // Base plan legacy route
-=======
-
-const router = Router();
-
-router.get('/profile', UserController.getProfile);
->>>>>>> fe05ef7be215c289d9c2e81e5d2ca052e3956485
 router.post('/base-plan', authenticateWeb3Token, UserController.updateBasePlan);
 
 export default router;

@@ -1,5 +1,4 @@
 import { Request, Response, NextFunction } from 'express';
-<<<<<<< HEAD
 import { MatrixQueryService } from '../services/MatrixQueryService.js';
 import { MatrixService } from '../services/MatrixService.js';
 import { AuthRequest } from '../middlewares/authMiddleware.js';
@@ -105,11 +104,6 @@ export class MatrixController {
   /**
    * Legacy Endpoint: GET /api/matrix/13-level-tree
    */
-=======
-import { MatrixService } from '../services/MatrixService.js';
-
-export class MatrixController {
->>>>>>> fe05ef7be215c289d9c2e81e5d2ca052e3956485
   static get13LevelTree(req: Request, res: Response, next: NextFunction) {
     try {
       const address = (req.query.address as string) || '0x0000000000000000000000000000000000000000';

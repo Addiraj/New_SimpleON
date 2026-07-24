@@ -27,11 +27,7 @@ import { useWeb3Store } from './store/useWeb3Store';
 export default function App() {
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
   const [activeTab, setActiveTab] = useState<string>('home');
-<<<<<<< HEAD
   const { basePlan, setBasePlan, activeView, setActiveView, fetchCalculations, initAuth } = useWeb3Store();
-=======
-  const { basePlan, setBasePlan, activeView, setActiveView, fetchCalculations } = useWeb3Store();
->>>>>>> fe05ef7be215c289d9c2e81e5d2ca052e3956485
 
   // Sync store activeView with local activeTab
   const currentTab = activeView !== 'landing' ? activeView : activeTab;

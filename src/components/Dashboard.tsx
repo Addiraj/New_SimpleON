@@ -1,8 +1,4 @@
-<<<<<<< HEAD
 import React, { useState, useEffect, useCallback } from 'react';
-=======
-import React, { useState } from 'react';
->>>>>>> fe05ef7be215c289d9c2e81e5d2ca052e3956485
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   Wallet, Trophy, Users, TrendingUp, ShieldCheck, Copy, Check, ExternalLink, 
@@ -16,14 +12,9 @@ import {
 } from 'recharts';
 import { useWeb3Store } from '../store/useWeb3Store';
 import { UiStateSwitcher, LoadingSkeletonCard, LoadingSkeletonTable, EmptyStateView, ErrorStateAlert, SuccessStateBanner } from './StateComponents';
-<<<<<<< HEAD
 import { dashboardApi } from '../services/api';
 
 // Fallback Mock Analytics Data
-=======
-
-// Mock Analytics Data
->>>>>>> fe05ef7be215c289d9c2e81e5d2ca052e3956485
 const earningsTrendData = [
   { day: 'Jul 1', earnings: 120, referrals: 1 },
   { day: 'Jul 5', earnings: 280, referrals: 2 },
@@ -40,19 +31,7 @@ const revenueDistributionData = [
   { name: 'X4 Passive Spillover', value: 150, color: '#8B5CF6' },
 ];
 
-<<<<<<< HEAD
 // Fallback Transactions List
-=======
-const monthlyVolumeData = [
-  { month: 'Mar', volume: 1200, rewards: 240 },
-  { month: 'Apr', volume: 2400, rewards: 480 },
-  { month: 'May', volume: 4800, rewards: 960 },
-  { month: 'Jun', volume: 8500, rewards: 1700 },
-  { month: 'Jul', volume: 12450, rewards: 2490 },
-];
-
-// Mock Transactions List
->>>>>>> fe05ef7be215c289d9c2e81e5d2ca052e3956485
 const initialTransactions = [
   { id: 'tx-101', type: 'Direct Commission', amount: '+$20.00 USDT', status: 'Completed', txHash: '0x9a8f...3e21', time: '10 mins ago', category: 'Commission' },
   { id: 'tx-102', type: '13-Level Matrix Spillover', amount: '+$65.00 USDT', status: 'Completed', txHash: '0x8b7e...4f12', time: '45 mins ago', category: 'Matrix' },
@@ -63,7 +42,6 @@ const initialTransactions = [
 
 // Mock Notifications
 const initialNotifications = [
-<<<<<<< HEAD
   { id: 'n1', title: 'New Direct Referral', description: 'Partner joined using your link.', time: '5m ago', read: false },
   { id: 'n2', title: 'Matrix Spillover Received', description: 'Credited payouts from Team Tree.', time: '1h ago', read: false },
   { id: 'n3', title: 'Booster Milestones', description: 'Check your active Booster cycle status.', time: '3h ago', read: false },
@@ -100,14 +78,6 @@ export interface RealDashboardData {
   currentBlockchainNetwork: string;
 }
 
-=======
-  { id: 'n1', title: 'New Direct Referral', description: 'Partner 0x8f3C...A063 joined using your link.', time: '5m ago', read: false },
-  { id: 'n2', title: 'Matrix Spillover Received', description: 'Credited +$65.00 USDT from 13-Level Team Tree.', time: '1h ago', read: false },
-  { id: 'n3', title: 'Booster 80% Milestones', description: 'You are 1 referral away from Cycle #3 completion.', time: '3h ago', read: false },
-  { id: 'n4', title: 'Smart Contract Audit', description: 'BscScan verified 100% non-custodial SIWE login.', time: '1d ago', read: true },
-];
-
->>>>>>> fe05ef7be215c289d9c2e81e5d2ca052e3956485
 export default function Dashboard() {
   const { 
     userProfile, address, chainId, basePlan, setBasePlan, calculations, 
@@ -116,7 +86,6 @@ export default function Dashboard() {
 
   const [uiState, setUiState] = useState<'loaded' | 'loading' | 'empty' | 'error' | 'success'>('loaded');
   const [copied, setCopied] = useState(false);
-<<<<<<< HEAD
   const [shared, setShared] = useState(false);
   const [upgradingTier, setUpgradingTier] = useState<string | null>(null);
 
@@ -125,10 +94,6 @@ export default function Dashboard() {
   const [isDataLoading, setIsDataLoading] = useState<boolean>(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-=======
-  const [upgradingTier, setUpgradingTier] = useState<string | null>(null);
-
->>>>>>> fe05ef7be215c289d9c2e81e5d2ca052e3956485
   // Dashboard Controls State
   const [searchQuery, setSearchQuery] = useState('');
   const [activeSidebarTab, setActiveSidebarTab] = useState<'overview' | 'transactions' | 'rewards' | 'quickActions'>('overview');
@@ -141,7 +106,6 @@ export default function Dashboard() {
   const [showShareModal, setShowShareModal] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(false);
 
-<<<<<<< HEAD
   /**
    * Fetch Real Dashboard Data from Backend API
    */
@@ -216,66 +180,13 @@ export default function Dashboard() {
     } else {
       copyReferral();
     }
-=======
-  const formattedAddress = address ? `${address.slice(0, 6)}...${address.slice(-4)}` : '0x71C7...976F';
-  const referralLink = address ? `${window.location.origin}/?ref=${address}` : 'https://simpleon.io/?ref=0x71C7...976F';
-
-  const copyReferral = () => {
-    navigator.clipboard.writeText(referralLink);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
->>>>>>> fe05ef7be215c289d9c2e81e5d2ca052e3956485
   };
 
   const handleUpgrade = async (tier: string) => {
     setUpgradingTier(tier);
     await upgradeTier(tier);
     setUpgradingTier(null);
-<<<<<<< HEAD
     fetchDashboardData();
-=======
->>>>>>> fe05ef7be215c289d9c2e81e5d2ca052e3956485
-  };
-
-  const toggleDarkMode = () => {
-    setIsDarkMode(!isDarkMode);
-    const root = document.documentElement;
-    if (!isDarkMode) {
-      root.classList.add('dark');
-    } else {
-      root.classList.remove('dark');
-    }
-  };
-
-  const markAllNotificationsRead = () => {
-    setNotifications(prev => prev.map(n => ({ ...n, read: true })));
-  };
-
-<<<<<<< HEAD
-  const unreadCount = dashboardData?.unreadNotificationCount ?? notifications.filter(n => !n.read).length;
-
-  // Derive transactions list
-  const transactionsList = (dashboardData?.recentTransactions && dashboardData.recentTransactions.length > 0)
-    ? dashboardData.recentTransactions
-    : initialTransactions;
-
-  const filteredTransactions = transactionsList.filter((tx: any) => {
-    const txCategory = tx.category || 'Commission';
-    const matchesFilter = txFilter === 'All' || txCategory === txFilter;
-    const searchLower = searchQuery.toLowerCase();
-    const matchesSearch =
-      (tx.type && tx.type.toLowerCase().includes(searchLower)) ||
-      (tx.txHash && tx.txHash.toLowerCase().includes(searchLower)) ||
-      (tx.amount && tx.amount.toString().toLowerCase().includes(searchLower));
-=======
-  const unreadCount = notifications.filter(n => !n.read).length;
-
-  const filteredTransactions = initialTransactions.filter(tx => {
-    const matchesFilter = txFilter === 'All' || tx.category === txFilter;
-    const matchesSearch = tx.type.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                          tx.txHash.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                          tx.amount.toLowerCase().includes(searchQuery.toLowerCase());
->>>>>>> fe05ef7be215c289d9c2e81e5d2ca052e3956485
     return matchesFilter && matchesSearch;
   });
 
@@ -302,11 +213,7 @@ export default function Dashboard() {
               <div className="text-sm font-extrabold text-prime flex items-center space-x-2">
                 <span>Executive Dashboard</span>
                 <span className="text-[9px] font-mono font-bold bg-accent-red/10 text-accent-red px-2 py-0.5 rounded-full border border-accent-red/20">
-<<<<<<< HEAD
                   {dashboardData?.currentBlockchainNetwork ? 'LIVE MYSQL & BSC' : 'LIVE BSC'}
-=======
-                  LIVE BSC
->>>>>>> fe05ef7be215c289d9c2e81e5d2ca052e3956485
                 </span>
               </div>
               <p className="text-[10px] text-sub font-mono hidden sm:block">SimpleOn Income Engine v2.4</p>
@@ -331,7 +238,6 @@ export default function Dashboard() {
         {/* Right Controls: Notifications, Dark Mode, Profile Menu */}
         <div className="flex items-center space-x-3">
           
-<<<<<<< HEAD
           {/* Refresh Action Button */}
           <button
             onClick={fetchDashboardData}
@@ -342,114 +248,6 @@ export default function Dashboard() {
             <RefreshCw size={18} className={isDataLoading ? 'animate-spin text-accent-red' : ''} />
           </button>
 
-=======
->>>>>>> fe05ef7be215c289d9c2e81e5d2ca052e3956485
-          {/* Dark Mode Toggle */}
-          <button
-            onClick={toggleDarkMode}
-            className="p-2.5 rounded-2xl bg-surface-elevated border border-border-theme text-sub hover:text-prime transition-all"
-            title="Toggle Dark/Light Mode"
-          >
-            {isDarkMode ? <Sun size={18} className="text-amber-400" /> : <Moon size={18} />}
-          </button>
-
-          {/* Notification Popover Bell */}
-          <div className="relative">
-            <button
-              onClick={() => setShowNotificationPopover(!showNotificationPopover)}
-              className="p-2.5 rounded-2xl bg-surface-elevated border border-border-theme text-sub hover:text-prime transition-all relative"
-            >
-              <Bell size={18} />
-              {unreadCount > 0 && (
-                <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-accent-red text-white text-[9px] font-black flex items-center justify-center animate-pulse">
-                  {unreadCount}
-                </span>
-              )}
-            </button>
-
-            {/* Notification Dropdown Panel */}
-            <AnimatePresence>
-              {showNotificationPopover && (
-                <motion.div
-                  initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                  animate={{ opacity: 1, y: 0, scale: 1 }}
-                  exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                  className="absolute right-0 mt-2 w-80 sm:w-96 bg-surface border border-border-theme rounded-3xl p-5 shadow-2xl z-50 space-y-4"
-                >
-                  <div className="flex items-center justify-between pb-3 border-b border-border-theme">
-                    <div className="flex items-center space-x-2">
-                      <Bell size={16} className="text-accent-red" />
-                      <span className="text-sm font-extrabold text-prime">Notifications</span>
-                    </div>
-                    {unreadCount > 0 && (
-                      <button
-                        onClick={markAllNotificationsRead}
-                        className="text-[10px] text-accent-red font-bold hover:underline"
-                      >
-                        Mark all as read
-                      </button>
-                    )}
-                  </div>
-
-                  <div className="space-y-2.5 max-h-72 overflow-y-auto pr-1">
-                    {notifications.map((n) => (
-                      <div
-                        key={n.id}
-                        className={`p-3 rounded-2xl border text-xs transition-all ${
-                          n.read
-                            ? 'bg-surface-elevated/40 border-border-theme/60 text-sub'
-                            : 'bg-accent-red/5 border-accent-red/20 text-prime font-medium'
-                        }`}
-                      >
-                        <div className="flex items-center justify-between">
-                          <span className="font-bold">{n.title}</span>
-                          <span className="text-[10px] text-sub font-mono">{n.time}</span>
-                        </div>
-                        <p className="text-[11px] text-sub mt-1 leading-snug">{n.description}</p>
-                      </div>
-                    ))}
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </div>
-
-          {/* User Profile Menu */}
-          <div className="relative">
-            <button
-              onClick={() => setShowProfileDropdown(!showProfileDropdown)}
-              className="flex items-center space-x-2.5 p-1.5 pl-3 pr-2 rounded-2xl bg-surface-elevated border border-border-theme hover:border-accent-red/40 transition-all"
-            >
-              <div className="w-7 h-7 rounded-xl bg-accent-red/10 text-accent-red font-mono text-xs font-bold flex items-center justify-center">
-                0x
-              </div>
-              <span className="text-xs font-mono font-bold text-prime hidden sm:inline">{formattedAddress}</span>
-              <ChevronDown size={14} className="text-sub" />
-            </button>
-
-            {/* Profile Dropdown */}
-            <AnimatePresence>
-              {showProfileDropdown && (
-                <motion.div
-                  initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                  animate={{ opacity: 1, y: 0, scale: 1 }}
-                  exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                  className="absolute right-0 mt-2 w-64 bg-surface border border-border-theme rounded-3xl p-5 shadow-2xl z-50 space-y-4"
-                >
-                  <div className="pb-3 border-b border-border-theme space-y-1">
-<<<<<<< HEAD
-                    <div className="text-xs font-mono font-extrabold text-prime break-all">
-                      {dashboardData?.walletAddress || address || '0x71C7656EC7ab88b098defB751B7401B5f6d8976F'}
-                    </div>
-                    <div className="text-[10px] text-emerald-500 font-bold flex items-center space-x-1">
-                      <ShieldCheck size={12} />
-                      <span>{dashboardData?.accountStatus === 'ACTIVE' ? 'Account Active' : 'SIWE Session Authenticated'}</span>
-=======
-                    <div className="text-xs font-mono font-extrabold text-prime break-all">{address || '0x71C7656EC7ab88b098defB751B7401B5f6d8976F'}</div>
-                    <div className="text-[10px] text-emerald-500 font-bold flex items-center space-x-1">
-                      <ShieldCheck size={12} />
-                      <span>SIWE Session Authenticated</span>
->>>>>>> fe05ef7be215c289d9c2e81e5d2ca052e3956485
                     </div>
                   </div>
 
@@ -459,15 +257,10 @@ export default function Dashboard() {
                       <span className="font-bold text-prime">{bnbBalance} BNB</span>
                     </div>
                     <div className="flex justify-between p-2 rounded-xl bg-surface-elevated">
-<<<<<<< HEAD
                       <span className="text-sub">USDT Available:</span>
                       <span className="font-bold text-emerald-500">
                         ${(dashboardData?.availableBalance ?? parseFloat(usdtBalance || '0')).toFixed(2)} USDT
                       </span>
-=======
-                      <span className="text-sub">USDT Balance:</span>
-                      <span className="font-bold text-emerald-500">${usdtBalance} USDT</span>
->>>>>>> fe05ef7be215c289d9c2e81e5d2ca052e3956485
                     </div>
                   </div>
 
@@ -566,19 +359,12 @@ export default function Dashboard() {
           {/* Quick Wallet Status Widget inside Sidebar */}
           <div className="p-4 rounded-2xl bg-surface-elevated border border-border-theme space-y-2">
             <div className="text-[10px] font-mono text-sub uppercase font-bold">Smart Contract Active</div>
-<<<<<<< HEAD
             <div className="text-xs font-extrabold text-prime font-mono truncate">
               {dashboardData?.walletAddress || address || '0x71C7...976F'}
             </div>
             <div className="text-[11px] text-emerald-500 font-bold flex items-center space-x-1">
               <CheckCircle2 size={12} />
               <span>{dashboardData?.currentBlockchainNetwork || 'BSC Chain 97 Connected'}</span>
-=======
-            <div className="text-xs font-extrabold text-prime font-mono truncate">{address || '0x71C7...976F'}</div>
-            <div className="text-[11px] text-emerald-500 font-bold flex items-center space-x-1">
-              <CheckCircle2 size={12} />
-              <span>BSC Chain 97 Connected</span>
->>>>>>> fe05ef7be215c289d9c2e81e5d2ca052e3956485
             </div>
           </div>
         </aside>
@@ -590,7 +376,6 @@ export default function Dashboard() {
           <UiStateSwitcher currentState={uiState} onStateChange={setUiState} />
 
           {/* Conditional Skeleton Loader */}
-<<<<<<< HEAD
           {(uiState === 'loading' || isDataLoading) && (
             <div className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -600,19 +385,10 @@ export default function Dashboard() {
                 <LoadingSkeletonCard />
               </div>
               <LoadingSkeletonTable />
-=======
-          {uiState === 'loading' && (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              <LoadingSkeletonCard />
-              <LoadingSkeletonCard />
-              <LoadingSkeletonCard />
-              <LoadingSkeletonCard />
->>>>>>> fe05ef7be215c289d9c2e81e5d2ca052e3956485
             </div>
           )}
 
           {/* Conditional Error View */}
-<<<<<<< HEAD
           {(uiState === 'error' || errorMessage) && (
             <ErrorStateAlert
               title="Dashboard Data Sync Error"
@@ -621,35 +397,19 @@ export default function Dashboard() {
                 setUiState('loaded');
                 fetchDashboardData();
               }}
-=======
-          {uiState === 'error' && (
-            <ErrorStateAlert
-              title="Dashboard Data Sync Error"
-              message="Failed to index live BSC node events. Please retry fetching on-chain statistics."
-              onRetry={() => setUiState('loaded')}
->>>>>>> fe05ef7be215c289d9c2e81e5d2ca052e3956485
             />
           )}
 
           {/* Conditional Success Banner */}
           {uiState === 'success' && (
             <SuccessStateBanner
-<<<<<<< HEAD
               title="Plan & Matrix Synchronized!"
               message="Smart contract event logs successfully verified and synced with live MySQL database."
-=======
-              title="Starter Booster Activated!"
-              message="$100.00 USDT allocated to Starter Node on BNB Smart Chain block #41209381."
->>>>>>> fe05ef7be215c289d9c2e81e5d2ca052e3956485
             />
           )}
 
           {/* MAIN LOADED CONTENT */}
-<<<<<<< HEAD
           {(uiState === 'loaded' || uiState === 'success') && !isDataLoading && (
-=======
-          {(uiState === 'loaded' || uiState === 'success') && (
->>>>>>> fe05ef7be215c289d9c2e81e5d2ca052e3956485
             <>
               {/* 2. TOP STATISTICS GRID (8 Mandatory KPIs) */}
               <div className="space-y-3">
@@ -658,13 +418,9 @@ export default function Dashboard() {
                     <Trophy size={18} className="text-accent-red" />
                     <span>Top Executive Statistics</span>
                   </h2>
-<<<<<<< HEAD
                   <span className="text-xs font-mono text-sub">
                     {dashboardData ? 'Real MySQL Data' : 'Updated 2s ago'}
                   </span>
-=======
-                  <span className="text-xs font-mono text-sub">Updated 2s ago</span>
->>>>>>> fe05ef7be215c289d9c2e81e5d2ca052e3956485
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -678,19 +434,12 @@ export default function Dashboard() {
                       <span className="text-[11px] font-bold uppercase tracking-wider">Total Income</span>
                       <DollarSign size={16} className="text-emerald-500" />
                     </div>
-<<<<<<< HEAD
                     <div className="text-2xl font-black font-mono text-prime">
                       ${(dashboardData?.totalEarnings ?? 1245.0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USDT
                     </div>
                     <p className="text-[11px] text-emerald-500 font-semibold mt-1 flex items-center space-x-1">
                       <TrendingUp size={12} />
                       <span>Gross credited earnings</span>
-=======
-                    <div className="text-2xl font-black font-mono text-prime">$1,245.00 USDT</div>
-                    <p className="text-[11px] text-emerald-500 font-semibold mt-1 flex items-center space-x-1">
-                      <TrendingUp size={12} />
-                      <span>+18.4% total yield</span>
->>>>>>> fe05ef7be215c289d9c2e81e5d2ca052e3956485
                     </p>
                   </motion.div>
 
@@ -703,17 +452,12 @@ export default function Dashboard() {
                       <span className="text-[11px] font-bold uppercase tracking-wider">Today's Income</span>
                       <Flame size={16} className="text-accent-orange" />
                     </div>
-<<<<<<< HEAD
                     <div className="text-2xl font-black font-mono text-accent-orange">
                       ${(dashboardData?.todaysEarnings ?? 120.0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USDT
                     </div>
                     <p className="text-[11px] text-sub mt-1">
                       {dashboardData ? `Remaining cap: $${dashboardData.remainingDailyCap.toFixed(2)}` : '3 new referral triggers'}
                     </p>
-=======
-                    <div className="text-2xl font-black font-mono text-accent-orange">$120.00 USDT</div>
-                    <p className="text-[11px] text-sub mt-1">3 new referral triggers</p>
->>>>>>> fe05ef7be215c289d9c2e81e5d2ca052e3956485
                   </motion.div>
 
                   {/* KPI 3: Wallet Balance */}
@@ -722,7 +466,6 @@ export default function Dashboard() {
                     className="p-5 rounded-3xl bg-surface border border-border-theme shadow-sm relative overflow-hidden"
                   >
                     <div className="flex items-center justify-between text-sub mb-2">
-<<<<<<< HEAD
                       <span className="text-[11px] font-bold uppercase tracking-wider">Available Balance</span>
                       <Wallet size={16} className="text-accent-blue" />
                     </div>
@@ -732,13 +475,6 @@ export default function Dashboard() {
                     <p className="text-[11px] text-sub font-mono mt-1">
                       Pending: ${dashboardData?.pendingBalance ?? 0} | Locked: ${dashboardData?.lockedBalance ?? 0}
                     </p>
-=======
-                      <span className="text-[11px] font-bold uppercase tracking-wider">Wallet Balance</span>
-                      <Wallet size={16} className="text-accent-blue" />
-                    </div>
-                    <div className="text-2xl font-black font-mono text-prime">${usdtBalance} USDT</div>
-                    <p className="text-[11px] text-sub font-mono mt-1">{bnbBalance} BNB Reserve</p>
->>>>>>> fe05ef7be215c289d9c2e81e5d2ca052e3956485
                   </motion.div>
 
                   {/* KPI 4: Active Cycle */}
@@ -750,17 +486,12 @@ export default function Dashboard() {
                       <span className="text-[11px] font-bold uppercase tracking-wider">Active Cycle</span>
                       <RefreshCw size={16} className="text-accent-purple" />
                     </div>
-<<<<<<< HEAD
                     <div className="text-2xl font-black font-mono text-prime">
                       {dashboardData ? (dashboardData.activeMatrixCycle > 0 ? `Cycle #${dashboardData.activeMatrixCycle}` : 'No Active Cycle') : 'Cycle #3'}
                     </div>
                     <p className="text-[11px] text-sub mt-1">
                       {dashboardData ? `${dashboardData.matrixPositionsFilled} / 5 Slots Filled (${dashboardData.completedCycles} Completed)` : '4 / 5 Slots Filled'}
                     </p>
-=======
-                    <div className="text-2xl font-black font-mono text-prime">Cycle #3</div>
-                    <p className="text-[11px] text-sub mt-1">4 / 5 Slots Filled</p>
->>>>>>> fe05ef7be215c289d9c2e81e5d2ca052e3956485
                   </motion.div>
 
                   {/* KPI 5: Current Plan */}
@@ -772,17 +503,12 @@ export default function Dashboard() {
                       <span className="text-[11px] font-bold uppercase tracking-wider">Current Plan</span>
                       <Zap size={16} className="text-accent-red" />
                     </div>
-<<<<<<< HEAD
                     <div className="text-xl font-black font-mono text-accent-red truncate">
                       {dashboardData?.currentPlan || 'Starter ($100)'}
                     </div>
                     <p className="text-[11px] text-sub mt-1">
                       Daily Cap: ${dashboardData?.dailyCap ?? 1000}/day
                     </p>
-=======
-                    <div className="text-xl font-black font-mono text-accent-red">Starter ($100)</div>
-                    <p className="text-[11px] text-sub mt-1">Daily Cap: 5 Cycles/day</p>
->>>>>>> fe05ef7be215c289d9c2e81e5d2ca052e3956485
                   </motion.div>
 
                   {/* KPI 6: Total Referrals */}
@@ -794,17 +520,12 @@ export default function Dashboard() {
                       <span className="text-[11px] font-bold uppercase tracking-wider">Total Referrals</span>
                       <Users size={16} className="text-accent-blue" />
                     </div>
-<<<<<<< HEAD
                     <div className="text-2xl font-black font-mono text-prime">
                       {dashboardData ? `${dashboardData.directReferrals} Directs` : '14 Directs'}
                     </div>
                     <p className="text-[11px] text-sub mt-1">
                       {dashboardData ? `Indirects: ${dashboardData.indirectReferrals} | Team: ${dashboardData.totalTeam}` : 'Team Volume: $14,200'}
                     </p>
-=======
-                    <div className="text-2xl font-black font-mono text-prime">14 Directs</div>
-                    <p className="text-[11px] text-sub mt-1">Team Volume: $14,200</p>
->>>>>>> fe05ef7be215c289d9c2e81e5d2ca052e3956485
                   </motion.div>
 
                   {/* KPI 7: Qualified Referrals */}
@@ -813,7 +534,6 @@ export default function Dashboard() {
                     className="p-5 rounded-3xl bg-surface border border-border-theme shadow-sm relative overflow-hidden"
                   >
                     <div className="flex items-center justify-between text-sub mb-2">
-<<<<<<< HEAD
                       <span className="text-[11px] font-bold uppercase tracking-wider">Qualified Builders</span>
                       <UserCheck size={16} className="text-emerald-500" />
                     </div>
@@ -823,13 +543,6 @@ export default function Dashboard() {
                     <p className="text-[11px] text-sub mt-1">
                       {dashboardData?.directReferrals ? `${Math.round((dashboardData.qualifiedBuilders / dashboardData.directReferrals) * 100)}% Qualification Rate` : 'Level 2+ Builder Qualification'}
                     </p>
-=======
-                      <span className="text-[11px] font-bold uppercase tracking-wider">Qualified Referrals</span>
-                      <UserCheck size={16} className="text-emerald-500" />
-                    </div>
-                    <div className="text-2xl font-black font-mono text-emerald-500">9 Active</div>
-                    <p className="text-[11px] text-sub mt-1">64% Qualification Rate</p>
->>>>>>> fe05ef7be215c289d9c2e81e5d2ca052e3956485
                   </motion.div>
 
                   {/* KPI 8: Booster Progress */}
@@ -838,7 +551,6 @@ export default function Dashboard() {
                     className="p-5 rounded-3xl bg-surface border border-border-theme shadow-sm relative overflow-hidden"
                   >
                     <div className="flex items-center justify-between text-sub mb-1">
-<<<<<<< HEAD
                       <span className="text-[11px] font-bold uppercase tracking-wider">Level Progress</span>
                       <Sparkles size={16} className="text-amber-500" />
                     </div>
@@ -855,16 +567,6 @@ export default function Dashboard() {
                     <p className="text-[10px] text-sub font-mono mt-1 truncate">
                       Next: {dashboardData?.nextLevel || 'Builder ($250)'}
                     </p>
-=======
-                      <span className="text-[11px] font-bold uppercase tracking-wider">Booster Progress</span>
-                      <Sparkles size={16} className="text-amber-500" />
-                    </div>
-                    <div className="text-2xl font-black font-mono text-prime">80%</div>
-                    {/* Progress Bar */}
-                    <div className="w-full h-2 rounded-full bg-surface-elevated overflow-hidden mt-2 border border-border-theme">
-                      <div className="h-full bg-accent-red rounded-full" style={{ width: '80%' }} />
-                    </div>
->>>>>>> fe05ef7be215c289d9c2e81e5d2ca052e3956485
                   </motion.div>
 
                 </div>
@@ -1029,11 +731,7 @@ export default function Dashboard() {
                         <Clock size={18} className="text-accent-red" />
                         <span>Recent On-Chain Transactions</span>
                       </h3>
-<<<<<<< HEAD
                       <p className="text-xs text-sub">Real-time smart contract events from database</p>
-=======
-                      <p className="text-xs text-sub">Real-time smart contract events</p>
->>>>>>> fe05ef7be215c289d9c2e81e5d2ca052e3956485
                     </div>
 
                     {/* Filter Pills */}
@@ -1056,7 +754,6 @@ export default function Dashboard() {
 
                   {/* Transactions List */}
                   <div className="space-y-2.5 max-h-80 overflow-y-auto pr-1">
-<<<<<<< HEAD
                     {filteredTransactions.length === 0 ? (
                       <div className="p-8 text-center text-sub text-xs font-mono">
                         No transactions found for the selected filter.
@@ -1101,31 +798,6 @@ export default function Dashboard() {
                         </div>
                       ))
                     )}
-=======
-                    {filteredTransactions.map((tx) => (
-                      <div
-                        key={tx.id}
-                        className="p-3.5 rounded-2xl bg-surface-elevated border border-border-theme flex items-center justify-between gap-3 text-xs"
-                      >
-                        <div className="space-y-0.5">
-                          <div className="font-bold text-prime flex items-center space-x-2">
-                            <span className="w-2 h-2 rounded-full bg-emerald-500" />
-                            <span>{tx.type}</span>
-                          </div>
-                          <div className="text-[10px] text-sub font-mono">{tx.txHash} • {tx.time}</div>
-                        </div>
-
-                        <div className="text-right">
-                          <div className={`font-mono font-extrabold ${tx.amount.startsWith('+') ? 'text-emerald-500' : 'text-prime'}`}>
-                            {tx.amount}
-                          </div>
-                          <span className="text-[9px] font-mono text-emerald-500 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">
-                            {tx.status}
-                          </span>
-                        </div>
-                      </div>
-                    ))}
->>>>>>> fe05ef7be215c289d9c2e81e5d2ca052e3956485
                   </div>
                 </div>
 
@@ -1145,13 +817,9 @@ export default function Dashboard() {
                         <div className="font-bold text-prime">Direct Sponsor Bonus (20%)</div>
                         <div className="text-[10px] text-sub">Instant partner commissions</div>
                       </div>
-<<<<<<< HEAD
                       <span className="font-extrabold text-emerald-500 text-sm">
                         ${((dashboardData?.totalEarnings || 1245) * 0.20).toFixed(2)}
                       </span>
-=======
-                      <span className="font-extrabold text-emerald-500 text-sm">$249.00</span>
->>>>>>> fe05ef7be215c289d9c2e81e5d2ca052e3956485
                     </div>
 
                     <div className="p-3.5 rounded-2xl bg-surface-elevated border border-border-theme flex justify-between items-center">
@@ -1159,13 +827,9 @@ export default function Dashboard() {
                         <div className="font-bold text-prime">13-Level Matrix Pool (65%)</div>
                         <div className="text-[10px] text-sub">Forced matrix tree allocation</div>
                       </div>
-<<<<<<< HEAD
                       <span className="font-extrabold text-accent-blue text-sm">
                         ${((dashboardData?.totalEarnings || 1245) * 0.65).toFixed(2)}
                       </span>
-=======
-                      <span className="font-extrabold text-accent-blue text-sm">$809.00</span>
->>>>>>> fe05ef7be215c289d9c2e81e5d2ca052e3956485
                     </div>
 
                     <div className="p-3.5 rounded-2xl bg-surface-elevated border border-border-theme flex justify-between items-center">
@@ -1173,13 +837,9 @@ export default function Dashboard() {
                         <div className="font-bold text-prime">X5 Matrix Split (15%)</div>
                         <div className="text-[10px] text-sub">Auto re-topup cycle pool</div>
                       </div>
-<<<<<<< HEAD
                       <span className="font-extrabold text-amber-500 text-sm">
                         ${((dashboardData?.totalEarnings || 1245) * 0.15).toFixed(2)}
                       </span>
-=======
-                      <span className="font-extrabold text-amber-500 text-sm">$187.00</span>
->>>>>>> fe05ef7be215c289d9c2e81e5d2ca052e3956485
                     </div>
 
                     <div className="p-3.5 rounded-2xl bg-surface-elevated border border-border-theme flex justify-between items-center">
@@ -1222,13 +882,9 @@ export default function Dashboard() {
 
               <div className="p-4 rounded-2xl bg-surface-elevated border border-border-theme space-y-2">
                 <div className="text-[10px] font-mono text-sub uppercase">Available Claimable Earnings</div>
-<<<<<<< HEAD
                 <div className="text-2xl font-mono font-black text-emerald-500">
                   ${(dashboardData?.availableBalance ?? parseFloat(usdtBalance || '0')).toFixed(2)} USDT
                 </div>
-=======
-                <div className="text-2xl font-mono font-black text-emerald-500">${usdtBalance} USDT</div>
->>>>>>> fe05ef7be215c289d9c2e81e5d2ca052e3956485
                 <div className="text-[11px] text-sub">Auto-credited directly to connected wallet address</div>
               </div>
 
@@ -1237,11 +893,7 @@ export default function Dashboard() {
                 <input
                   type="text"
                   disabled
-<<<<<<< HEAD
                   value={dashboardData?.walletAddress || address || '0x71C7656EC7ab88b098defB751B7401B5f6d8976F'}
-=======
-                  value={address || '0x71C7656EC7ab88b098defB751B7401B5f6d8976F'}
->>>>>>> fe05ef7be215c289d9c2e81e5d2ca052e3956485
                   className="w-full p-3 rounded-xl bg-surface-elevated border border-border-theme font-mono text-xs text-prime"
                 />
               </div>
@@ -1283,17 +935,12 @@ export default function Dashboard() {
               <div className="p-4 rounded-2xl bg-surface-elevated border border-border-theme space-y-2 text-center">
                 <div className="text-[10px] font-mono text-sub uppercase font-bold">Your Unique Invite Code</div>
                 <div className="text-2xl font-mono font-black text-accent-purple tracking-widest">
-<<<<<<< HEAD
                   {targetReferralCode}
-=======
-                  {address ? address.slice(-6).toUpperCase() : 'F6D8976F'}
->>>>>>> fe05ef7be215c289d9c2e81e5d2ca052e3956485
                 </div>
                 <p className="text-[11px] text-sub">Earn 20% instant direct commissions on every partner registration.</p>
               </div>
 
               <div className="space-y-2">
-<<<<<<< HEAD
                 <input
                   type="text"
                   readOnly
@@ -1318,15 +965,6 @@ export default function Dashboard() {
                     <span>{shared ? 'Shared!' : 'Share Link'}</span>
                   </button>
                 </div>
-=======
-                <button
-                  onClick={copyReferral}
-                  className="w-full py-3 rounded-2xl bg-accent-red text-white font-extrabold text-xs shadow-md hover:bg-accent-red/90 transition-all flex items-center justify-center space-x-2"
-                >
-                  <Copy size={14} />
-                  <span>{copied ? 'Copied to Clipboard!' : 'Copy Full Invite Link'}</span>
-                </button>
->>>>>>> fe05ef7be215c289d9c2e81e5d2ca052e3956485
               </div>
             </motion.div>
           </div>

@@ -3,7 +3,6 @@ import { AuthRequest } from '../middlewares/authMiddleware.js';
 import { BoosterService } from '../services/BoosterService.js';
 
 export class BoosterController {
-<<<<<<< HEAD
   /**
    * GET /api/booster/plans
    * Return active Booster level configurations from MySQL
@@ -15,19 +14,11 @@ export class BoosterController {
         success: true,
         data: { plans },
       });
-=======
-  static getCalculations(req: Request, res: Response, next: NextFunction) {
-    try {
-      const basePlan = req.query.basePlan ? Number(req.query.basePlan) : 1.0;
-      const calculations = BoosterService.getBoosterCalculations(basePlan);
-      res.json({ success: true, data: calculations });
->>>>>>> fe05ef7be215c289d9c2e81e5d2ca052e3956485
     } catch (err) {
       next(err);
     }
   }
 
-<<<<<<< HEAD
   /**
    * GET /api/booster/plans/:slug
    * Return single Booster level configuration by slug
@@ -141,20 +132,6 @@ export class BoosterController {
         success: true,
         data: result,
       });
-=======
-  static upgradeTier(req: AuthRequest, res: Response, next: NextFunction) {
-    try {
-      const address = req.userAddress;
-      const { targetTier } = req.body;
-
-      if (!address) {
-        res.status(401).json({ success: false, error: { message: 'Unauthorized' } });
-        return;
-      }
-
-      const result = BoosterService.upgradeUserBoosterTier(address, targetTier);
-      res.json({ success: true, data: result });
->>>>>>> fe05ef7be215c289d9c2e81e5d2ca052e3956485
     } catch (err) {
       next(err);
     }
