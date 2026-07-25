@@ -15,13 +15,14 @@ import TestimonialsSection from './TestimonialsSection';
 import SecuritySection from './SecuritySection';
 import CtaSection from './CtaSection';
 import { useWeb3Store } from '../store/useWeb3Store';
+import { useAppKit } from '@reown/appkit/react';
 
 interface LandingPageProps {
   onNavigateTab: (tabId: string) => void;
 }
 
 export default function LandingPage({ onNavigateTab }: LandingPageProps) {
-  const { openWalletModal } = useWeb3Store();
+  const { open } = useAppKit();
 
   return (
     <div id="landing-page-wrapper" className="space-y-12 sm:space-y-16">
@@ -29,7 +30,7 @@ export default function LandingPage({ onNavigateTab }: LandingPageProps) {
       {/* 1. Hero Section with Large Illustration */}
       <Hero 
         onCtaClick={onNavigateTab} 
-        onConnectWallet={openWalletModal} 
+        onConnectWallet={() => open()} 
       />
 
       {/* 2. Live Interactive Statistics Ticker */}
@@ -79,7 +80,7 @@ export default function LandingPage({ onNavigateTab }: LandingPageProps) {
 
       {/* 15. Final Conversion CTA Section */}
       <CtaSection 
-        onConnectWallet={openWalletModal}
+        onConnectWallet={() => open()}
         onOpenSimulator={() => onNavigateTab('calculator')}
       />
 

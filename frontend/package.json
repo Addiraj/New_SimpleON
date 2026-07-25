@@ -11,6 +11,8 @@
     "lint": "tsc --noEmit"
   },
   "dependencies": {
+    "@reown/appkit": "^1.8.23",
+    "@reown/appkit-adapter-ethers": "^1.8.23",
     "axios": "^1.18.1",
     "ethers": "^6.17.0",
     "lucide-react": "^0.546.0",

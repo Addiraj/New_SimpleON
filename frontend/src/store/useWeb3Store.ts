@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { ethers } from 'ethers';
 import { api, authApi, notificationApi } from '../services/api';
 import { UserProfile, BoosterCalculationsResponse } from '../types';
+import { appKitModal } from '../appkit';
 
 interface Web3State {
   // Wallet Connection
@@ -77,8 +78,10 @@ export const useWeb3Store = create<Web3State>((set, get) => ({
   isNotificationCenterOpen: false,
   unreadNotificationCount: 0,
 
-  openWalletModal: () => set({ isWalletModalOpen: true, connectionError: null }),
-  closeWalletModal: () => set({ isWalletModalOpen: false }),
+  openWalletModal: () => {
+    appKitModal.open();
+  },
+  closeWalletModal: () => appKitModal.close(),
   toggleNotificationCenter: () => set((state) => ({ isNotificationCenterOpen: !state.isNotificationCenterOpen })),
   setActiveView: (view) => set({ activeView: view }),
 
@@ -128,27 +131,6 @@ export const useWeb3Store = create<Web3State>((set, get) => ({
       });
 
       get().fetchUnreadCount();
-
-      // Attach window.ethereum listeners if available
-      if (typeof window !== 'undefined' && (window as any).ethereum) {
-        const ethereum = (window as any).ethereum;
-        ethereum.on('accountsChanged', (accounts: string[]) => {
-          if (!accounts || accounts.length === 0) {
-            get().disconnectWallet();
-          } else if (accounts[0].toLowerCase() !== get().address) {
-            set({ address: accounts[0].toLowerCase() });
-            get().signSiweAndLogin();
-          }
-        });
-
-        ethereum.on('chainChanged', (chainIdHex: string) => {
-          set({ chainId: parseInt(chainIdHex, 16) });
-        });
-
-        ethereum.on('disconnect', () => {
-          get().disconnectWallet();
-        });
-      }
     } catch (err) {
       // Try refresh token if access token expired
       if (refreshToken) {
@@ -214,76 +196,7 @@ export const useWeb3Store = create<Web3State>((set, get) => ({
   },
 
   connectWallet: async (walletType) => {
-    set({ isConnecting: true, connectionError: null, walletType });
-
-    try {
-      if (typeof window === 'undefined' || !(window as any).ethereum) {
-        throw new Error('No browser Web3 wallet provider found. Please install MetaMask or Trust Wallet.');
-      }
-
-      const ethereum = (window as any).ethereum;
-      const browserProvider = new ethers.BrowserProvider(ethereum);
-
-      // Request account access from user's wallet
-      let accounts: string[];
-      try {
-        accounts = await browserProvider.send('eth_requestAccounts', []);
-      } catch (reqErr: any) {
-        if (reqErr.code === 4001 || reqErr.message?.includes('rejected')) {
-          set({
-            isConnecting: false,
-            isConnected: false,
-            connectionError: 'Wallet connection request was rejected by user. Please approve in your wallet extension.',
-          });
-          return;
-        }
-        throw reqErr;
-      }
-
-      if (!accounts || accounts.length === 0) {
-        throw new Error('No account address returned from Web3 provider');
-      }
-
-      const network = await browserProvider.getNetwork();
-      const userAddress = accounts[0].toLowerCase();
-      const chainId = Number(network.chainId);
-
-      set({
-        isConnected: true,
-        address: userAddress,
-        chainId,
-        provider: browserProvider,
-        walletType,
-        connectionError: null,
-      });
-
-      // Bind EIP-1193 event listeners
-      ethereum.on?.('accountsChanged', (newAccounts: string[]) => {
-        if (!newAccounts || newAccounts.length === 0) {
-          get().disconnectWallet();
-        } else if (newAccounts[0].toLowerCase() !== get().address) {
-          set({ address: newAccounts[0].toLowerCase() });
-          get().signSiweAndLogin();
-        }
-      });
-
-      ethereum.on?.('chainChanged', (chainIdHex: string) => {
-        set({ chainId: parseInt(chainIdHex, 16) });
-      });
-
-      ethereum.on?.('disconnect', () => {
-        get().disconnectWallet();
-      });
-
-      // Trigger SIWE Login
-      await get().signSiweAndLogin();
-    } catch (err: any) {
-      console.warn('Wallet connection error:', err.message);
-      set({
-        isConnecting: false,
-        connectionError: err.message || 'Failed to connect Web3 wallet provider.',
-      });
-    }
+    appKitModal.open();
   },
 
   signSiweAndLogin: async () => {
@@ -361,6 +274,11 @@ export const useWeb3Store = create<Web3State>((set, get) => ({
   },
 
   disconnectWallet: async () => {
+    try {
+      await appKitModal.disconnect();
+    } catch (e) {
+      console.error(e);
+    }
     const storedRefreshToken = localStorage.getItem('simpleon_web3_refresh_token');
     if (storedRefreshToken) {
       await authApi.logout(storedRefreshToken);

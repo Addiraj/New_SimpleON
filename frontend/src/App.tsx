@@ -23,6 +23,7 @@ import ApiDocs from './components/ApiDocs';
 import ArchitectureDocs from './components/ArchitectureDocs';
 import LedgerTransactions from './components/LedgerTransactions';
 import { useWeb3Store } from './store/useWeb3Store';
+import AppKitSync from './components/AppKitSync';
 
 export default function App() {
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
@@ -274,6 +275,7 @@ export default function App() {
       <WalletModal />
       <NotificationCenter />
       <MobileBottomNav />
+      <AppKitSync />
     </div>
   );
 }

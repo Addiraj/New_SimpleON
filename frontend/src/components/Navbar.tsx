@@ -115,32 +115,7 @@ export default function Navbar({ theme, toggleTheme, activeTab, setActiveTab }: 
           </button>
 
           {/* Web3 Wallet Connection Button */}
-          {isConnected ? (
-            <div className="flex items-center space-x-2">
-              <button
-                onClick={() => handleNavClick('dashboard')}
-                className="flex items-center space-x-2 px-3.5 py-2 rounded-xl bg-surface-elevated border border-border-theme text-xs font-mono font-bold text-prime hover:border-accent-red/50 transition-all"
-              >
-                <div className="h-2 w-2 rounded-full bg-green-500 animate-pulse" />
-                <span>{formattedAddress}</span>
-              </button>
-              <button
-                onClick={disconnectWallet}
-                className="p-2 rounded-xl border border-border-theme text-sub hover:text-accent-red hover:bg-surface-elevated text-xs font-bold"
-                title="Disconnect Wallet"
-              >
-                <X size={16} />
-              </button>
-            </div>
-          ) : (
-            <button
-              onClick={openWalletModal}
-              className="inline-flex items-center justify-center space-x-2 rounded-xl bg-accent-red px-4 py-2 text-xs font-extrabold text-white shadow-md hover:bg-accent-red-hover transition-all transform active:scale-95"
-            >
-              <Wallet size={16} />
-              <span>Connect Wallet</span>
-            </button>
-          )}
+          <appkit-button />
         </div>
 
         {/* Mobile Controls */}
@@ -176,23 +151,8 @@ export default function Navbar({ theme, toggleTheme, activeTab, setActiveTab }: 
               <span>{item.label}</span>
             </button>
           ))}
-          <div className="pt-2 border-t border-border-theme">
-            {isConnected ? (
-              <button
-                onClick={() => handleNavClick('dashboard')}
-                className="w-full py-3 rounded-xl bg-surface-elevated border border-border-theme text-xs font-mono font-bold text-center text-prime"
-              >
-                Connected: {formattedAddress}
-              </button>
-            ) : (
-              <button
-                onClick={openWalletModal}
-                className="w-full py-3 rounded-xl bg-accent-red text-white text-xs font-black flex items-center justify-center space-x-2"
-              >
-                <Wallet size={16} />
-                <span>Connect Web3 Wallet</span>
-              </button>
-            )}
+          <div className="pt-2 border-t border-border-theme flex justify-center">
+            <appkit-button />
           </div>
         </div>
       )}
