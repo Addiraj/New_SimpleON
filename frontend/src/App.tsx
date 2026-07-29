@@ -14,12 +14,9 @@ import X5MatrixUI from './components/X5MatrixUI';
 import MatrixVisualizer from './components/MatrixVisualizer';
 import DailyCappingDashboard from './components/DailyCappingDashboard';
 import ProfileSettings from './components/ProfileSettings';
-import AdminDashboard from './components/AdminDashboard';
-import DesignSystemShowcase from './components/DesignSystemShowcase';
+import AdminLayout from './components/AdminLayout';
 import NotificationCenter from './components/NotificationCenter';
 import MobileBottomNav from './components/MobileBottomNav';
-import ContractDocs from './components/ContractDocs';
-import ApiDocs from './components/ApiDocs';
 import ArchitectureDocs from './components/ArchitectureDocs';
 import LedgerTransactions from './components/LedgerTransactions';
 import { useWeb3Store } from './store/useWeb3Store';
@@ -45,6 +42,10 @@ export default function App() {
   useEffect(() => {
     initAuth();
     fetchCalculations(1.0);
+    if (window.location.pathname === '/admin') {
+      setActiveTab('admin');
+      setActiveView('admin' as any);
+    }
   }, []);
 
   useEffect(() => {
@@ -185,21 +186,10 @@ export default function App() {
             exit={{ opacity: 0, y: -10 }}
             transition={{ duration: 0.25 }}
           >
-            <AdminDashboard />
+            <AdminLayout />
           </motion.div>
         );
-      case 'design-system':
-        return (
-          <motion.div
-            key="design-system"
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            transition={{ duration: 0.25 }}
-          >
-            <DesignSystemShowcase />
-          </motion.div>
-        );
+
       case 'ledger':
         return (
           <motion.div
@@ -212,30 +202,7 @@ export default function App() {
             <LedgerTransactions />
           </motion.div>
         );
-      case 'contracts':
-        return (
-          <motion.div
-            key="contracts"
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            transition={{ duration: 0.25 }}
-          >
-            <ContractDocs />
-          </motion.div>
-        );
-      case 'apiDocs':
-        return (
-          <motion.div
-            key="apiDocs"
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            transition={{ duration: 0.25 }}
-          >
-            <ApiDocs />
-          </motion.div>
-        );
+
       case 'architecture':
         return (
           <motion.div
@@ -258,12 +225,14 @@ export default function App() {
       id="app-root-wrapper"
       className="bg-page text-prime min-h-screen font-sans flex flex-col transition-colors duration-300 overflow-x-hidden pb-16 md:pb-0"
     >
-      <Navbar 
-        theme={theme} 
-        toggleTheme={toggleTheme} 
-        activeTab={currentTab} 
-        setActiveTab={handleTabChange} 
-      />
+      {currentTab !== 'admin' && (
+        <Navbar 
+          theme={theme} 
+          toggleTheme={toggleTheme} 
+          activeTab={currentTab} 
+          setActiveTab={handleTabChange} 
+        />
+      )}
 
       <main id="app-main-content" className="flex-grow">
         <AnimatePresence mode="wait">
@@ -271,10 +240,10 @@ export default function App() {
         </AnimatePresence>
       </main>
 
-      <Footer setActiveTab={handleTabChange} />
+      {currentTab !== 'admin' && <Footer setActiveTab={handleTabChange} />}
       <WalletModal />
-      <NotificationCenter />
-      <MobileBottomNav />
+      {currentTab !== 'admin' && <NotificationCenter />}
+      {currentTab !== 'admin' && <MobileBottomNav />}
       <AppKitSync />
     </div>
   );

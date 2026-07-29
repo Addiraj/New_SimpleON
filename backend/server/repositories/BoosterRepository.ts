@@ -420,6 +420,36 @@ export class BoosterRepository {
       return { directCount: 2, builderCount: 1 };
     }
   }
+
+  /**
+   * Update plan joining amount by slug
+   */
+  static async updatePlanBySlug(slug: string, newAmount: string) {
+    const cleanSlug = slug.toLowerCase().trim();
+    try {
+      const dbConfig = await prisma.levelConfiguration.findFirst({
+        where: { slug: cleanSlug, status: 'ACTIVE' },
+        orderBy: { version: 'desc' },
+      });
+
+      if (dbConfig) {
+        await prisma.levelConfiguration.update({
+          where: { id: dbConfig.id },
+          data: { joining_amount: newAmount },
+        });
+      }
+    } catch (err: any) {
+      logger.warn({ error: err.message }, `Prisma update for slug ${slug} failed. Trying in-memory update.`);
+    }
+
+    // Always update in-memory as fallback
+    const defaultMatch = DEFAULT_LEVEL_CONFIGS.find((cfg) => cfg.slug === cleanSlug);
+    if (defaultMatch) {
+      defaultMatch.joining_amount = newAmount;
+    }
+    
+    return true;
+  }
 }
 
 export default BoosterRepository;

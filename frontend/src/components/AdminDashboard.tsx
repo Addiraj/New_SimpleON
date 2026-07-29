@@ -1,14 +1,60 @@
-import React, { useState } from 'react';
-import { motion } from 'motion/react';
+import React, { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'motion/react';
 import { 
   ShieldCheck, Users, Layers, DollarSign, Activity, Search, Filter, 
-  TrendingUp, Download, AlertOctagon, Lock, RefreshCw, CheckCircle2, ChevronRight 
+  TrendingUp, Download, AlertOctagon, Lock, RefreshCw, CheckCircle2, ChevronRight, X
 } from 'lucide-react';
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, PieChart, Pie, Cell } from 'recharts';
+import { api } from '../services/api';
 
 export default function AdminDashboard() {
   const [userSearch, setUserSearch] = useState('');
   const [systemPaused, setSystemPaused] = useState(false);
+  
+  const [selectedPlanSlug, setSelectedPlanSlug] = useState('starter');
+  const [planValue, setPlanValue] = useState(1.0);
+  const [showWarningPopup, setShowWarningPopup] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [isLoadingPlan, setIsLoadingPlan] = useState(false);
+
+  useEffect(() => {
+    let isMounted = true;
+    const fetchPlanValue = async () => {
+      setIsLoadingPlan(true);
+      try {
+        const response: any = await api.get(`/booster/plans/${selectedPlanSlug}`);
+        if (isMounted && response?.success && response?.data) {
+          const val = parseFloat(response.data.joiningAmount || response.data.joining_amount || 1.0);
+          setPlanValue(val);
+        }
+      } catch (err) {
+        console.error('Failed to fetch plan value', err);
+      } finally {
+        if (isMounted) setIsLoadingPlan(false);
+      }
+    };
+    fetchPlanValue();
+    return () => { isMounted = false; };
+  }, [selectedPlanSlug]);
+  
+  const handleSavePlan = () => {
+    setShowWarningPopup(true);
+  };
+
+  const confirmSavePlan = async () => {
+    setIsSaving(true);
+    try {
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      await api.put(`/booster/plans/${selectedPlanSlug}`, { joiningAmount: planValue });
+      setShowWarningPopup(false);
+      // Optional success indication
+    } catch (err) {
+      console.error('Failed to update plan', err);
+      alert('Failed to update plan');
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   const stats = [
     { title: 'Total Registered Users', value: '1,428', change: '+12% this week', icon: <Users size={18} className="text-accent-red" /> },
@@ -87,6 +133,112 @@ export default function AdminDashboard() {
           </div>
         ))}
       </div>
+
+      {/* DYNAMIC PLAN CONFIGURATION */}
+      <div className="p-6 sm:p-8 rounded-3xl bg-surface border border-border-theme shadow-xl space-y-6">
+        <div className="flex items-center space-x-2 pb-4 border-b border-border-theme">
+          <Layers size={20} className="text-accent-red" />
+          <h2 className="text-lg font-black text-prime uppercase">Dynamic Plan Configuration</h2>
+        </div>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          <div className="space-y-4">
+            <label className="text-xs font-mono font-bold text-sub block">Select Plan to Modify</label>
+            <select 
+              value={selectedPlanSlug}
+              onChange={(e) => setSelectedPlanSlug(e.target.value)}
+              className="w-full px-4 py-3 rounded-2xl bg-surface-elevated border border-border-theme text-prime text-sm font-mono font-bold focus:outline-none focus:border-accent-red"
+            >
+              <option value="starter">Starter Booster Tier</option>
+              <option value="builder">Builder Booster Tier</option>
+              <option value="leader">Leader Booster Tier</option>
+              <option value="champion">Champion Booster Tier</option>
+            </select>
+          </div>
+
+          <div className="space-y-4">
+            <div className="flex justify-between text-xs font-mono font-bold">
+              <span className="text-sub">Plan Joining Value (USDT)</span>
+              <span className="text-accent-red">
+                {isLoadingPlan ? (
+                  <RefreshCw size={14} className="animate-spin inline-block mr-1" />
+                ) : null}
+                ${planValue.toFixed(2)} USDT
+              </span>
+            </div>
+            <input
+              type="range"
+              min="1"
+              max="1000"
+              step="1"
+              value={planValue}
+              onChange={(e) => setPlanValue(parseFloat(e.target.value))}
+              disabled={isLoadingPlan}
+              className={`w-full py-3 accent-accent-red ${isLoadingPlan ? 'opacity-50 cursor-not-allowed' : ''}`}
+            />
+          </div>
+        </div>
+
+        <div className="pt-4 flex justify-end">
+          <button
+            onClick={handleSavePlan}
+            disabled={isSaving}
+            className={`px-6 py-3 rounded-2xl bg-accent-red text-white text-sm font-black shadow-lg shadow-accent-red/20 transition-all ${isSaving ? 'opacity-70 cursor-not-allowed' : 'hover:bg-accent-red/90'}`}
+          >
+            {isSaving ? 'Saving...' : 'Save Configuration'}
+          </button>
+        </div>
+      </div>
+
+      {/* WARNING POPUP MODAL */}
+      <AnimatePresence>
+        {showWarningPopup && (
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            className="fixed top-20 left-1/2 -translate-x-1/2 z-[100] w-full max-w-md px-4"
+          >
+            <div className="bg-amber-500 text-slate-950 p-4 rounded-2xl shadow-2xl flex items-start space-x-3 border-2 border-amber-400">
+              <AlertOctagon className="shrink-0 mt-0.5" size={24} />
+              <div className="flex-1 space-y-3">
+                <h3 className="font-black text-sm uppercase">Global System Warning</h3>
+                <p className="text-xs font-semibold opacity-90 mt-1">
+                  You are about to dynamically modify the plan value. 
+                  <br />
+                  <span className="font-black underline">This will immediately affect all user websites, calculation logic, and future joining fees.</span>
+                </p>
+                <div className="flex space-x-2 pt-2">
+                  <button 
+                    onClick={confirmSavePlan}
+                    disabled={isSaving}
+                    className="px-4 py-2 bg-slate-950 text-white rounded-lg text-xs font-black shadow transition-all hover:bg-slate-800 disabled:opacity-50 flex items-center space-x-2"
+                  >
+                    {isSaving ? (
+                      <>
+                        <RefreshCw size={14} className="animate-spin" />
+                        <span>Processing...</span>
+                      </>
+                    ) : (
+                      <span>Yes, I Approve</span>
+                    )}
+                  </button>
+                  <button 
+                    onClick={() => setShowWarningPopup(false)}
+                    disabled={isSaving}
+                    className="px-4 py-2 bg-amber-400/50 text-slate-900 rounded-lg text-xs font-black transition-all hover:bg-amber-400 disabled:opacity-50"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+              <button onClick={() => setShowWarningPopup(false)} disabled={isSaving} className="shrink-0 opacity-70 hover:opacity-100 transition-opacity">
+                <X size={18} />
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* CHARTS ROW */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">

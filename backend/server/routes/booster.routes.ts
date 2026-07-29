@@ -7,6 +7,7 @@ const router = Router();
 // Booster Plan APIs
 router.get('/plans', BoosterController.getPlans);
 router.get('/plans/:slug', BoosterController.getPlanBySlug);
+router.put('/plans/:slug', BoosterController.updatePlan);
 router.get('/current-plan', optionalAuthenticateWeb3Token, BoosterController.getCurrentPlan);
 router.get('/eligibility', optionalAuthenticateWeb3Token, BoosterController.getEligibility);
 router.post('/eligibility', optionalAuthenticateWeb3Token, BoosterController.getEligibility);

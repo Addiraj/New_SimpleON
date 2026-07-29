@@ -46,6 +46,31 @@ export class BoosterController {
   }
 
   /**
+   * PUT /api/booster/plans/:slug
+   * Update single Booster level configuration joining amount
+   */
+  static async updatePlan(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { slug } = req.params;
+      const { joiningAmount } = req.body;
+
+      if (!joiningAmount) {
+        res.status(400).json({ success: false, error: { message: 'joiningAmount is required' } });
+        return;
+      }
+
+      await BoosterService.updatePlanBySlug(slug, joiningAmount.toString());
+
+      res.json({
+        success: true,
+        message: 'Plan updated successfully',
+      });
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  /**
    * GET /api/booster/current-plan
    * Return current user's active booster plan and history
    */

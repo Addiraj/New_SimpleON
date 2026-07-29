@@ -28,10 +28,6 @@ export default function Navbar({ theme, toggleTheme, activeTab, setActiveTab }: 
     { id: 'capping', label: 'Capping' },
     { id: 'ledger', label: 'Ledger' },
     { id: 'profile', label: 'Profile' },
-    { id: 'admin', label: 'Admin' },
-    { id: 'design-system', label: 'UI Spec' },
-    { id: 'contracts', label: 'Contracts' },
-    { id: 'apiDocs', label: 'API' },
   ];
 
   const handleNavClick = (id: string) => {

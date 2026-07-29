@@ -33,12 +33,16 @@ interface Web3State {
   isNotificationCenterOpen: boolean;
   unreadNotificationCount: number;
 
+  // Admin State
+  isAdminLoggedIn: boolean;
+
   // Action Handlers
   initAuth: () => Promise<void>;
   openWalletModal: () => void;
   closeWalletModal: () => void;
   toggleNotificationCenter: () => void;
   setActiveView: (view: 'landing' | 'dashboard' | 'matrix' | 'plans' | 'wallet' | 'ledger' | 'referrals' | 'capping' | 'profile' | 'admin' | 'contracts' | 'apiDocs') => void;
+  setAdminLoggedIn: (status: boolean) => void;
 
   connectWallet: (walletType: 'metamask' | 'walletconnect' | 'trustwallet' | 'coinbase' | 'injected') => Promise<void>;
   signSiweAndLogin: () => Promise<void>;
@@ -77,6 +81,8 @@ export const useWeb3Store = create<Web3State>((set, get) => ({
 
   isNotificationCenterOpen: false,
   unreadNotificationCount: 0,
+  
+  isAdminLoggedIn: false,
 
   openWalletModal: () => {
     appKitModal.open();
@@ -84,6 +90,7 @@ export const useWeb3Store = create<Web3State>((set, get) => ({
   closeWalletModal: () => appKitModal.close(),
   toggleNotificationCenter: () => set((state) => ({ isNotificationCenterOpen: !state.isNotificationCenterOpen })),
   setActiveView: (view) => set({ activeView: view }),
+  setAdminLoggedIn: (status) => set({ isAdminLoggedIn: status }),
 
   fetchUnreadCount: async () => {
     try {
