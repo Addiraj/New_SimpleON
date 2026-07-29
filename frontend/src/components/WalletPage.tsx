@@ -98,53 +98,7 @@ export default function WalletPage() {
     }
   ];
 
-  const recentActivity = [
-    {
-      id: 'tx-1',
-      type: 'SIWE EIP-712 Login',
-      status: 'Success',
-      hash: '0xa38c7f219b1d309228e57f12e84129b8c0d9a7e6d5c4b3a2109876543210abcd',
-      timestamp: '2 mins ago',
-      details: 'Nonce authentication verified on-chain',
-      amount: '0.00 BNB'
-    },
-    {
-      id: 'tx-2',
-      type: 'BEP-20 USDT Approval',
-      status: 'Success',
-      hash: '0x9d2b1f8e6a5c4d3b2a109876543210abcdef1234567890abcdef1234567890ab',
-      timestamp: '1 hour ago',
-      details: 'Unlimited allowance permitted to SimpleOn contract',
-      amount: 'Infinite USDT'
-    },
-    {
-      id: 'tx-3',
-      type: 'Starter Booster Deposit',
-      status: 'Success',
-      hash: '0x7e6d5c4b3a2109876543210abcdef1234567890abcdef1234567890abcdef12',
-      timestamp: '3 hours ago',
-      details: '$100.00 USDT allocated to Starter Tier Node',
-      amount: '-$100.00 USDT'
-    },
-    {
-      id: 'tx-4',
-      type: 'P2P Direct Commission',
-      status: 'Success',
-      hash: '0x5f4e3d2c1b0a9876543210abcdef1234567890abcdef1234567890abcdef34',
-      timestamp: '5 hours ago',
-      details: 'Direct referral bonus credited from 0x8f3C...A063',
-      amount: '+$20.00 USDT'
-    },
-    {
-      id: 'tx-5',
-      type: '13-Level Matrix Spillover',
-      status: 'Success',
-      hash: '0x3a2b1c0d9e8f7a6b5c4d3e2f1a09876543210abcdef1234567890abcdef56',
-      timestamp: '1 day ago',
-      details: 'Level 2 Matrix node bonus credited from team pool',
-      amount: '+$15.00 USDT'
-    }
-  ];
+  const recentActivity: any[] = [];
 
   return (
     <div id="wallet-page-container" className="py-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-10">

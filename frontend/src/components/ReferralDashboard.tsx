@@ -98,10 +98,10 @@ export default function ReferralDashboard() {
             tier: 'STARTER',
             tierAmount: 100,
             status: m.status === 'ACTIVE' ? 'ACTIVE' : 'INACTIVE',
-            joinedDate: m.joiningDate ? m.joiningDate.substring(0, 10) : '2026-02-01',
+            joinedDate: m.joiningDate ? m.joiningDate.substring(0, 10) : '-',
             directsCount: m.directsCount || 0,
-            volumeGenerated: m.volumeGenerated || 500,
-            commissionEarned: (m.volumeGenerated || 500) * 0.2,
+            volumeGenerated: m.volumeGenerated || 0,
+            commissionEarned: (m.volumeGenerated || 0) * 0.2,
             matrixPosition: `Node #${m.depth || 1}.${idx + 1}`,
           }));
           if (apiMembers.length > 0) {
@@ -119,10 +119,10 @@ export default function ReferralDashboard() {
             tier: node.level === 'VIP' ? 'VIP' : node.level === 'Leader' ? 'LEADER' : node.level === 'Builder' ? 'BUILDER' : 'STARTER',
             tierAmount: node.level === 'VIP' ? 1000 : node.level === 'Leader' ? 500 : node.level === 'Builder' ? 250 : 100,
             status: node.status === 'ACTIVE' ? 'ACTIVE' : 'INACTIVE',
-            joinedDate: node.joiningDate ? node.joiningDate.substring(0, 10) : '2026-01-15',
+            joinedDate: node.joiningDate ? node.joiningDate.substring(0, 10) : '-',
             directsCount: node.directsCount || 0,
-            volumeGenerated: 10000,
-            commissionEarned: 200,
+            volumeGenerated: node.volumeGenerated || 0,
+            commissionEarned: node.commissionEarned || 0,
             matrixPosition: node.depth === 0 ? 'Root Node' : `L${node.depth} Node`,
             children: node.children ? node.children.map(formatTreeNode) : [],
           });
@@ -415,7 +415,7 @@ export default function ReferralDashboard() {
             <Trophy size={18} className="text-amber-500" />
           </div>
           <div className="text-3xl font-black font-mono text-prime">
-            {summaryData ? `${summaryData.qualifiedBuilders} Builders` : '0%'}
+            {summaryData ? `${summaryData.qualifiedBuilders} Builders` : '0 Builders'}
           </div>
           <p className="text-[11px] text-sub">Qualifies for 100% Spillover Pool</p>
         </div>

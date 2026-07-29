@@ -15,38 +15,15 @@ import { UiStateSwitcher, LoadingSkeletonCard, LoadingSkeletonTable, EmptyStateV
 import { dashboardApi } from '../services/api';
 
 // Fallback Mock Analytics Data
-const earningsTrendData = [
-  { day: 'Jul 1', earnings: 120, referrals: 1 },
-  { day: 'Jul 5', earnings: 280, referrals: 2 },
-  { day: 'Jul 10', earnings: 450, referrals: 3 },
-  { day: 'Jul 15', earnings: 720, referrals: 5 },
-  { day: 'Jul 20', earnings: 980, referrals: 7 },
-  { day: 'Jul 22', earnings: 1245, referrals: 9 },
-];
+const earningsTrendData: any[] = [];
 
-const revenueDistributionData = [
-  { name: 'Direct Sponsor (20%)', value: 249, color: '#10B981' },
-  { name: '13-Level Matrix (65%)', value: 809, color: '#3B82F6' },
-  { name: 'X5 Matrix Split (15%)', value: 187, color: '#F59E0B' },
-  { name: 'X4 Passive Spillover', value: 150, color: '#8B5CF6' },
-];
+const revenueDistributionData: any[] = [];
 
 // Fallback Transactions List
-const initialTransactions = [
-  { id: 'tx-101', type: 'Direct Commission', amount: '+$20.00 USDT', status: 'Completed', txHash: '0x9a8f...3e21', time: '10 mins ago', category: 'Commission' },
-  { id: 'tx-102', type: '13-Level Matrix Spillover', amount: '+$65.00 USDT', status: 'Completed', txHash: '0x8b7e...4f12', time: '45 mins ago', category: 'Matrix' },
-  { id: 'tx-103', type: 'Starter Plan Upgrade', amount: '-$100.00 USDT', status: 'Completed', txHash: '0x7c6d...5a09', time: '2 hours ago', category: 'Deposit' },
-  { id: 'tx-104', type: 'Auto Re-Topup Trigger', amount: '-$50.00 USDT', status: 'Completed', txHash: '0x6d5c...6b88', time: '5 hours ago', category: 'Auto' },
-  { id: 'tx-105', type: 'X5 Split Pool Reward', amount: '+$15.00 USDT', status: 'Completed', txHash: '0x5e4d...7c77', time: '1 day ago', category: 'Pool' },
-];
+const initialTransactions: any[] = [];
 
 // Mock Notifications
-const initialNotifications = [
-  { id: 'n1', title: 'New Direct Referral', description: 'Partner joined using your link.', time: '5m ago', read: false },
-  { id: 'n2', title: 'Matrix Spillover Received', description: 'Credited payouts from Team Tree.', time: '1h ago', read: false },
-  { id: 'n3', title: 'Booster Milestones', description: 'Check your active Booster cycle status.', time: '3h ago', read: false },
-  { id: 'n4', title: 'Smart Contract Audit', description: 'BscScan verified SIWE session.', time: '1d ago', read: true },
-];
+const initialNotifications: any[] = [];
 
 export interface RealDashboardData {
   walletAddress: string;
@@ -549,7 +526,7 @@ export default function Dashboard() {
                     <span>Top Executive Statistics</span>
                   </h2>
                   <span className="text-xs font-mono text-sub">
-                    {dashboardData ? 'Real MySQL Data' : 'Updated 2s ago'}
+                    {dashboardData ? 'Real MySQL Data' : 'Loading...'}
                   </span>
                 </div>
 
@@ -565,7 +542,7 @@ export default function Dashboard() {
                       <DollarSign size={16} className="text-emerald-500" />
                     </div>
                     <div className="text-2xl font-black font-mono text-prime">
-                      ${(dashboardData?.totalEarnings ?? 1245.0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USDT
+                      ${(dashboardData?.totalEarnings ?? 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USDT
                     </div>
                     <p className="text-[11px] text-emerald-500 font-semibold mt-1 flex items-center space-x-1">
                       <TrendingUp size={12} />
@@ -583,10 +560,10 @@ export default function Dashboard() {
                       <Flame size={16} className="text-accent-orange" />
                     </div>
                     <div className="text-2xl font-black font-mono text-accent-orange">
-                      ${(dashboardData?.todaysEarnings ?? 120.0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USDT
+                      ${(dashboardData?.todaysEarnings ?? 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USDT
                     </div>
                     <p className="text-[11px] text-sub mt-1">
-                      {dashboardData ? `Remaining cap: $${dashboardData.remainingDailyCap.toFixed(2)}` : '3 new referral triggers'}
+                      {dashboardData ? `Remaining cap: $${dashboardData.remainingDailyCap.toFixed(2)}` : 'Remaining cap: $0.00'}
                     </p>
                   </motion.div>
 
@@ -617,10 +594,10 @@ export default function Dashboard() {
                       <RefreshCw size={16} className="text-accent-purple" />
                     </div>
                     <div className="text-2xl font-black font-mono text-prime">
-                      {dashboardData ? (dashboardData.activeMatrixCycle > 0 ? `Cycle #${dashboardData.activeMatrixCycle}` : 'No Active Cycle') : 'Cycle #3'}
+                      {dashboardData ? (dashboardData.activeMatrixCycle > 0 ? `Cycle #${dashboardData.activeMatrixCycle}` : 'No Active Cycle') : 'No Active Cycle'}
                     </div>
                     <p className="text-[11px] text-sub mt-1">
-                      {dashboardData ? `${dashboardData.matrixPositionsFilled} / 5 Slots Filled (${dashboardData.completedCycles} Completed)` : '4 / 5 Slots Filled'}
+                      {dashboardData ? `${dashboardData.matrixPositionsFilled} / 5 Slots Filled (${dashboardData.completedCycles} Completed)` : '0 / 5 Slots Filled'}
                     </p>
                   </motion.div>
 
@@ -651,10 +628,10 @@ export default function Dashboard() {
                       <Users size={16} className="text-accent-blue" />
                     </div>
                     <div className="text-2xl font-black font-mono text-prime">
-                      {dashboardData ? `${dashboardData.directReferrals} Directs` : '14 Directs'}
+                      {dashboardData ? `${dashboardData.directReferrals} Directs` : '0 Directs'}
                     </div>
                     <p className="text-[11px] text-sub mt-1">
-                      {dashboardData ? `Indirects: ${dashboardData.indirectReferrals} | Team: ${dashboardData.totalTeam}` : 'Team Volume: $14,200'}
+                      {dashboardData ? `Indirects: ${dashboardData.indirectReferrals} | Team: ${dashboardData.totalTeam}` : 'Indirects: 0 | Team: 0'}
                     </p>
                   </motion.div>
 
@@ -668,10 +645,10 @@ export default function Dashboard() {
                       <UserCheck size={16} className="text-emerald-500" />
                     </div>
                     <div className="text-2xl font-black font-mono text-emerald-500">
-                      {dashboardData ? `${dashboardData.qualifiedBuilders} Active` : '9 Active'}
+                      {dashboardData ? `${dashboardData.qualifiedBuilders} Active` : '0 Active'}
                     </div>
                     <p className="text-[11px] text-sub mt-1">
-                      {dashboardData?.directReferrals ? `${Math.round((dashboardData.qualifiedBuilders / dashboardData.directReferrals) * 100)}% Qualification Rate` : 'Level 2+ Builder Qualification'}
+                      {dashboardData?.directReferrals ? `${Math.round((dashboardData.qualifiedBuilders / dashboardData.directReferrals) * 100)}% Qualification Rate` : '0% Qualification Rate'}
                     </p>
                   </motion.div>
 
@@ -685,13 +662,13 @@ export default function Dashboard() {
                       <Sparkles size={16} className="text-amber-500" />
                     </div>
                     <div className="text-2xl font-black font-mono text-prime">
-                      {dashboardData?.levelProgress ?? 80}%
+                      {dashboardData?.levelProgress ?? 0}%
                     </div>
                     {/* Progress Bar */}
                     <div className="w-full h-2 rounded-full bg-surface-elevated overflow-hidden mt-2 border border-border-theme">
                       <div 
                         className="h-full bg-accent-red rounded-full transition-all duration-500" 
-                        style={{ width: `${dashboardData?.levelProgress ?? 80}%` }} 
+                        style={{ width: `${dashboardData?.levelProgress ?? 0}%` }} 
                       />
                     </div>
                     <p className="text-[10px] text-sub font-mono mt-1 truncate">
