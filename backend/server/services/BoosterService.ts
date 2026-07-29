@@ -49,6 +49,13 @@ export class BoosterService {
   }
 
   /**
+   * Update plan joining amount by slug
+   */
+  static async updatePlanBySlug(slug: string, newAmount: string): Promise<boolean> {
+    return await BoosterRepository.updatePlanBySlug(slug, newAmount);
+  }
+
+  /**
    * Get user's active booster level, history, and status from MySQL
    */
   static async getUserCurrentPlan(userId: string) {
