@@ -28,4 +28,7 @@ router.post('/logout', validateRequest(logoutSchema), AuthController.logout);
 // Current user profile
 router.get('/me', authenticateWeb3Token, AuthController.getCurrentUser);
 
+// Admin validation
+router.post('/admin/login', authLimiter, AuthController.adminLogin);
+
 export default router;

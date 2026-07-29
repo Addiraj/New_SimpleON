@@ -129,6 +129,11 @@ export const authApi = {
     const res: any = await api.get('/auth/me');
     return res.data || res;
   },
+
+  adminLogin: async (username: string, password: string) => {
+    const res: any = await api.post('/auth/admin/login', { username, password });
+    return res.data || res;
+  },
 };
 
 // User Profile & Preferences API
