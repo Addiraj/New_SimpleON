@@ -144,6 +144,27 @@ export class UserService {
   }
 
   /**
+   * Get User Activity / Audit Logs
+   */
+  static async getActivityLogs(userIdOrAddress: string) {
+    const user = await UserRepository.findUser(userIdOrAddress);
+    if (!user) {
+      throw AppError.notFound('User profile not found');
+    }
+
+    const logs = await UserRepository.getUserAuditLogs(user.id);
+    
+    // Map to frontend expected format
+    return logs.map((log) => ({
+      id: log.id,
+      action: log.action.replace(/_/g, ' '),
+      ip: log.ip_address || 'Unknown',
+      time: log.created_at ? new Date(log.created_at).toISOString().replace('T', ' ').slice(0, 19) : '',
+      device: log.user_agent || 'Unknown Device',
+    }));
+  }
+
+  /**
    * Legacy method support for backward compatibility
    */
   static getUserProfile(address: string) {

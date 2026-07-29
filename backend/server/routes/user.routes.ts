@@ -19,6 +19,9 @@ router.get('/preferences', authenticateWeb3Token, UserController.getPreferences)
 router.patch('/preferences', authenticateWeb3Token, validateRequest(updatePreferencesSchema), UserController.updatePreferences);
 router.put('/preferences', authenticateWeb3Token, validateRequest(updatePreferencesSchema), UserController.updatePreferences);
 
+// Activity Logs endpoint
+router.get('/activity-logs', authenticateWeb3Token, UserController.getActivityLogs);
+
 // Base plan legacy route
 router.post('/base-plan', authenticateWeb3Token, UserController.updateBasePlan);
 

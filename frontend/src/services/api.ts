@@ -157,6 +157,11 @@ export const userApi = {
     const res: any = await api.patch('/user/preferences', data);
     return res.data || res;
   },
+
+  getActivityLogs: async () => {
+    const res: any = await api.get('/user/activity-logs');
+    return res.data || res;
+  },
 };
 
 // Booster Plan API
