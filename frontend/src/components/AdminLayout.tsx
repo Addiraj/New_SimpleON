@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Lock, Shield, Settings, FileText, Code2, LogOut } from 'lucide-react';
 import { useWeb3Store } from '../store/useWeb3Store';
+import { authApi } from '../services/api';
 
 import AdminDashboard from './AdminDashboard';
 import DesignSystemShowcase from './DesignSystemShowcase';
@@ -15,16 +16,18 @@ export default function AdminLayout() {
   const [error, setError] = useState('');
   const [activeAdminTab, setActiveAdminTab] = useState<'dashboard' | 'ui' | 'contracts' | 'api'>('dashboard');
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    const envUser = import.meta.env.VITE_ADMIN_USERNAME;
-    const envPass = import.meta.env.VITE_ADMIN_PASSWORD;
-
-    if (username === envUser && password === envPass) {
-      setAdminLoggedIn(true);
-      setError('');
-    } else {
-      setError('Invalid admin credentials');
+    try {
+      const res = await authApi.adminLogin(username, password);
+      if (res && res.success) {
+        setAdminLoggedIn(true);
+        setError('');
+      } else {
+        setError('Invalid admin credentials');
+      }
+    } catch (err: any) {
+      setError(err.message || 'Invalid admin credentials');
     }
   };
 

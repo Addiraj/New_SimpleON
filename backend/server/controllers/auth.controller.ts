@@ -97,6 +97,36 @@ export class AuthController {
       next(err);
     }
   }
+
+  /**
+   * POST /api/auth/admin/login
+   * Validates admin credentials
+   */
+  static async adminLogin(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { username, password } = req.body;
+      const envUser = process.env.ADMIN_USERNAME;
+      const envPass = process.env.ADMIN_PASSWORD;
+
+      if (!envUser || !envPass) {
+        return res.status(500).json({
+          success: false,
+          error: { message: 'Admin credentials not configured on server', statusCode: 500 },
+        });
+      }
+
+      if (username === envUser && password === envPass) {
+        return sendSuccess(res, { success: true, token: 'admin_session_active' }, 'Admin logged in successfully');
+      } else {
+        return res.status(401).json({
+          success: false,
+          error: { message: 'Invalid admin credentials', statusCode: 401 },
+        });
+      }
+    } catch (err) {
+      next(err);
+    }
+  }
 }
 
 export default AuthController;
