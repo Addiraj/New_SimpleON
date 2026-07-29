@@ -42,10 +42,7 @@ export default function App() {
   };
 
   useEffect(() => {
-<<<<<<< HEAD
     initAuth();
-=======
->>>>>>> fe05ef7be215c289d9c2e81e5d2ca052e3956485
     fetchCalculations(1.0);
   }, []);
 

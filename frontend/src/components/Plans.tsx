@@ -3,7 +3,7 @@ import { motion } from 'motion/react';
 import { 
   Rocket, TrendingUp, Users, Trophy, ChevronDown, 
   ChevronUp, Layers, Target, AlertCircle, RefreshCw, 
-  CheckCircle2, Lock
+  CheckCircle2, Lock, Zap
 } from 'lucide-react';
 import { boosterApi, paymentApi, upgradeApi } from '../services/api';
 
@@ -48,7 +48,7 @@ export default function Plans({ basePlan = 1 }: { basePlan?: number } = {}) {
   >('idle');
   const [verifyStatusMessage, setVerifyStatusMessage] = useState<string | null>(null);
 
-  const handleVerifyPayment = async (txHashToVerify?: string) => {
+  const handleVerifyPayment = async (txHashToVerify?: string, isMock: boolean = false) => {
     const hash = txHashToVerify || txHashInput;
     if (!activePaymentIntent?.id || !hash) {
       setVerifyStatusMessage('Please enter a valid transaction hash starting with 0x');
@@ -58,6 +58,27 @@ export default function Plans({ basePlan = 1 }: { basePlan?: number } = {}) {
 
     setVerifyStatusMessage('Awaiting wallet confirmation...');
     setVerificationStep('wallet_confirm');
+
+    if (isMock) {
+      setTimeout(() => {
+        setVerifyStatusMessage('Mock processing payment verification...');
+        setVerificationStep('backend_verifying');
+        paymentApi
+          .confirmMock(activePaymentIntent.id, hash)
+          .then((res: any) => {
+            const verifiedData = res?.data || res;
+            setActivePaymentIntent(verifiedData);
+            setVerificationStep('confirmed');
+            setVerifyStatusMessage(res?.message || 'Mock Payment successfully verified!');
+            loadPlanData();
+          })
+          .catch((err: any) => {
+            setVerificationStep('failed');
+            setVerifyStatusMessage(err?.message || 'Mock Verification failed');
+          });
+      }, 500);
+      return;
+    }
 
     setTimeout(() => {
       setVerifyStatusMessage('Querying blockchain receipt from RPC node...');
@@ -456,8 +477,10 @@ export default function Plans({ basePlan = 1 }: { basePlan?: number } = {}) {
               <div id="plans-accordion-booster-content" className="p-6 md:p-8 border-t border-border-theme bg-surface-elevated/40">
                 <div id="booster-tiers-grid" className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
                   {boosterTiers.map((tier, idx) => {
-                    const currentOrder = eligibilityData?.currentLevelOrder || 1;
-                    const isCurrentOrPassed = currentOrder >= tier.levelOrder;
+                    const currentOrder = (eligibilityData?.currentLevelOrder !== undefined && eligibilityData?.currentLevelOrder !== null)
+                      ? eligibilityData.currentLevelOrder
+                      : 0;
+                    const isCurrentOrPassed = currentOrder >= tier.levelOrder && currentOrder > 0;
                     const isTargetLevel = tier.levelOrder === (eligibilityData?.targetLevelOrder || 1);
                     const isEligibleForUpgrade = isTargetLevel && (eligibilityData?.eligible ?? true);
                     const isLocked = tier.levelOrder > currentOrder + 1 || (isTargetLevel && !eligibilityData?.eligible);
@@ -559,7 +582,7 @@ export default function Plans({ basePlan = 1 }: { basePlan?: number } = {}) {
                           </button>
 
                           {/* Active Pending Payment Intent Box for this tier */}
-                          {activePaymentIntent && activePaymentIntent.level?.slug === tier.slug && (
+                          {activePaymentIntent && (activePaymentIntent.level?.slug === tier.slug || activePaymentIntent.metadata?.planSlug === tier.slug || activePaymentIntent.intent?.level?.slug === tier.slug) && (
                             <div className="p-3.5 rounded-xl bg-surface-elevated border border-amber-500/30 text-[11px] space-y-2 font-mono">
                               <div className="flex justify-between items-center font-bold">
                                 <span className="text-amber-500">Payment Reference</span>
@@ -611,7 +634,21 @@ export default function Plans({ basePlan = 1 }: { basePlan?: number } = {}) {
                                     </button>
                                   </div>
 
-
+                                  {/* Auto-fill test transaction hash helper */}
+                                  <div className="flex items-center space-x-4 mt-2">
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        const mockHash = `0xmock${Date.now()}${Math.random().toString(16).substring(2, 10)}`;
+                                        setTxHashInput(mockHash);
+                                        handleVerifyPayment(mockHash, true); // Use Mock Confirm
+                                      }}
+                                      className="text-[10px] bg-green-500/10 text-green-500 hover:bg-green-500/20 px-2 py-1 rounded-lg flex items-center space-x-1 font-bold transition-colors"
+                                    >
+                                      <Zap size={10} />
+                                      <span>Mock Confirm & Verify (Dev)</span>
+                                    </button>
+                                  </div>
 
                                   {/* Verification Stepper */}
                                   {verificationStep !== 'idle' && (
