@@ -8,7 +8,7 @@ import { useWeb3Store } from '../store/useWeb3Store';
 import { userApi } from '../services/api';
 
 export default function ProfileSettings() {
-  const { address, walletType, isConnected, openWalletModal } = useWeb3Store();
+  const { address, walletType, isConnected, isAuthenticated, openWalletModal, signSiweAndLogin } = useWeb3Store();
 
   const [activeTab, setActiveTab] = useState<'PROFILE' | 'WALLET' | 'SECURITY' | 'NOTIFICATIONS' | 'ACTIVITY'>('PROFILE');
   const [copiedAddress, setCopiedAddress] = useState(false);
@@ -25,6 +25,7 @@ export default function ProfileSettings() {
   const [emailNotifs, setEmailNotifs] = useState(true);
   const [inAppNotifs, setInAppNotifs] = useState(true);
   const [telegramNotifs, setTelegramNotifs] = useState(true);
+  const [activityLogs, setActivityLogs] = useState<any[]>([]);
 
   // UI state
   const [isLoading, setIsLoading] = useState(true);
@@ -39,9 +40,10 @@ export default function ProfileSettings() {
     const fetchUserData = async () => {
       try {
         setIsLoading(true);
-        const [profRes, prefRes] = await Promise.all([
+        const [profRes, prefRes, logsRes] = await Promise.all([
           userApi.getProfile().catch(() => null),
           userApi.getPreferences().catch(() => null),
+          userApi.getActivityLogs().catch(() => null),
         ]);
 
         if (isMounted) {
@@ -58,6 +60,12 @@ export default function ProfileSettings() {
             setTheme(prefData.theme || 'dark');
             setEmailNotifs(prefData.emailNotifications ?? prefData.email_notifications ?? true);
             setInAppNotifs(prefData.inAppNotifications ?? prefData.in_app_notifications ?? true);
+          }
+          if (logsRes) {
+            const logsData = logsRes.data?.logs || logsRes.logs || logsRes;
+            if (Array.isArray(logsData)) {
+              setActivityLogs(logsData);
+            }
           }
         }
       } catch (err) {
@@ -82,6 +90,15 @@ export default function ProfileSettings() {
 
   const handleSaveSettings = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
+
+    if (!isAuthenticated) {
+      setFeedback({
+        type: 'error',
+        message: 'Please connect your wallet and sign in to save settings.',
+      });
+      return;
+    }
+
     setIsSubmitting(true);
     setFeedback(null);
 
@@ -108,6 +125,14 @@ export default function ProfileSettings() {
         type: 'success',
         message: 'Profile and preferences saved successfully!',
       });
+      
+      // Refresh activity logs after saving
+      userApi.getActivityLogs().then((res: any) => {
+        const logsData = res.data?.logs || res.logs || res;
+        if (Array.isArray(logsData)) {
+          setActivityLogs(logsData);
+        }
+      }).catch(console.error);
     } catch (err: any) {
       console.error('Failed to save profile settings:', err);
       const errMsg = err.message || err.response?.data?.error?.message || 'Failed to save settings. Please check your inputs.';
@@ -120,12 +145,7 @@ export default function ProfileSettings() {
     }
   };
 
-  const activityLogs = [
-    { id: 1, action: 'SIWE Authentication Logged In', ip: '185.220.101.5', time: new Date().toISOString().replace('T', ' ').slice(0, 19), device: 'Chrome / macOS' },
-    { id: 2, action: 'Updated Profile & Preferences', ip: '185.220.101.5', time: profile?.lastLoginAt ? new Date(profile.lastLoginAt).toISOString().replace('T', ' ').slice(0, 19) : '2026-07-22 14:22:05', device: 'Web3 Client Session' },
-    { id: 3, action: 'Base Plan Booster Active', ip: '185.220.101.5', time: '2026-07-20 09:11:40', device: 'WalletConnect App' },
-    { id: 4, action: 'Signed SIWE Challenge Message', ip: '185.220.101.5', time: '2026-07-19 18:05:00', device: 'Chrome / macOS' },
-  ];
+
 
   return (
     <div className="py-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-10">

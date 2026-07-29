@@ -106,6 +106,26 @@ export class UserController {
   }
 
   /**
+   * GET /api/user/activity-logs
+   */
+  static async getActivityLogs(req: AuthRequest, res: Response, next: NextFunction) {
+    try {
+      const userIdOrAddress = req.userId || req.userAddress;
+      if (!userIdOrAddress) {
+        return res.status(401).json({
+          success: false,
+          error: { message: 'Authentication required to view activity logs', statusCode: 401 },
+        });
+      }
+
+      const logs = await UserService.getActivityLogs(userIdOrAddress);
+      return sendSuccess(res, { logs, ...logs }, 'User activity logs retrieved successfully');
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  /**
    * POST /api/user/base-plan (Legacy support)
    */
   static updateBasePlan(req: AuthRequest, res: Response, next: NextFunction) {
