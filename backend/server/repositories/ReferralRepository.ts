@@ -336,6 +336,26 @@ export class ReferralRepository {
       indirectCount = userRels.filter((r) => r.depth > 1).length;
       totalCount = userRels.length;
       qualifiedBuilders = userRels.filter((r) => r.status === 'ACTIVE').length;
+      
+      const sortedRels = [...userRels].sort((a, b) => b.created_at.getTime() - a.created_at.getTime()).slice(0, 5);
+      
+      recentMembers = await Promise.all(sortedRels.map(async (r) => {
+        const u = await AuthRepository.findUserById(r.referred_user_id);
+        const addr = u ? u.wallet_address : '0x0000000000000000000000000000000000000000';
+        const shortAddr = `${addr.slice(0, 6)}...${addr.slice(-4)}`;
+        return {
+          id: r.referred_user_id,
+          walletAddress: addr,
+          shortWalletAddress: shortAddr,
+          referralCode: u ? u.referral_code : 'UNKNOWN',
+          displayName: u?.display_name || null,
+          level: r.depth === 1 ? 'Direct Partner' : `Tier ${r.depth}`,
+          status: u?.status || 'ACTIVE',
+          joiningDate: (u?.joined_at || u?.created_at || new Date()).toISOString(),
+          depth: r.depth,
+          directsCount: 0,
+        };
+      }));
     }
 
     return {
@@ -437,18 +457,23 @@ export class ReferralRepository {
       members = await Promise.all(
         idArray.slice(skip, skip + limit).map(async (id) => {
           const u = await AuthRepository.findUserById(id);
-          const addr = u ? u.wallet_address : '0x8f3C91029381A063b4f8a2910d';
+          const addr = u ? u.wallet_address : '0x0000000000000000000000000000000000000000';
+          
+          let directsCount = 0;
+          const uDirects = memoryReferralRelations.filter((r) => r.sponsor_user_id === id && r.depth === 1);
+          directsCount = uDirects.length;
+          
           return {
             id,
             walletAddress: addr,
             shortWalletAddress: `${addr.slice(0, 6)}...${addr.slice(-4)}`,
-            referralCode: u ? u.referral_code : 'SO-MEM1',
-            displayName: u ? u.display_name || null : 'Partner 1',
+            referralCode: u ? u.referral_code : 'UNKNOWN',
+            displayName: u ? u.display_name || null : null,
             level: 'Starter',
             status: u ? u.status || 'ACTIVE' : 'ACTIVE',
-            joiningDate: (u?.created_at || new Date()).toISOString(),
+            joiningDate: (u?.joined_at || u?.created_at || new Date()).toISOString(),
             depth: 1,
-            directsCount: 0,
+            directsCount,
           };
         })
       );
@@ -551,34 +576,60 @@ export class ReferralRepository {
       rootNode.directsCount = rootNode.children.length;
     } catch (err: any) {
       logger.warn({ error: err.message }, 'Prisma unavailable, returning fallback tree structure');
-      rootNode.children = [
-        {
-          id: 'member-1',
-          walletAddress: '0x8f3C91029381A063b4f8a2910d',
-          shortWalletAddress: '0x8f3C...2910d',
-          referralCode: 'SO-MEM1',
-          displayName: 'Leader Alpha',
-          level: 'Leader',
-          status: 'ACTIVE',
-          joiningDate: '2026-02-01',
-          depth: 1,
-          directsCount: 2,
-          children: [
-            {
-              id: 'member-1-1',
-              walletAddress: '0x3a2b1c0d9e8f7a6b5c4d3e2f',
-              shortWalletAddress: '0x3a2b...3e2f',
-              referralCode: 'SO-SUB1',
-              displayName: 'Builder One',
-              level: 'Builder',
-              status: 'ACTIVE',
-              joiningDate: '2026-02-10',
-              depth: 2,
-              directsCount: 0,
-            },
-          ],
-        },
-      ];
+      
+      // Need to access memoryUsers from AuthRepository - it's private but exposed via any in codebase
+      const memoryUsersMap = (AuthRepository as any).memoryUsers || new Map();
+      
+      const buildMemorySubtree = async (parentUserId: string, currentDepth: number): Promise<TeamMemberInfo[]> => {
+        if (currentDepth > maxDepth) return [];
+        
+        const directRels = memoryReferralRelations.filter(
+          (r) => r.sponsor_user_id === parentUserId && r.depth === 1
+        );
+        
+        const memoryUserDirects = Array.from(memoryUsersMap.values())
+          .filter((u: any) => u.sponsor_id === parentUserId);
+          
+        const childIds = new Set<string>();
+        directRels.forEach((r) => childIds.add(r.referred_user_id));
+        memoryUserDirects.forEach((u: any) => childIds.add(u.id));
+        
+        const childrenList: TeamMemberInfo[] = [];
+        
+        for (const childId of Array.from(childIds)) {
+          const u = await AuthRepository.findUserById(childId);
+          if (!u) continue;
+          
+          const childAddr = u.wallet_address;
+          if (
+            search &&
+            !childAddr.toLowerCase().includes(search.toLowerCase()) &&
+            !u.referral_code.toLowerCase().includes(search.toLowerCase())
+          ) {
+            continue;
+          }
+          
+          const grandChildren = await buildMemorySubtree(childId, currentDepth + 1);
+          
+          childrenList.push({
+            id: u.id,
+            walletAddress: childAddr,
+            shortWalletAddress: `${childAddr.slice(0, 6)}...${childAddr.slice(-4)}`,
+            referralCode: u.referral_code,
+            displayName: u.display_name || null,
+            level: currentDepth === 1 ? 'Leader' : currentDepth === 2 ? 'Builder' : 'Starter',
+            status: u.status || 'ACTIVE',
+            joiningDate: (u.joined_at || u.created_at || new Date()).toISOString(),
+            depth: currentDepth,
+            directsCount: grandChildren.length,
+            children: grandChildren,
+          });
+        }
+        
+        return childrenList;
+      };
+      
+      rootNode.children = await buildMemorySubtree(userId, 1);
       rootNode.directsCount = rootNode.children.length;
     }
 
