@@ -611,18 +611,7 @@ export default function Plans({ basePlan = 1 }: { basePlan?: number } = {}) {
                                     </button>
                                   </div>
 
-                                  {/* Auto-fill test transaction hash helper */}
-                                  <button
-                                    type="button"
-                                    onClick={() => {
-                                      const mockHash = `0xmock${Date.now()}${Math.random().toString(16).substring(2, 10)}`;
-                                      setTxHashInput(mockHash);
-                                      handleVerifyPayment(mockHash);
-                                    }}
-                                    className="text-[9px] text-amber-500 hover:underline flex items-center space-x-1"
-                                  >
-                                    <span>Auto-fill & Verify Test Tx Hash</span>
-                                  </button>
+
 
                                   {/* Verification Stepper */}
                                   {verificationStep !== 'idle' && (

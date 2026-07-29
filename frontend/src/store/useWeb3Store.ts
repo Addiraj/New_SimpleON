@@ -67,8 +67,8 @@ export const useWeb3Store = create<Web3State>((set, get) => ({
   walletType: null,
   connectionError: null,
 
-  bnbBalance: '1.4528',
-  usdtBalance: '1,245.00',
+  bnbBalance: '0.00',
+  usdtBalance: '0.00',
 
   isAuthenticated: false,
   jwtToken: localStorage.getItem('simpleon_web3_jwt'),
@@ -187,8 +187,8 @@ export const useWeb3Store = create<Web3State>((set, get) => ({
         walletType: get().walletType || 'metamask',
         connectionError: null,
         isAuthenticated: true,
-        bnbBalance: '2.8450',
-        usdtBalance: '3,450.00'
+        bnbBalance: '0.00',
+        usdtBalance: '0.00'
       });
       get().fetchCalculations(1.0);
     } else if (state === 'disconnected') {
