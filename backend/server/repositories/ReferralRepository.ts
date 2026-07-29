@@ -358,9 +358,23 @@ export class ReferralRepository {
       }));
     }
 
+    let sponsorInfo: any = null;
+    if (user.sponsor_id) {
+      const sponsor = await AuthRepository.findUserById(user.sponsor_id);
+      if (sponsor) {
+        sponsorInfo = {
+          id: sponsor.id,
+          walletAddress: sponsor.wallet_address,
+          shortWalletAddress: `${sponsor.wallet_address.slice(0, 6)}...${sponsor.wallet_address.slice(-4)}`,
+          referralCode: sponsor.referral_code,
+        };
+      }
+    }
+
     return {
       referralCode,
       referralUrl,
+      sponsor: sponsorInfo,
       directReferralCount: directCount,
       indirectReferralCount: indirectCount,
       totalTeamCount: totalCount,

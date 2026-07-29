@@ -229,9 +229,17 @@ export default function ReferralDashboard() {
 
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-8 relative z-10">
           <div className="space-y-2">
-            <div className="inline-flex items-center space-x-2 rounded-full bg-accent-red/10 px-3.5 py-1 text-xs font-bold text-accent-red border border-accent-red/20 mb-1">
-              <Users size={14} />
-              <span>13-Level Forced Matrix Affiliate Center</span>
+            <div className="flex flex-wrap items-center gap-2 mb-1">
+              <div className="inline-flex items-center space-x-2 rounded-full bg-accent-red/10 px-3.5 py-1 text-xs font-bold text-accent-red border border-accent-red/20">
+                <Users size={14} />
+                <span>13-Level Forced Matrix Affiliate Center</span>
+              </div>
+              {summaryData?.sponsor && (
+                <div className="inline-flex items-center space-x-2 rounded-full bg-emerald-500/10 px-3.5 py-1 text-xs font-bold text-emerald-500 border border-emerald-500/20">
+                  <ShieldCheck size={14} />
+                  <span>Upline Sponsor: {summaryData.sponsor.shortWalletAddress || summaryData.sponsor.walletAddress}</span>
+                </div>
+              )}
             </div>
             <h1 className="text-3xl sm:text-4xl font-black text-prime tracking-tight">
               Referral <span className="text-accent-red">Dashboard</span> & Network Tree

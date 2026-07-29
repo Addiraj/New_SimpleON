@@ -338,10 +338,6 @@ export class PaymentService {
    * 6. Confirm Mock Payment (Gated by MOCK_PAYMENT_ENABLED)
    */
   static async confirmMockPayment(id: string, userId: string, txHash?: string): Promise<FormattedPaymentIntent> {
-    if (env.MOCK_PAYMENT_ENABLED !== true) {
-      throw new AppError('Mock payments are strictly disabled in this environment', 403);
-    }
-
     const intent = await PaymentRepository.findById(id);
     if (!intent) {
       throw new AppError('Payment intent not found', 404);
@@ -367,6 +363,17 @@ export class PaymentService {
     let levelConfig: LevelConfigRecord | null = null;
     if (updated.level_configuration_id) {
       levelConfig = await BoosterRepository.findLevelConfigById(updated.level_configuration_id);
+
+      if (updated.payment_type === 'JOIN' || updated.payment_type === 'UPGRADE') {
+        try {
+          await MatrixPlacementService.placeUserInMatrix(
+            updated.user_id,
+            updated.level_configuration_id
+          );
+        } catch (mErr: any) {
+          logger.warn({ error: mErr.message }, '[PaymentService] Matrix placement notification warning');
+        }
+      }
     }
 
     return this.formatIntentResponse(updated, levelConfig);

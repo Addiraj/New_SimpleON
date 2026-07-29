@@ -93,8 +93,6 @@ api.interceptors.response.use(
     return Promise.reject(new Error(message));
   }
 );
-<<<<<<< HEAD
-
 // Auth API endpoints helper
 export const authApi = {
   getNonce: async (walletAddress: string, chainId = 97) => {
@@ -404,5 +402,3 @@ export const notificationApi = {
     return res.data || res;
   },
 };
-=======
->>>>>>> fe05ef7be215c289d9c2e81e5d2ca052e3956485

@@ -7,17 +7,17 @@ export const createPaymentIntentSchema = z.object({
   idempotencyKey: z.string().optional(),
 });
 
-export const getPaymentByReferenceSchema = z.object({
+export const getPaymentByReferenceSchema = {
   params: z.object({
     reference: z.string().min(1, 'Payment reference is required'),
   }),
-});
+};
 
-export const getPaymentByIdSchema = z.object({
+export const getPaymentByIdSchema = {
   params: z.object({
     id: z.string().min(1, 'Payment ID is required'),
   }),
-});
+};
 
 export const verifyPaymentSchema = {
   body: z.object({
