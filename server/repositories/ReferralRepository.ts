@@ -338,6 +338,9 @@ export class ReferralRepository {
       qualifiedBuilders = userRels.filter((r) => r.status === 'ACTIVE').length;
     }
 
+    const qualifiedBuildersPercentage = totalCount > 0 ? ((qualifiedBuilders / totalCount) * 100).toFixed(1) : "0.0";
+    const totalNetworkVolume = totalCount * 250;
+
     return {
       referralCode,
       referralUrl,
@@ -345,6 +348,8 @@ export class ReferralRepository {
       indirectReferralCount: indirectCount,
       totalTeamCount: totalCount,
       qualifiedBuilders,
+      qualifiedBuildersPercentage,
+      totalNetworkVolume,
       recentlyJoinedMembers: recentMembers,
     };
   }
@@ -399,6 +404,11 @@ export class ReferralRepository {
               created_at: true,
               joined_at: true,
               sponsor_referrals: { select: { id: true } },
+              current_level: {
+                select: {
+                  level_config: { select: { name: true, price: true } }
+                }
+              }
             },
           },
         },
@@ -407,13 +417,15 @@ export class ReferralRepository {
       members = rels.map((r: any) => {
         const addr = r.referred.wallet_address;
         const shortAddr = `${addr.slice(0, 6)}...${addr.slice(-4)}`;
+        const tierName = r.referred.current_level?.level_config?.name?.toUpperCase() || 'STARTER';
         return {
           id: r.referred.id,
           walletAddress: addr,
           shortWalletAddress: shortAddr,
           referralCode: r.referred.referral_code,
           displayName: r.referred.display_name || null,
-          level: 'Starter',
+          level: tierName,
+          tier: tierName,
           status: r.referred.status || 'ACTIVE',
           joiningDate: (r.referred.joined_at || r.referred.created_at || new Date()).toISOString(),
           depth: 1,
@@ -510,6 +522,15 @@ export class ReferralRepository {
                 status: true,
                 created_at: true,
                 joined_at: true,
+                current_level: {
+                  select: {
+                    level_config: { select: { name: true } }
+                  }
+                },
+                matrix_positions: {
+                  take: 1,
+                  select: { placement_source: true }
+                }
               },
             },
           },
@@ -528,6 +549,9 @@ export class ReferralRepository {
           }
 
           const grandChildren = await buildSubtree(r.referred.id, currentDepth + 1);
+          
+          const tierName = r.referred.current_level?.level_config?.name?.toUpperCase() || 'STARTER';
+          const placement = r.referred.matrix_positions?.[0]?.placement_source === 'SPILLOVER' ? 'SPILLOVER' : (r.referred.status || 'ACTIVE');
 
           childrenList.push({
             id: r.referred.id,
@@ -535,8 +559,9 @@ export class ReferralRepository {
             shortWalletAddress: `${childAddr.slice(0, 6)}...${childAddr.slice(-4)}`,
             referralCode: r.referred.referral_code,
             displayName: r.referred.display_name || null,
-            level: currentDepth === 1 ? 'Leader' : currentDepth === 2 ? 'Builder' : 'Starter',
-            status: r.referred.status || 'ACTIVE',
+            level: tierName,
+            tier: tierName,
+            status: placement,
             joiningDate: (r.referred.joined_at || r.referred.created_at || new Date()).toISOString(),
             depth: currentDepth,
             directsCount: grandChildren.length,

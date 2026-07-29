@@ -25,131 +25,23 @@ interface ReferralMember {
   children?: ReferralMember[];
 }
 
-// Tree Mock Data (Root + Level 1 Directs + Level 2/3 Indirects)
-const referralTreeData: ReferralMember = {
-  id: 'root-user',
-  address: '0x71C7656EC7ab88b098defB751B7401B5f6d8976F',
-  level: 0,
-  tier: 'VIP',
-  tierAmount: 1000,
-  status: 'ACTIVE',
-  joinedDate: '2026-01-15',
-  directsCount: 14,
-  volumeGenerated: 142500,
-  commissionEarned: 2450,
-  matrixPosition: 'Root Node',
-  children: [
-    {
-      id: 'member-1',
-      address: '0x8f3C91029381A063b4f8a2910d',
-      level: 1,
-      tier: 'LEADER',
-      tierAmount: 500,
-      status: 'ACTIVE',
-      joinedDate: '2026-02-01',
-      directsCount: 5,
-      volumeGenerated: 24500,
-      commissionEarned: 490,
-      matrixPosition: 'L1 - Position 1',
-      children: [
-        {
-          id: 'member-1-1',
-          address: '0x3a2b1c0d9e8f7a6b5c4d3e2f',
-          level: 2,
-          tier: 'BUILDER',
-          tierAmount: 250,
-          status: 'ACTIVE',
-          joinedDate: '2026-02-10',
-          directsCount: 3,
-          volumeGenerated: 8500,
-          commissionEarned: 120,
-          matrixPosition: 'L2 - Node 1.1'
-        },
-        {
-          id: 'member-1-2',
-          address: '0x9e8f7a6b5c4d3e2f1a098765',
-          level: 2,
-          tier: 'STARTER',
-          tierAmount: 100,
-          status: 'SPILLOVER',
-          joinedDate: '2026-02-14',
-          directsCount: 2,
-          volumeGenerated: 4200,
-          commissionEarned: 65,
-          matrixPosition: 'L2 - Node 1.2'
-        }
-      ]
-    },
-    {
-      id: 'member-2',
-      address: '0x4e5d6c7b8a901234567890ab',
-      level: 1,
-      tier: 'BUILDER',
-      tierAmount: 250,
-      status: 'ACTIVE',
-      joinedDate: '2026-02-05',
-      directsCount: 4,
-      volumeGenerated: 18200,
-      commissionEarned: 364,
-      matrixPosition: 'L1 - Position 2',
-      children: [
-        {
-          id: 'member-2-1',
-          address: '0x11223344556677889900aabb',
-          level: 2,
-          tier: 'STARTER',
-          tierAmount: 100,
-          status: 'ACTIVE',
-          joinedDate: '2026-02-18',
-          directsCount: 1,
-          volumeGenerated: 2100,
-          commissionEarned: 40,
-          matrixPosition: 'L2 - Node 2.1'
-        }
-      ]
-    },
-    {
-      id: 'member-3',
-      address: '0x1234567890abcdef12345678',
-      level: 1,
-      tier: 'STARTER',
-      tierAmount: 100,
-      status: 'SPILLOVER',
-      joinedDate: '2026-02-12',
-      directsCount: 2,
-      volumeGenerated: 6400,
-      commissionEarned: 128,
-      matrixPosition: 'L1 - Position 3',
-      children: [
-        {
-          id: 'member-3-1',
-          address: '0xbbccddeeff00112233445566',
-          level: 2,
-          tier: 'STARTER',
-          tierAmount: 100,
-          status: 'INACTIVE',
-          joinedDate: '2026-03-01',
-          directsCount: 0,
-          volumeGenerated: 0,
-          commissionEarned: 0,
-          matrixPosition: 'L2 - Node 3.1'
-        }
-      ]
-    }
-  ]
-};
+// Default empty lists
+const defaultMembersList: ReferralMember[] = [];
 
-// Flattened member list for Table view
-const allMembersList: ReferralMember[] = [
-  { id: 'm1', address: '0x8f3C91029381A063b4f8a2910d', level: 1, tier: 'LEADER', tierAmount: 500, status: 'ACTIVE', joinedDate: '2026-02-01', directsCount: 5, volumeGenerated: 24500, commissionEarned: 490, matrixPosition: 'L1 - Pos 1' },
-  { id: 'm2', address: '0x4e5d6c7b8a901234567890ab', level: 1, tier: 'BUILDER', tierAmount: 250, status: 'ACTIVE', joinedDate: '2026-02-05', directsCount: 4, volumeGenerated: 18200, commissionEarned: 364, matrixPosition: 'L1 - Pos 2' },
-  { id: 'm3', address: '0x1234567890abcdef12345678', level: 1, tier: 'STARTER', tierAmount: 100, status: 'SPILLOVER', joinedDate: '2026-02-12', directsCount: 2, volumeGenerated: 6400, commissionEarned: 128, matrixPosition: 'L1 - Pos 3' },
-  { id: 'm4', address: '0x3a2b1c0d9e8f7a6b5c4d3e2f', level: 2, tier: 'BUILDER', tierAmount: 250, status: 'ACTIVE', joinedDate: '2026-02-10', directsCount: 3, volumeGenerated: 8500, commissionEarned: 120, matrixPosition: 'L2 - Pos 1.1' },
-  { id: 'm5', address: '0x9e8f7a6b5c4d3e2f1a098765', level: 2, tier: 'STARTER', tierAmount: 100, status: 'SPILLOVER', joinedDate: '2026-02-14', directsCount: 2, volumeGenerated: 4200, commissionEarned: 65, matrixPosition: 'L2 - Pos 1.2' },
-  { id: 'm6', address: '0x11223344556677889900aabb', level: 2, tier: 'STARTER', tierAmount: 100, status: 'ACTIVE', joinedDate: '2026-02-18', directsCount: 1, volumeGenerated: 2100, commissionEarned: 40, matrixPosition: 'L2 - Pos 2.1' },
-  { id: 'm7', address: '0xbbccddeeff00112233445566', level: 2, tier: 'STARTER', tierAmount: 100, status: 'INACTIVE', joinedDate: '2026-03-01', directsCount: 0, volumeGenerated: 0, commissionEarned: 0, matrixPosition: 'L2 - Pos 3.1' },
-  { id: 'm8', address: '0x778899aabbccddeeff001122', level: 3, tier: 'VIP', tierAmount: 1000, status: 'ACTIVE', joinedDate: '2026-03-05', directsCount: 8, volumeGenerated: 45000, commissionEarned: 750, matrixPosition: 'L3 - Pos 1.1.1' },
-];
+const defaultReferralTreeData: ReferralMember = {
+  id: 'root',
+  address: 'Connect Wallet',
+  level: 0,
+  tier: 'STARTER',
+  tierAmount: 0,
+  status: 'INACTIVE',
+  joinedDate: '-',
+  directsCount: 0,
+  volumeGenerated: 0,
+  commissionEarned: 0,
+  matrixPosition: 'Root',
+  children: []
+};
 
 export default function ReferralDashboard() {
   const { address, isAuthenticated, openWalletModal } = useWeb3Store();
@@ -166,8 +58,8 @@ export default function ReferralDashboard() {
 
   // Live Referral Data State
   const [summaryData, setSummaryData] = useState<any>(null);
-  const [treeData, setTreeData] = useState<any>(referralTreeData);
-  const [membersList, setMembersList] = useState<ReferralMember[]>(allMembersList);
+  const [treeData, setTreeData] = useState<any>(defaultReferralTreeData);
+  const [membersList, setMembersList] = useState<ReferralMember[]>(defaultMembersList);
   const [loading, setLoading] = useState<boolean>(false);
   
   // Assign Sponsor Form State
@@ -192,12 +84,14 @@ export default function ReferralDashboard() {
 
         if (!isMounted) return;
 
-        if (sumRes.status === 'fulfilled' && sumRes.value?.data) {
-          setSummaryData(sumRes.value.data);
+        if (sumRes.status === 'fulfilled' && sumRes.value) {
+          const data = sumRes.value.data || sumRes.value;
+          setSummaryData(data);
         }
 
-        if (directRes.status === 'fulfilled' && directRes.value?.data?.members) {
-          const apiMembers: ReferralMember[] = directRes.value.data.members.map((m: any, idx: number) => ({
+        if (directRes.status === 'fulfilled') {
+          const apiMembersList = directRes.value?.data?.members || directRes.value?.members || [];
+          const apiMembers: ReferralMember[] = apiMembersList.map((m: any, idx: number) => ({
             id: m.id || `m-${idx}`,
             address: m.walletAddress,
             level: m.depth || 1,
@@ -215,9 +109,10 @@ export default function ReferralDashboard() {
           }
         }
 
-        if (treeRes.status === 'fulfilled' && treeRes.value?.data?.root) {
-          const apiTree = treeRes.value.data.root;
-          const formatTreeNode = (node: any): ReferralMember => ({
+        if (treeRes.status === 'fulfilled') {
+          const apiTree = treeRes.value?.data?.root || treeRes.value?.root;
+          if (apiTree) {
+            const formatTreeNode = (node: any): ReferralMember => ({
             id: node.id,
             address: node.walletAddress,
             level: node.depth || 0,
@@ -232,6 +127,7 @@ export default function ReferralDashboard() {
             children: node.children ? node.children.map(formatTreeNode) : [],
           });
           setTreeData(formatTreeNode(apiTree));
+          }
         }
       } catch (err) {
         console.warn('Error loading referral API:', err);
@@ -475,11 +371,11 @@ export default function ReferralDashboard() {
             <Users size={18} className="text-accent-red" />
           </div>
           <div className="text-3xl font-black font-mono text-prime">
-            {summaryData ? `${summaryData.directReferralCount} Directs` : '14 Directs'}
+            {summaryData ? `${summaryData.directReferralCount} Directs` : '0 Directs'}
           </div>
           <p className="text-[11px] text-emerald-500 font-bold flex items-center space-x-1">
             <CheckCircle2 size={12} />
-            <span>{summaryData ? `${summaryData.qualifiedBuilders} Active / Qualified` : '9 Active / 5 Pending Upgrade'}</span>
+            <span>{summaryData ? `${summaryData.qualifiedBuilders || 0} Active / Qualified` : '0 Active / 0 Pending Upgrade'}</span>
           </p>
         </div>
 
@@ -490,7 +386,7 @@ export default function ReferralDashboard() {
             <Layers size={18} className="text-accent-blue" />
           </div>
           <div className="text-3xl font-black font-mono text-accent-blue">
-            {summaryData ? `${summaryData.indirectReferralCount} Members` : '86 Team Members'}
+            {summaryData ? `${summaryData.indirectReferralCount} Members` : '0 Team Members'}
           </div>
           <p className="text-[11px] text-sub">
             {summaryData ? `Total Team Depth: ${summaryData.totalTeamCount}` : 'Spanning 13 Matrix Team Levels'}
@@ -504,7 +400,7 @@ export default function ReferralDashboard() {
             <DollarSign size={18} className="text-emerald-500" />
           </div>
           <div className="text-3xl font-black font-mono text-emerald-500">
-            {summaryData ? `${summaryData.totalTeamCount} Members` : '$2,450.00 USDT'}
+            {summaryData ? `${summaryData.totalTeamCount} Members` : '$0.00 USDT'}
           </div>
           <p className="text-[11px] text-emerald-500 font-bold flex items-center space-x-1">
             <TrendingUp size={12} />
@@ -519,7 +415,7 @@ export default function ReferralDashboard() {
             <Trophy size={18} className="text-amber-500" />
           </div>
           <div className="text-3xl font-black font-mono text-prime">
-            {summaryData ? `${summaryData.qualifiedBuilders} Builders` : '82.5%'}
+            {summaryData ? `${summaryData.qualifiedBuilders} Builders` : '0%'}
           </div>
           <p className="text-[11px] text-sub">Qualifies for 100% Spillover Pool</p>
         </div>
@@ -554,11 +450,11 @@ export default function ReferralDashboard() {
             {/* Level 0: Root Node (User) */}
             <div className="flex flex-col items-center">
               <button
-                onClick={() => setSelectedNodeDetails(referralTreeData)}
+                onClick={() => setSelectedNodeDetails(treeData)}
                 className="px-6 py-3.5 rounded-2xl bg-accent-red text-white shadow-xl shadow-accent-red/20 font-mono text-xs font-extrabold flex items-center space-x-2 border-2 border-white/20 hover:scale-105 transition-all"
               >
                 <Zap size={16} />
-                <span>ROOT: {userAddress.slice(0, 6)}...{userAddress.slice(-4)} (VIP)</span>
+                <span>{treeData.address !== 'Connect Wallet' ? `ROOT: ${userAddress.slice(0, 6)}...${userAddress.slice(-4)} (${treeData.tier})` : 'Connect Wallet to View'}</span>
               </button>
               <div className="w-0.5 h-8 bg-accent-red/40" />
             </div>
@@ -568,7 +464,7 @@ export default function ReferralDashboard() {
               {/* Horizontal Connecting Line */}
               <div className="absolute top-0 left-1/6 right-1/6 h-0.5 bg-accent-red/30" />
 
-              {referralTreeData.children?.map((child) => (
+              {treeData.children?.map((child: ReferralMember) => (
                 <div key={child.id} className="flex flex-col items-center relative space-y-6">
                   {/* Vertical Line from top horizontal connector */}
                   <div className="w-0.5 h-6 bg-accent-red/30 -mt-6" />

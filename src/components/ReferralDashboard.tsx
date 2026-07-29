@@ -9,6 +9,40 @@ import {
 import { useWeb3Store } from '../store/useWeb3Store';
 import { referralApi } from '../services/api';
 
+export interface ReferralMember {
+  id: string;
+  address: string;
+  level: number;
+  tier: string;
+  tierAmount: number;
+  status: string;
+  joinedDate: string;
+  directsCount: number;
+  volumeGenerated: number;
+  commissionEarned: number;
+  matrixPosition: string;
+  children?: ReferralMember[];
+}
+
+const defaultMembersList: ReferralMember[] = [];
+
+const defaultReferralTreeData: ReferralMember = {
+  id: 'root',
+  address: 'Connect Wallet',
+  level: 0,
+  tier: 'NONE',
+  tierAmount: 0,
+  status: 'INACTIVE',
+  joinedDate: '-',
+  directsCount: 0,
+  volumeGenerated: 0,
+  commissionEarned: 0,
+  matrixPosition: 'Root',
+  children: []
+};
+
+export default function ReferralDashboard() {
+  const { isAuthenticated, address } = useWeb3Store();
   const [copiedLink, setCopiedLink] = useState(false);
   const [copiedCode, setCopiedCode] = useState(false);
   const [showQrModal, setShowQrModal] = useState(false);
@@ -21,8 +55,8 @@ import { referralApi } from '../services/api';
 
   // Live Referral Data State
   const [summaryData, setSummaryData] = useState<any>(null);
-  const [treeData, setTreeData] = useState<any>(referralTreeData);
-  const [membersList, setMembersList] = useState<ReferralMember[]>(allMembersList);
+  const [treeData, setTreeData] = useState<ReferralMember>(defaultReferralTreeData);
+  const [membersList, setMembersList] = useState<ReferralMember[]>(defaultMembersList);
   const [loading, setLoading] = useState<boolean>(false);
   
   // Assign Sponsor Form State
@@ -47,17 +81,19 @@ import { referralApi } from '../services/api';
 
         if (!isMounted) return;
 
-        if (sumRes.status === 'fulfilled' && sumRes.value?.data) {
-          setSummaryData(sumRes.value.data);
+        if (sumRes.status === 'fulfilled' && sumRes.value) {
+          const data = sumRes.value.data || sumRes.value;
+          setSummaryData(data);
         }
 
-        if (directRes.status === 'fulfilled' && directRes.value?.data?.members) {
-          const apiMembers: ReferralMember[] = directRes.value.data.members.map((m: any, idx: number) => ({
+        if (directRes.status === 'fulfilled') {
+          const apiMembersList = directRes.value?.data?.members || directRes.value?.members || [];
+          const apiMembers: ReferralMember[] = apiMembersList.map((m: any, idx: number) => ({
             id: m.id || `m-${idx}`,
             address: m.walletAddress,
             level: m.depth || 1,
-            tier: 'STARTER',
-            tierAmount: 100,
+            tier: m.tier || 'STARTER',
+            tierAmount: m.tier === 'VIP' ? 1000 : m.tier === 'LEADER' ? 500 : m.tier === 'BUILDER' ? 250 : 100,
             status: m.status === 'ACTIVE' ? 'ACTIVE' : 'INACTIVE',
             joinedDate: m.joiningDate ? m.joiningDate.substring(0, 10) : '2026-02-01',
             directsCount: m.directsCount || 0,
@@ -70,13 +106,14 @@ import { referralApi } from '../services/api';
           }
         }
 
-        if (treeRes.status === 'fulfilled' && treeRes.value?.data?.root) {
-          const apiTree = treeRes.value.data.root;
-          const formatTreeNode = (node: any): ReferralMember => ({
+        if (treeRes.status === 'fulfilled') {
+          const apiTree = treeRes.value?.data?.root || treeRes.value?.root;
+          if (apiTree) {
+            const formatTreeNode = (node: any): ReferralMember => ({
             id: node.id,
             address: node.walletAddress,
             level: node.depth || 0,
-            tier: node.level === 'VIP' ? 'VIP' : node.level === 'Leader' ? 'LEADER' : node.level === 'Builder' ? 'BUILDER' : 'STARTER',
+            tier: node.tier || (node.level === 'VIP' ? 'VIP' : node.level === 'Leader' ? 'LEADER' : node.level === 'Builder' ? 'BUILDER' : 'STARTER'),
             tierAmount: node.level === 'VIP' ? 1000 : node.level === 'Leader' ? 500 : node.level === 'Builder' ? 250 : 100,
             status: node.status === 'ACTIVE' ? 'ACTIVE' : 'INACTIVE',
             joinedDate: node.joiningDate ? node.joiningDate.substring(0, 10) : '2026-01-15',
@@ -87,6 +124,7 @@ import { referralApi } from '../services/api';
             children: node.children ? node.children.map(formatTreeNode) : [],
           });
           setTreeData(formatTreeNode(apiTree));
+          }
         }
       } catch (err) {
         console.warn('Error loading referral API:', err);
@@ -129,7 +167,6 @@ import { referralApi } from '../services/api';
       const res = await referralApi.assignSponsor(assignInput.trim());
       setAssignMsg({ type: 'success', text: res?.message || 'Sponsor assigned successfully!' });
       setAssignInput('');
-      // Refresh summary
       const sumRes = await referralApi.getSummary();
       if (sumRes?.data) setSummaryData(sumRes.data);
     } catch (err: any) {
@@ -139,29 +176,12 @@ import { referralApi } from '../services/api';
     }
   };
 
-  // Filtered members list
   const filteredMembers = membersList.filter(m => {
     const matchesSearch = m.address.toLowerCase().includes(searchQuery.toLowerCase()) || m.matrixPosition.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesLevel = levelFilter === 'ALL' ? true : levelFilter === 'DIRECT' ? m.level === 1 : m.level > 1;
     const matchesTier = tierFilter === 'ALL' ? true : m.tier === tierFilter;
     return matchesSearch && matchesLevel && matchesTier;
   });
-
-  // Social Share Handlers
-  const handleShareTwitter = () => {
-    const text = encodeURIComponent(`${customInviteMsg}\n\nJoin here: ${referralUrl}`);
-    window.open(`https://twitter.com/intent/tweet?text=${text}`, '_blank');
-  };
-
-  const handleShareTelegram = () => {
-    const text = encodeURIComponent(customInviteMsg);
-    window.open(`https://t.me/share/url?url=${encodeURIComponent(referralUrl)}&text=${text}`, '_blank');
-  };
-
-  const handleShareWhatsApp = () => {
-    const text = encodeURIComponent(`${customInviteMsg}\n${referralUrl}`);
-    window.open(`https://api.whatsapp.com/send?text=${text}`, '_blank');
-  };
 
   const handleNativeShare = async () => {
     if (navigator.share) {
@@ -210,6 +230,107 @@ import { referralApi } from '../services/api';
             </button>
 
             <button
+              onClick={() => setShowInviteModal(true)}
+              className="px-6 py-3.5 rounded-2xl bg-accent-red hover:bg-accent-red/90 text-white shadow-lg shadow-accent-red/20 transition-all flex items-center space-x-2 text-xs font-bold"
+            >
+              <UserPlus size={18} />
+              <span>Invite Friends</span>
+            </button>
+
+            <button
+              onClick={() => setShowQrModal(true)}
+              className="p-3.5 rounded-2xl bg-surface-elevated hover:bg-surface border border-border-theme text-prime transition-colors flex items-center space-x-2 text-xs font-bold"
+            >
+              <QrCode size={18} />
+              <span className="hidden sm:inline">QR Code</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Your Unique Referral Assets */}
+      <div className="p-6 rounded-3xl bg-surface border border-border-theme shadow-xl relative overflow-hidden">
+        <div className="flex justify-between items-center mb-6">
+          <div className="flex items-center space-x-2">
+            <Sparkles size={20} className="text-accent-red" />
+            <h2 className="text-lg font-black text-prime">Your Unique Referral Assets</h2>
+          </div>
+          <div className="flex items-center space-x-2 bg-surface-elevated px-3 py-1.5 rounded-xl border border-border-theme">
+            <span className="text-xs font-mono text-sub">Invite Code:</span>
+            <span className="text-xs font-bold text-accent-red">{referralCode}</span>
+            <button onClick={copyRefCode} className="text-sub hover:text-prime transition-colors ml-1">
+              {copiedCode ? <Check size={14} className="text-emerald-500" /> : <Copy size={14} />}
+            </button>
+          </div>
+        </div>
+        <p className="text-xs text-sub mb-4">Share your invite link to automatically register direct team partners on BNB Smart Chain</p>
+
+        <div className="flex flex-col md:flex-row gap-6">
+          <div className="flex-1 space-y-2">
+            <label className="text-[10px] font-mono font-bold text-sub uppercase">Personal Referral URL</label>
+            <div className="flex">
+              <div className="flex-1 bg-surface-elevated border border-border-theme border-r-0 rounded-l-2xl px-4 py-3 text-xs font-mono text-prime flex items-center overflow-x-auto whitespace-nowrap">
+                {referralUrl}
+              </div>
+              <button
+                onClick={copyUrl}
+                className="px-6 rounded-r-2xl bg-accent-red text-white text-xs font-bold flex items-center space-x-2 hover:bg-accent-red/90 transition-colors"
+              >
+                {copiedLink ? <Check size={16} /> : <Copy size={16} />}
+                <span>{copiedLink ? 'Copied' : 'Copy Link'}</span>
+              </button>
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-[10px] font-mono font-bold text-sub uppercase">Quick Social Share</label>
+            <div className="flex space-x-2">
+              <button
+                onClick={() => window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(customInviteMsg)}&url=${encodeURIComponent(referralUrl)}`, '_blank')}
+                className="px-4 py-3 rounded-2xl bg-[#1DA1F2]/10 text-[#1DA1F2] hover:bg-[#1DA1F2]/20 border border-[#1DA1F2]/20 transition-colors flex items-center space-x-2 text-xs font-bold"
+              >
+                <Twitter size={16} />
+                <span>X / Twitter</span>
+              </button>
+              <button
+                onClick={() => window.open(`https://t.me/share/url?url=${encodeURIComponent(referralUrl)}&text=${encodeURIComponent(customInviteMsg)}`, '_blank')}
+                className="px-4 py-3 rounded-2xl bg-[#0088cc]/10 text-[#0088cc] hover:bg-[#0088cc]/20 border border-[#0088cc]/20 transition-colors flex items-center space-x-2 text-xs font-bold"
+              >
+                <Send size={16} />
+                <span>Telegram</span>
+              </button>
+              <button
+                onClick={() => window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(customInviteMsg + '\n' + referralUrl)}`, '_blank')}
+                className="px-4 py-3 rounded-2xl bg-[#25D366]/10 text-[#25D366] hover:bg-[#25D366]/20 border border-[#25D366]/20 transition-colors flex items-center space-x-2 text-xs font-bold"
+              >
+                <MessageSquare size={16} />
+                <span>WhatsApp</span>
+              </button>
+              <button
+                onClick={handleNativeShare}
+                className="p-3 rounded-2xl bg-surface-elevated hover:bg-surface border border-border-theme text-sub hover:text-prime transition-colors"
+              >
+                <Share2 size={16} />
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Stats Cards Row */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {/* Stat 1: Direct Referrals */}
+        <div className="p-6 rounded-3xl bg-surface border border-border-theme shadow-md space-y-2 relative overflow-hidden">
+          <div className="flex justify-between items-center text-sub">
+            <span className="text-[11px] font-mono font-bold uppercase">Direct Referrals</span>
+            <Users size={18} className="text-accent-red" />
+          </div>
+          <div className="text-3xl font-black font-mono text-prime">
+            {summaryData ? `${summaryData.directReferralCount} Directs` : '0 Directs'}
+          </div>
+          <p className="text-[11px] text-emerald-500 font-bold flex items-center space-x-1">
+            <CheckCircle2 size={12} />
+            <span>{summaryData?.activeDirects || 0} Active / {summaryData?.pendingDirects || 0} Pending Upgrade</span>
           </p>
         </div>
 
@@ -220,7 +341,7 @@ import { referralApi } from '../services/api';
             <Layers size={18} className="text-accent-blue" />
           </div>
           <div className="text-3xl font-black font-mono text-accent-blue">
-            {summaryData ? `${summaryData.indirectReferralCount} Members` : '86 Team Members'}
+            {summaryData ? `${summaryData.indirectReferralCount} Members` : '0 Team Members'}
           </div>
           <p className="text-[11px] text-sub">
             {summaryData ? `Total Team Depth: ${summaryData.totalTeamCount}` : 'Spanning 13 Matrix Team Levels'}
@@ -234,7 +355,7 @@ import { referralApi } from '../services/api';
             <DollarSign size={18} className="text-emerald-500" />
           </div>
           <div className="text-3xl font-black font-mono text-emerald-500">
-            {summaryData ? `${summaryData.totalTeamCount} Members` : '$2,450.00 USDT'}
+            {summaryData ? `$${summaryData.totalNetworkVolume?.toLocaleString() || '0.00'} USDT` : '$0.00 USDT'}
           </div>
           <p className="text-[11px] text-emerald-500 font-bold flex items-center space-x-1">
             <TrendingUp size={12} />
@@ -249,14 +370,13 @@ import { referralApi } from '../services/api';
             <Trophy size={18} className="text-amber-500" />
           </div>
           <div className="text-3xl font-black font-mono text-prime">
-            {summaryData ? `${summaryData.qualifiedBuilders} Builders` : '82.5%'}
+            {summaryData ? `${summaryData.qualifiedBuildersPercentage || '0'}%` : '0%'}
           </div>
           <p className="text-[11px] text-sub">Qualifies for 100% Spillover Pool</p>
         </div>
-
       </div>
 
-      {/* 3. BEAUTIFUL INTERACTIVE TREE VISUALIZATION SECTION */}
+      {/* Interactive Network Tree Visualizer Section */}
       <div className="p-6 sm:p-8 rounded-3xl bg-surface border border-border-theme shadow-xl space-y-6">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-border-theme">
           <div>
@@ -281,14 +401,14 @@ import { referralApi } from '../services/api';
         <div className="p-6 rounded-2xl bg-surface-elevated/80 border border-border-theme overflow-x-auto">
           <div className="min-w-[700px] flex flex-col items-center space-y-8 py-4">
             
-            {/* Level 0: Root Node (User) */}
+            {/* Level 0: Root Node */}
             <div className="flex flex-col items-center">
               <button
-                onClick={() => setSelectedNodeDetails(referralTreeData)}
+                onClick={() => setSelectedNodeDetails(treeData)}
                 className="px-6 py-3.5 rounded-2xl bg-accent-red text-white shadow-xl shadow-accent-red/20 font-mono text-xs font-extrabold flex items-center space-x-2 border-2 border-white/20 hover:scale-105 transition-all"
               >
                 <Zap size={16} />
-                <span>ROOT: {userAddress.slice(0, 6)}...{userAddress.slice(-4)} (VIP)</span>
+                <span>{treeData.address !== 'Connect Wallet' ? `ROOT: ${treeData.address.slice(0, 6)}...${treeData.address.slice(-4)} (${treeData.tier})` : 'Connect Wallet to View'}</span>
               </button>
               <div className="w-0.5 h-8 bg-accent-red/40" />
             </div>
@@ -298,7 +418,7 @@ import { referralApi } from '../services/api';
               {/* Horizontal Connecting Line */}
               <div className="absolute top-0 left-1/6 right-1/6 h-0.5 bg-accent-red/30" />
 
-              {referralTreeData.children?.map((child) => (
+              {treeData.children?.map((child: ReferralMember) => (
                 <div key={child.id} className="flex flex-col items-center relative space-y-6">
                   {/* Vertical Line from top horizontal connector */}
                   <div className="w-0.5 h-6 bg-accent-red/30 -mt-6" />
@@ -311,7 +431,7 @@ import { referralApi } from '../services/api';
                         ? 'border-emerald-500 bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500/20'
                         : child.status === 'SPILLOVER'
                         ? 'border-amber-500 bg-amber-500/10 text-amber-500 hover:bg-amber-500/20'
-                        : 'border-border-theme bg-surface text-sub'
+                        : 'border-border-theme bg-surface text-sub hover:bg-surface-elevated'
                     }`}
                   >
                     <div className="flex items-center space-x-1.5">
@@ -326,7 +446,7 @@ import { referralApi } from '../services/api';
                     <div className="flex flex-col items-center space-y-4">
                       <div className="w-0.5 h-6 bg-border-theme" />
                       <div className="flex space-x-3">
-                        {child.children.map((subChild) => (
+                        {child.children.map((subChild: ReferralMember) => (
                           <button
                             key={subChild.id}
                             onClick={() => setSelectedNodeDetails(subChild)}
@@ -400,7 +520,7 @@ import { referralApi } from '../services/api';
         </AnimatePresence>
       </div>
 
-      {/* 4. SEARCH & FILTERED REFERRAL TEAM LIST */}
+      {/* Referral Team Member Directory */}
       <div className="p-6 sm:p-8 rounded-3xl bg-surface border border-border-theme shadow-xl space-y-6">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-border-theme">
           <div>
@@ -411,20 +531,18 @@ import { referralApi } from '../services/api';
             <p className="text-xs text-sub">Search and filter direct sponsors, indirect matrix members, and spillovers</p>
           </div>
 
-          {/* Search Bar & Filters */}
           <div className="flex flex-wrap items-center gap-3">
             <div className="relative">
               <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-sub pointer-events-none" />
               <input
                 type="text"
-                placeholder="Search by address or node position..."
+                placeholder="Search by address or node..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-9 pr-3 py-2 rounded-xl bg-surface-elevated border border-border-theme text-xs text-prime placeholder-sub focus:outline-none focus:border-accent-red"
               />
             </div>
 
-            {/* Level Filter */}
             <select
               value={levelFilter}
               onChange={(e) => setLevelFilter(e.target.value as any)}
@@ -435,7 +553,6 @@ import { referralApi } from '../services/api';
               <option value="INDIRECT">Indirect (L2-L13)</option>
             </select>
 
-            {/* Tier Filter */}
             <select
               value={tierFilter}
               onChange={(e) => setTierFilter(e.target.value as any)}
@@ -450,18 +567,17 @@ import { referralApi } from '../services/api';
           </div>
         </div>
 
-        {/* Directory Table */}
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="border-b border-border-theme text-[10px] font-mono text-sub uppercase tracking-wider">
-                <th className="py-3 px-4">Member Address</th>
+                <th className="py-3 px-4 whitespace-nowrap">Member Address</th>
                 <th className="py-3 px-4">Level</th>
                 <th className="py-3 px-4">Tier Plan</th>
                 <th className="py-3 px-4">Status</th>
                 <th className="py-3 px-4">Directs</th>
-                <th className="py-3 px-4">Team Volume</th>
-                <th className="py-3 px-4">Commission Earned</th>
+                <th className="py-3 px-4 whitespace-nowrap">Team Volume</th>
+                <th className="py-3 px-4 whitespace-nowrap">Commission Earned</th>
                 <th className="py-3 px-4 text-right">Action</th>
               </tr>
             </thead>
@@ -478,7 +594,7 @@ import { referralApi } from '../services/api';
                       {m.level === 1 ? 'L1 Direct' : `L${m.level} Indirect`}
                     </span>
                   </td>
-                  <td className="py-3.5 px-4 font-bold text-prime">
+                  <td className="py-3.5 px-4 font-bold text-prime whitespace-nowrap">
                     {m.tier} (${m.tierAmount})
                   </td>
                   <td className="py-3.5 px-4">
@@ -510,7 +626,7 @@ import { referralApi } from '../services/api';
         </div>
       </div>
 
-      {/* MODAL 1: QR CODE MODAL */}
+      {/* QR Code Modal */}
       <AnimatePresence>
         {showQrModal && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-md">
@@ -526,20 +642,16 @@ import { referralApi } from '../services/api';
                   ✕
                 </button>
               </div>
-
-              {/* Vector SVG QR Code Graphic */}
               <div className="p-6 bg-white rounded-2xl mx-auto w-48 h-48 flex items-center justify-center shadow-inner border border-gray-200">
                 <svg viewBox="0 0 100 100" className="w-full h-full fill-slate-900">
                   <path d="M10 10h30v30H10zM50 10h10v10H50zM70 10h20v20H70zM10 50h10v10H10zM30 50h20v10H30zM60 50h30v30H60zM10 70h20v20H10zM40 70h10v20H40zM20 20h10v10H20zM80 20h10v10H80zM70 70h10v10H70z" />
                   <rect x="42" y="42" width="16" height="16" fill="#DC2626" rx="4" />
                 </svg>
               </div>
-
               <div className="space-y-1">
                 <div className="text-xs font-mono font-bold text-prime">{referralCode}</div>
                 <p className="text-[11px] text-sub">Scan with any mobile Web3 wallet camera to register instantly.</p>
               </div>
-
               <button
                 onClick={copyUrl}
                 className="w-full py-3 rounded-2xl bg-accent-red text-white text-xs font-black shadow-md hover:bg-accent-red/90 transition-all"
@@ -551,7 +663,7 @@ import { referralApi } from '../services/api';
         )}
       </AnimatePresence>
 
-      {/* MODAL 2: INVITE FRIENDS MODAL */}
+      {/* Invite Friends Modal */}
       <AnimatePresence>
         {showInviteModal && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-md">
@@ -564,13 +676,12 @@ import { referralApi } from '../services/api';
               <div className="flex justify-between items-center pb-2 border-b border-border-theme">
                 <div className="flex items-center space-x-2">
                   <UserPlus size={18} className="text-accent-red" />
-                  <span className="text-sm font-extrabold text-prime">Customize Invitation Message</span>
+                  <span className="text-sm font-extrabold text-prime">Customize Invitation</span>
                 </div>
                 <button onClick={() => setShowInviteModal(false)} className="p-1 rounded-xl hover:bg-surface-elevated">
                   ✕
                 </button>
               </div>
-
               <div className="space-y-2">
                 <label className="text-xs font-mono font-bold text-sub uppercase">Invitation Text</label>
                 <textarea
@@ -580,7 +691,6 @@ import { referralApi } from '../services/api';
                   className="w-full p-3.5 rounded-2xl bg-surface-elevated border border-border-theme text-xs text-prime focus:outline-none focus:border-accent-red"
                 />
               </div>
-
               <div className="space-y-2 pt-2">
                 <button
                   onClick={handleNativeShare}
@@ -595,8 +705,7 @@ import { referralApi } from '../services/api';
         )}
       </AnimatePresence>
 
-<<<<<<< HEAD
-      {/* MODAL 3: ASSIGN SPONSOR MODAL */}
+      {/* Assign Sponsor Modal */}
       <AnimatePresence>
         {showAssignModal && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-md">
@@ -627,7 +736,7 @@ import { referralApi } from '../services/api';
 
               <form onSubmit={handleAssignSponsorSubmit} className="space-y-4">
                 <div className="space-y-2">
-                  <label className="text-xs font-mono font-bold text-sub uppercase">Sponsor Referral Code or Wallet Address</label>
+                  <label className="text-xs font-mono font-bold text-sub uppercase">Sponsor Code or Wallet</label>
                   <input
                     type="text"
                     placeholder="e.g. SO-A1B2C3D4 or 0x123..."
@@ -635,9 +744,8 @@ import { referralApi } from '../services/api';
                     onChange={(e) => setAssignInput(e.target.value)}
                     className="w-full p-3.5 rounded-2xl bg-surface-elevated border border-border-theme text-xs font-mono text-prime focus:outline-none focus:border-accent-blue"
                   />
-                  <p className="text-[11px] text-sub">Note: Sponsors cannot be changed once assigned or after account activation.</p>
+                  <p className="text-[11px] text-sub">Note: Sponsors cannot be changed once assigned.</p>
                 </div>
-
                 <button
                   type="submit"
                   disabled={assignLoading || !assignInput.trim()}
@@ -651,9 +759,6 @@ import { referralApi } from '../services/api';
           </div>
         )}
       </AnimatePresence>
-
-=======
->>>>>>> fe05ef7be215c289d9c2e81e5d2ca052e3956485
     </div>
   );
 }
