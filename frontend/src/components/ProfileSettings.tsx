@@ -32,7 +32,7 @@ export default function ProfileSettings() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [feedback, setFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
 
-  const userAddress = address || profile?.walletAddress || '0x71C7656EC7ab88b098defB751B7401B5f6d8976F';
+  const userAddress = address || profile?.walletAddress || '';
 
   // Load profile and preferences on mount / address change
   useEffect(() => {

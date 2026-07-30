@@ -50,7 +50,7 @@ export default function Plans({ basePlan = 1 }: { basePlan?: number } = {}) {
   >('idle');
   const [verifyStatusMessage, setVerifyStatusMessage] = useState<string | null>(null);
 
-  const handleVerifyPayment = async (txHashToVerify?: string, isMock: boolean = false) => {
+  const handleVerifyPayment = async (txHashToVerify?: string) => {
     const hash = txHashToVerify || txHashInput;
     if (!activePaymentIntent?.id || !hash) {
       setVerifyStatusMessage('Please enter a valid transaction hash starting with 0x');
@@ -60,27 +60,6 @@ export default function Plans({ basePlan = 1 }: { basePlan?: number } = {}) {
 
     setVerifyStatusMessage('Awaiting wallet confirmation...');
     setVerificationStep('wallet_confirm');
-
-    if (isMock) {
-      setTimeout(() => {
-        setVerifyStatusMessage('Mock processing payment verification...');
-        setVerificationStep('backend_verifying');
-        paymentApi
-          .confirmMock(activePaymentIntent.id, hash)
-          .then((res: any) => {
-            const verifiedData = res?.data || res;
-            setActivePaymentIntent(verifiedData);
-            setVerificationStep('confirmed');
-            setVerifyStatusMessage(res?.message || 'Mock Payment successfully verified!');
-            loadPlanData();
-          })
-          .catch((err: any) => {
-            setVerificationStep('failed');
-            setVerifyStatusMessage(err?.message || 'Mock Verification failed');
-          });
-      }, 500);
-      return;
-    }
 
     setTimeout(() => {
       setVerifyStatusMessage('Querying blockchain receipt from RPC node...');
@@ -654,21 +633,6 @@ export default function Plans({ basePlan = 1 }: { basePlan?: number } = {}) {
                                     </button>
                                   </div>
 
-                                  {/* Auto-fill test transaction hash helper */}
-                                  <div className="flex items-center space-x-4 mt-2">
-                                    <button
-                                      type="button"
-                                      onClick={() => {
-                                        const mockHash = `0xmock${Date.now()}${Math.random().toString(16).substring(2, 10)}`;
-                                        setTxHashInput(mockHash);
-                                        handleVerifyPayment(mockHash, true); // Use Mock Confirm
-                                      }}
-                                      className="text-[10px] bg-green-500/10 text-green-500 hover:bg-green-500/20 px-2 py-1 rounded-lg flex items-center space-x-1 font-bold transition-colors"
-                                    >
-                                      <Zap size={10} />
-                                      <span>Mock Confirm & Verify (Dev)</span>
-                                    </button>
-                                  </div>
 
                                   {/* Verification Stepper */}
                                   {verificationStep !== 'idle' && (

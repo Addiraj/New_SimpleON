@@ -350,7 +350,7 @@ export default function Dashboard() {
                 >
                   <div className="pb-3 border-b border-border-theme space-y-1">
                     <div className="text-xs font-mono font-extrabold text-prime break-all">
-                      {dashboardData?.walletAddress || address || '0x71C7656EC7ab88b098defB751B7401B5f6d8976F'}
+                      {dashboardData?.walletAddress || address || 'Not Connected'}
                     </div>
                     <div className="text-[10px] text-emerald-500 font-bold flex items-center space-x-1">
                       <ShieldCheck size={12} />
@@ -925,7 +925,7 @@ export default function Dashboard() {
                         <div className="text-[10px] text-sub">Instant partner commissions</div>
                       </div>
                       <span className="font-extrabold text-emerald-500 text-sm">
-                        ${((dashboardData?.totalEarnings || 1245) * 0.20).toFixed(2)}
+                        ${((dashboardData?.totalEarnings || 0) * 0.20).toFixed(2)}
                       </span>
                     </div>
 
@@ -935,7 +935,7 @@ export default function Dashboard() {
                         <div className="text-[10px] text-sub">Forced matrix tree allocation</div>
                       </div>
                       <span className="font-extrabold text-accent-blue text-sm">
-                        ${((dashboardData?.totalEarnings || 1245) * 0.65).toFixed(2)}
+                        ${((dashboardData?.totalEarnings || 0) * 0.65).toFixed(2)}
                       </span>
                     </div>
 
@@ -945,7 +945,7 @@ export default function Dashboard() {
                         <div className="text-[10px] text-sub">Auto re-topup cycle pool</div>
                       </div>
                       <span className="font-extrabold text-amber-500 text-sm">
-                        ${((dashboardData?.totalEarnings || 1245) * 0.15).toFixed(2)}
+                        ${((dashboardData?.totalEarnings || 0) * 0.15).toFixed(2)}
                       </span>
                     </div>
 
@@ -1000,7 +1000,7 @@ export default function Dashboard() {
                 <input
                   type="text"
                   disabled
-                  value={dashboardData?.walletAddress || address || '0x71C7656EC7ab88b098defB751B7401B5f6d8976F'}
+                  value={dashboardData?.walletAddress || address || ''}
                   className="w-full p-3 rounded-xl bg-surface-elevated border border-border-theme font-mono text-xs text-prime"
                 />
               </div>
