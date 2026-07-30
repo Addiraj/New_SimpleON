@@ -9,7 +9,7 @@ export class CappingController {
    */
   static async getStatus(req: Request, res: Response) {
     try {
-      const userId = (req as any).user?.id || (req.query.userId as string);
+      const userId = (req as any).userId || (req.query.userId as string);
       if (!userId) {
         return res.status(401).json({
           status: 'error',
@@ -38,7 +38,7 @@ export class CappingController {
    */
   static async getHistory(req: Request, res: Response) {
     try {
-      const userId = (req as any).user?.id || (req.query.userId as string);
+      const userId = (req as any).userId || (req.query.userId as string);
       if (!userId) {
         return res.status(401).json({
           status: 'error',
@@ -70,7 +70,7 @@ export class CappingController {
    */
   static async getSummary(req: Request, res: Response) {
     try {
-      const userId = (req as any).user?.id || (req.query.userId as string);
+      const userId = (req as any).userId || (req.query.userId as string);
       if (!userId) {
         return res.status(401).json({
           status: 'error',

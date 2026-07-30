@@ -51,8 +51,6 @@ export default function WalletPage() {
   const handleCopy = () => {
     if (address) {
       navigator.clipboard.writeText(address);
-    } else {
-      navigator.clipboard.writeText('0x71C7656EC7ab88b098defB751B7401B5f6d8976F');
     }
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
@@ -414,7 +412,7 @@ export default function WalletPage() {
 
                     <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-1">
                       <div className="font-mono text-base font-extrabold text-prime break-all bg-surface px-4 py-2.5 rounded-xl border border-border-theme/80 w-full sm:w-auto flex-1">
-                        {address || '0x71C7656EC7ab88b098defB751B7401B5f6d8976F'}
+                        {address || 'Not Connected'}
                       </div>
 
                       <div className="flex items-center space-x-2 w-full sm:w-auto shrink-0">
@@ -427,7 +425,7 @@ export default function WalletPage() {
                         </button>
 
                         <a
-                          href={`https://testnet.bscscan.com/address/${address || '0x71C7656EC7ab88b098defB751B7401B5f6d8976F'}`}
+                          href={`https://testnet.bscscan.com/address/${address || ''}`}
                           target="_blank"
                           rel="noreferrer"
                           className="p-2.5 rounded-xl bg-surface border border-border-theme text-sub hover:text-prime transition-colors"

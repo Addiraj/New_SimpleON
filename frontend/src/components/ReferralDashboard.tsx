@@ -143,7 +143,7 @@ export default function ReferralDashboard() {
     };
   }, [isAuthenticated]);
 
-  const userAddress = address || '0x71C7656EC7ab88b098defB751B7401B5f6d8976F';
+  const userAddress = address || '';
   const referralCode = summaryData?.referralCode || (address ? address.slice(-8).toUpperCase() : 'F6D8976F');
   const referralUrl = summaryData?.referralUrl || `${window.location.origin}/?ref=${referralCode}`;
 

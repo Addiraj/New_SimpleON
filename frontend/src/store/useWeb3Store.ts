@@ -13,6 +13,7 @@ interface Web3State {
   isConnecting: boolean;
   walletType: 'metamask' | 'walletconnect' | 'trustwallet' | 'coinbase' | 'injected' | string | null;
   connectionError: string | null;
+  hasPromptedSiwe: boolean;
 
   // Balances
   bnbBalance: string;
@@ -48,6 +49,7 @@ interface Web3State {
   signSiweAndLogin: () => Promise<void>;
   disconnectWallet: () => Promise<void>;
   setConnectionError: (errorMsg: string | null) => void;
+  setHasPromptedSiwe: (status: boolean) => void;
   simulateState: (state: 'loading' | 'success' | 'disconnected' | 'error') => void;
 
   setBasePlan: (amount: number) => Promise<void>;
@@ -66,6 +68,7 @@ export const useWeb3Store = create<Web3State>((set, get) => ({
   isConnecting: false,
   walletType: null,
   connectionError: null,
+  hasPromptedSiwe: false,
 
   bnbBalance: '0.00',
   usdtBalance: '0.00',
@@ -103,6 +106,7 @@ export const useWeb3Store = create<Web3State>((set, get) => ({
   },
 
   setConnectionError: (errorMsg) => set({ connectionError: errorMsg }),
+  setHasPromptedSiwe: (status) => set({ hasPromptedSiwe: status }),
 
   /**
    * Initialize authentication on store load & detect URL referral code
@@ -306,6 +310,7 @@ export const useWeb3Store = create<Web3State>((set, get) => ({
       isConnecting: false,
       connectionError: null,
       activeView: 'landing',
+      hasPromptedSiwe: false,
     });
   },
 

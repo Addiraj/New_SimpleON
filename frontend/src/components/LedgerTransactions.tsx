@@ -105,7 +105,7 @@ export default function LedgerTransactions() {
           amountUsdt: tx.amountUsdt ?? tx.amount ?? 0,
           amount: tx.amount ?? 0,
           currency: tx.currency || 'USDT',
-          fromAddress: tx.fromAddress || '0x71C7656EC7ab88b098defB751B7401B5f6d8976F',
+          fromAddress: tx.fromAddress || 'Unknown',
           status: tx.status || 'COMPLETED',
           timestamp: tx.createdAt || tx.timestamp || new Date().toISOString(),
           createdAt: tx.createdAt || tx.timestamp || new Date().toISOString(),
@@ -483,7 +483,7 @@ export default function LedgerTransactions() {
                   <input
                     type="text"
                     readOnly
-                    value={address || '0x71C7656EC7ab88b098defB751B7401B5f6d8976F'}
+                    value={address || 'Not Connected'}
                     className="w-full px-3 py-2 rounded-xl bg-surface-elevated border border-border-theme font-mono text-xs text-sub cursor-not-allowed"
                   />
                 </div>
