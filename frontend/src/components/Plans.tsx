@@ -6,6 +6,7 @@ import {
   CheckCircle2, Lock, Zap
 } from 'lucide-react';
 import { boosterApi, paymentApi, upgradeApi } from '../services/api';
+import { useWeb3Store } from '../store/useWeb3Store';
 
 export interface FormattedPlanApi {
   id: string;
@@ -28,6 +29,7 @@ export interface FormattedPlanApi {
 }
 
 export default function Plans({ basePlan = 1 }: { basePlan?: number } = {}) {
+  const { isConnected, isAuthenticated, openWalletModal } = useWeb3Store();
   const [expandedSection, setExpandedSection] = useState<'booster' | 'main' | null>('booster');
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
@@ -113,6 +115,12 @@ export default function Plans({ basePlan = 1 }: { basePlan?: number } = {}) {
   };
 
   const handleCreateIntent = async (type: 'JOIN' | 'UPGRADE' | 'RETOPUP', levelSlug: string) => {
+    if (!isConnected || !isAuthenticated) {
+      setPaymentError('Please connect your wallet and sign in to activate or upgrade booster plans.');
+      openWalletModal();
+      return;
+    }
+
     setActionLoadingSlug(levelSlug);
     setPaymentError(null);
     setVerificationStep('idle');
@@ -477,11 +485,23 @@ export default function Plans({ basePlan = 1 }: { basePlan?: number } = {}) {
               <div id="plans-accordion-booster-content" className="p-6 md:p-8 border-t border-border-theme bg-surface-elevated/40">
                 <div id="booster-tiers-grid" className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
                   {boosterTiers.map((tier, idx) => {
-                    const currentOrder = (eligibilityData?.currentLevelOrder !== undefined && eligibilityData?.currentLevelOrder !== null)
+                    const rawOrder = (eligibilityData?.currentLevelOrder !== undefined && eligibilityData?.currentLevelOrder !== null)
                       ? eligibilityData.currentLevelOrder
                       : 0;
+                    
+                    const isConfirmedIntent = activePaymentIntent?.status === 'CONFIRMED' && (
+                      activePaymentIntent?.level?.slug === tier.slug || 
+                      activePaymentIntent?.metadata?.planSlug === tier.slug ||
+                      activePaymentIntent?.intent?.level?.slug === tier.slug
+                    );
+
+                    const confirmedLevelOrder = (activePaymentIntent?.status === 'CONFIRMED' && activePaymentIntent?.level?.levelOrder)
+                      ? activePaymentIntent.level.levelOrder
+                      : isConfirmedIntent ? tier.levelOrder : 0;
+
+                    const currentOrder = Math.max(rawOrder, confirmedLevelOrder);
                     const isCurrentOrPassed = currentOrder >= tier.levelOrder && currentOrder > 0;
-                    const isTargetLevel = tier.levelOrder === (eligibilityData?.targetLevelOrder || 1);
+                    const isTargetLevel = tier.levelOrder === (currentOrder === 0 ? 1 : currentOrder + 1);
                     const isEligibleForUpgrade = isTargetLevel && (eligibilityData?.eligible ?? true);
                     const isLocked = tier.levelOrder > currentOrder + 1 || (isTargetLevel && !eligibilityData?.eligible);
 

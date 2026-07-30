@@ -94,9 +94,37 @@ export class BoosterController {
    */
   static async getEligibility(req: AuthRequest, res: Response, next: NextFunction) {
     try {
-      const userId = req.userId || req.userAddress || 'guest-user';
+      const userId = req.userId || req.userAddress;
       let targetSlug = (req.body?.slug || req.query?.slug) as string | undefined;
       const levelNumber = req.body?.levelNumber || req.query?.levelNumber;
+
+      if (!userId || userId === 'guest-user') {
+        res.json({
+          success: true,
+          data: {
+            eligible: true,
+            currentLevel: 'None',
+            currentLevelOrder: 0,
+            targetLevel: 'Starter Booster',
+            targetSlug: 'starter',
+            targetLevelOrder: 1,
+            requirements: {
+              requiredDirectReferrals: 0,
+              currentDirectReferrals: 0,
+              requiredQualifiedBuilders: 0,
+              currentQualifiedBuilders: 0,
+              teamSize: 0,
+              totalEarnings: 0,
+              completedCycles: 0,
+              hasPreviousLevel: true,
+              alreadyActiveOrCompleted: false,
+            },
+            reasons: [],
+            eligibilitySnapshot: {},
+          },
+        });
+        return;
+      }
 
       if (!targetSlug && levelNumber) {
         const plans = await BoosterService.getActivePlans();

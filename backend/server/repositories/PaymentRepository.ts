@@ -127,29 +127,31 @@ export class PaymentRepository {
         where: { id },
       });
 
-      if (!dbIntent) return null;
+      if (dbIntent) {
+        // Auto expire if past expiry
+        if (dbIntent.status === 'PENDING' && dbIntent.expires_at <= new Date()) {
+          await prisma.paymentIntent.update({
+            where: { id },
+            data: { status: 'EXPIRED' },
+          });
+          dbIntent.status = 'EXPIRED';
+        }
 
-      // Auto expire if past expiry
-      if (dbIntent.status === 'PENDING' && dbIntent.expires_at <= new Date()) {
-        await prisma.paymentIntent.update({
-          where: { id },
-          data: { status: 'EXPIRED' },
-        });
-        dbIntent.status = 'EXPIRED';
+        return {
+          ...dbIntent,
+          expected_amount: dbIntent.expected_amount.toString(),
+        } as unknown as PaymentIntentRecord;
       }
-
-      return {
-        ...dbIntent,
-        expected_amount: dbIntent.expected_amount.toString(),
-      } as unknown as PaymentIntentRecord;
     } catch (err: any) {
-      const intent = memoryPaymentIntents.get(id);
-      if (intent && intent.status === 'PENDING' && intent.expires_at <= new Date()) {
-        intent.status = 'EXPIRED';
-        intent.updated_at = new Date();
-      }
-      return intent || null;
+      logger.warn({ error: err.message }, '[PaymentRepository] Database query error in findById, checking memory');
     }
+
+    const intent = memoryPaymentIntents.get(id);
+    if (intent && intent.status === 'PENDING' && intent.expires_at <= new Date()) {
+      intent.status = 'EXPIRED';
+      intent.updated_at = new Date();
+    }
+    return intent || null;
   }
 
   /**
@@ -161,32 +163,34 @@ export class PaymentRepository {
         where: { payment_reference: reference },
       });
 
-      if (!dbIntent) return null;
-
-      if (dbIntent.status === 'PENDING' && dbIntent.expires_at <= new Date()) {
-        await prisma.paymentIntent.update({
-          where: { id: dbIntent.id },
-          data: { status: 'EXPIRED' },
-        });
-        dbIntent.status = 'EXPIRED';
-      }
-
-      return {
-        ...dbIntent,
-        expected_amount: dbIntent.expected_amount.toString(),
-      } as unknown as PaymentIntentRecord;
-    } catch (err: any) {
-      for (const intent of memoryPaymentIntents.values()) {
-        if (intent.payment_reference === reference) {
-          if (intent.status === 'PENDING' && intent.expires_at <= new Date()) {
-            intent.status = 'EXPIRED';
-            intent.updated_at = new Date();
-          }
-          return intent;
+      if (dbIntent) {
+        if (dbIntent.status === 'PENDING' && dbIntent.expires_at <= new Date()) {
+          await prisma.paymentIntent.update({
+            where: { id: dbIntent.id },
+            data: { status: 'EXPIRED' },
+          });
+          dbIntent.status = 'EXPIRED';
         }
+
+        return {
+          ...dbIntent,
+          expected_amount: dbIntent.expected_amount.toString(),
+        } as unknown as PaymentIntentRecord;
       }
-      return null;
+    } catch (err: any) {
+      logger.warn({ error: err.message }, '[PaymentRepository] Database query error in findByReference, checking memory');
     }
+
+    for (const intent of memoryPaymentIntents.values()) {
+      if (intent.payment_reference === reference) {
+        if (intent.status === 'PENDING' && intent.expires_at <= new Date()) {
+          intent.status = 'EXPIRED';
+          intent.updated_at = new Date();
+        }
+        return intent;
+      }
+    }
+    return null;
   }
 
   /**
