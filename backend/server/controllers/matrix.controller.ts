@@ -13,8 +13,9 @@ export class MatrixController {
       const userId = authReq.userId || (req.query.userId as string);
       const address = authReq.userAddress || (req.query.address as string);
       const levelConfigId = req.query.levelConfigId as string;
+      const tierCode = (req.query.tierCode || req.query.tier) as string;
 
-      const summary = await MatrixQueryService.getSummary(userId, address, levelConfigId);
+      const summary = await MatrixQueryService.getSummary(userId, address, levelConfigId, tierCode);
       res.json({ success: true, data: summary });
     } catch (err) {
       next(err);
@@ -30,8 +31,9 @@ export class MatrixController {
       const userId = authReq.userId || (req.query.userId as string);
       const address = authReq.userAddress || (req.query.address as string);
       const levelConfigId = req.query.levelConfigId as string;
+      const tierCode = (req.query.tierCode || req.query.tier) as string;
 
-      const currentCycle = await MatrixQueryService.getCurrentCycle(userId, address, levelConfigId);
+      const currentCycle = await MatrixQueryService.getCurrentCycle(userId, address, levelConfigId, tierCode);
       res.json({ success: true, data: currentCycle });
     } catch (err) {
       next(err);
@@ -47,10 +49,11 @@ export class MatrixController {
       const userId = authReq.userId || (req.query.userId as string);
       const address = authReq.userAddress || (req.query.address as string);
       const levelConfigId = req.query.levelConfigId as string;
+      const tierCode = (req.query.tierCode || req.query.tier) as string;
       const page = parseInt((req.query.page as string) || '1', 10);
       const limit = parseInt((req.query.limit as string) || '10', 10);
 
-      const cycles = await MatrixQueryService.getCycles(userId, address, levelConfigId, page, limit);
+      const cycles = await MatrixQueryService.getCycles(userId, address, levelConfigId, tierCode, page, limit);
       res.json({ success: true, data: cycles });
     } catch (err) {
       next(err);

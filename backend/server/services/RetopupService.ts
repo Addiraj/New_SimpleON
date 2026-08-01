@@ -1,6 +1,7 @@
 import { Prisma } from '@prisma/client';
 import { prisma } from '../config/database.js';
 import { logger } from '../config/logger.js';
+import { BoosterConfigService } from './BoosterConfigService.js';
 
 export interface RetopupResult {
   retopupDeducted: boolean;
@@ -29,13 +30,8 @@ export class RetopupService {
     const currentCycleNumber = cycle.cycle_number;
 
     const retopupEnabled = configSnapshot.retopup_enabled !== false;
-    const joiningAmount = parseFloat(configSnapshot.joining_amount || '100');
-    const slotValue = joiningAmount * 0.15; // 20% of 5-slot pool = 1 slot value = $15 on $100 plan
-
-    const configuredRetopup = configSnapshot.retopup_amount ? parseFloat(configSnapshot.retopup_amount) : null;
-    const retopupAmount = retopupEnabled
-      ? (configuredRetopup !== null && !isNaN(configuredRetopup) && configuredRetopup > 0 ? configuredRetopup : slotValue)
-      : 0;
+    const tierConfig = BoosterConfigService.getTierConfig(configSnapshot.slug) || BoosterConfigService.assertTierConfig('starter');
+    const retopupAmount = retopupEnabled ? tierConfig.resubscribeAmount : 0;
 
     let debitLedger: any = null;
 

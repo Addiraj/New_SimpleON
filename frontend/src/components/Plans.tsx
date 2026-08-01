@@ -7,7 +7,7 @@ import {
 } from 'lucide-react';
 import { boosterApi, paymentApi, upgradeApi } from '../services/api';
 import { useWeb3Store } from '../store/useWeb3Store';
-
+import { BOOSTER_TIER_CONFIGS, formatUsdt } from '../data/boosterPlan';
 export interface FormattedPlanApi {
   id: string;
   name: string;
@@ -33,6 +33,7 @@ export default function Plans({ basePlan = 1 }: { basePlan?: number } = {}) {
   const [expandedSection, setExpandedSection] = useState<'booster' | 'main' | null>('booster');
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  const [usingFallbackConfig, setUsingFallbackConfig] = useState<boolean>(false);
 
   const [apiPlans, setApiPlans] = useState<FormattedPlanApi[]>([]);
   const [calculations, setCalculations] = useState<any>(null);
@@ -131,6 +132,7 @@ export default function Plans({ basePlan = 1 }: { basePlan?: number } = {}) {
   const loadPlanData = useCallback(async () => {
     setLoading(true);
     setError(null);
+    setUsingFallbackConfig(false);
     try {
       const [plansRes, calcRes, eligRes] = await Promise.all([
         boosterApi.getPlans(),
@@ -142,7 +144,21 @@ export default function Plans({ basePlan = 1 }: { basePlan?: number } = {}) {
         ? plansRes
         : plansRes?.data || plansRes?.plans || [];
 
-      setApiPlans(plansArray);
+      const validPlans = plansArray.length === 4 && plansArray.every((plan) => {
+        const verified = BOOSTER_TIER_CONFIGS.find((tier) => tier.code === plan.slug);
+        return verified
+          && Number.parseFloat(plan.joiningAmount) === verified.subscriptionAmount
+          && Number(plan.matrixSize) === verified.slotsPerCycle
+          && Number.parseFloat(plan.retopupAmount) === verified.resubscribeAmount
+          && Number.parseFloat(plan.dailyCap) === verified.defaultDailyCapping;
+      });
+
+      if (!validPlans) {
+        console.warn('Booster API config unavailable or invalid; rendering verified default tier configuration.', plansArray);
+        setUsingFallbackConfig(true);
+      }
+
+      setApiPlans(validPlans ? plansArray : []);
       setCalculations(calcRes?.data || calcRes);
 
       if (eligRes) {
@@ -150,7 +166,8 @@ export default function Plans({ basePlan = 1 }: { basePlan?: number } = {}) {
       }
     } catch (err: any) {
       console.error('Error loading booster plan configurations:', err);
-      setError(err?.message || 'Failed to connect to booster plan configuration server.');
+      setUsingFallbackConfig(true);
+      setError('Booster plan information is temporarily being loaded from the default configuration.');
     } finally {
       setLoading(false);
     }
@@ -162,30 +179,38 @@ export default function Plans({ basePlan = 1 }: { basePlan?: number } = {}) {
 
   // Fallback defaults if API is loading or empty
   const starterPlan = apiPlans.find((p) => p.slug === 'starter') || {
-    joiningAmount: '1',
-    upgradeAmount: '4',
-    matrixSize: 5,
+    joiningAmount: String(BOOSTER_TIER_CONFIGS[0].subscriptionAmount),
+    upgradeAmount: String(BOOSTER_TIER_CONFIGS[0].upgradeAmount),
+    retopupAmount: String(BOOSTER_TIER_CONFIGS[0].resubscribeAmount),
+    dailyCap: String(BOOSTER_TIER_CONFIGS[0].defaultDailyCapping),
+    matrixSize: BOOSTER_TIER_CONFIGS[0].slotsPerCycle,
     requiredDirectReferrals: 0,
     requiredQualifiedBuilders: 0,
   };
   const builderPlan = apiPlans.find((p) => p.slug === 'builder') || {
-    joiningAmount: '4',
-    upgradeAmount: '16',
-    matrixSize: 5,
+    joiningAmount: String(BOOSTER_TIER_CONFIGS[1].subscriptionAmount),
+    upgradeAmount: String(BOOSTER_TIER_CONFIGS[1].upgradeAmount),
+    retopupAmount: String(BOOSTER_TIER_CONFIGS[1].resubscribeAmount),
+    dailyCap: String(BOOSTER_TIER_CONFIGS[1].defaultDailyCapping),
+    matrixSize: BOOSTER_TIER_CONFIGS[1].slotsPerCycle,
     requiredDirectReferrals: 1,
     requiredQualifiedBuilders: 0,
   };
   const leaderPlan = apiPlans.find((p) => p.slug === 'leader') || {
-    joiningAmount: '16',
-    upgradeAmount: '64',
-    matrixSize: 5,
+    joiningAmount: String(BOOSTER_TIER_CONFIGS[2].subscriptionAmount),
+    upgradeAmount: String(BOOSTER_TIER_CONFIGS[2].upgradeAmount),
+    retopupAmount: String(BOOSTER_TIER_CONFIGS[2].resubscribeAmount),
+    dailyCap: String(BOOSTER_TIER_CONFIGS[2].defaultDailyCapping),
+    matrixSize: BOOSTER_TIER_CONFIGS[2].slotsPerCycle,
     requiredDirectReferrals: 2,
     requiredQualifiedBuilders: 1,
   };
   const championPlan = apiPlans.find((p) => p.slug === 'champion') || {
-    joiningAmount: '64',
-    upgradeAmount: '100',
-    matrixSize: 5,
+    joiningAmount: String(BOOSTER_TIER_CONFIGS[3].subscriptionAmount),
+    upgradeAmount: String(BOOSTER_TIER_CONFIGS[3].mainPlanAmount),
+    retopupAmount: String(BOOSTER_TIER_CONFIGS[3].resubscribeAmount),
+    dailyCap: String(BOOSTER_TIER_CONFIGS[3].defaultDailyCapping),
+    matrixSize: BOOSTER_TIER_CONFIGS[3].slotsPerCycle,
     requiredDirectReferrals: 3,
     requiredQualifiedBuilders: 2,
   };
@@ -201,11 +226,11 @@ export default function Plans({ basePlan = 1 }: { basePlan?: number } = {}) {
       slug: 'starter',
       name: 'Starter Booster',
       levelOrder: 1,
-      cost: `${starterCost.toFixed(2)} USDT`,
+      cost: formatUsdt(starterCost),
       costFormula: `${parseFloat(starterPlan.joiningAmount || '1')} × Base Plan`,
-      collection: `${(starterCost * (starterPlan.matrixSize || 5)).toFixed(2)} USDT`,
-      reSubscribe: `${starterCost.toFixed(2)} USDT`,
-      upgrade: `${builderCost.toFixed(2)} USDT`,
+      collection: `${starterPlan.matrixSize || 5} × ${formatUsdt(starterCost)} = ${formatUsdt(starterCost * (starterPlan.matrixSize || 5))}`,
+      reSubscribe: formatUsdt(starterCost),
+      upgrade: formatUsdt(builderCost),
       requiredDirects: starterPlan.requiredDirectReferrals ?? 0,
       requiredBuilders: starterPlan.requiredQualifiedBuilders ?? 0,
       description: `Your entry ticket. Out of ${(starterCost * (starterPlan.matrixSize || 5)).toFixed(2)} USDT collected from ${starterPlan.matrixSize || 5} direct partners, ${starterCost.toFixed(2)} USDT is used to re-subscribe and ${builderCost.toFixed(2)} USDT automatically upgrades you to Builder.`,
@@ -217,11 +242,11 @@ export default function Plans({ basePlan = 1 }: { basePlan?: number } = {}) {
       slug: 'builder',
       name: 'Builder Booster',
       levelOrder: 2,
-      cost: `${builderCost.toFixed(2)} USDT`,
+      cost: formatUsdt(builderCost),
       costFormula: `${parseFloat(builderPlan.joiningAmount || '4')} × Base Plan`,
-      collection: `${(builderCost * (builderPlan.matrixSize || 5)).toFixed(2)} USDT`,
-      reSubscribe: `${builderCost.toFixed(2)} USDT`,
-      upgrade: `${leaderCost.toFixed(2)} USDT`,
+      collection: `${builderPlan.matrixSize || 5} × ${formatUsdt(builderCost)} = ${formatUsdt(builderCost * (builderPlan.matrixSize || 5))}`,
+      reSubscribe: formatUsdt(builderCost),
+      upgrade: formatUsdt(leaderCost),
       requiredDirects: builderPlan.requiredDirectReferrals ?? 1,
       requiredBuilders: builderPlan.requiredQualifiedBuilders ?? 0,
       description: `The second tier. Out of ${(builderCost * (builderPlan.matrixSize || 5)).toFixed(2)} USDT collected, ${builderCost.toFixed(2)} USDT is recycled into Builder re-subscription and ${leaderCost.toFixed(2)} USDT is used to auto-upgrade to Leader.`,
@@ -233,11 +258,11 @@ export default function Plans({ basePlan = 1 }: { basePlan?: number } = {}) {
       slug: 'leader',
       name: 'Leader Booster',
       levelOrder: 3,
-      cost: `${leaderCost.toFixed(2)} USDT`,
+      cost: formatUsdt(leaderCost),
       costFormula: `${parseFloat(leaderPlan.joiningAmount || '16')} × Base Plan`,
-      collection: `${(leaderCost * (leaderPlan.matrixSize || 5)).toFixed(2)} USDT`,
-      reSubscribe: `${leaderCost.toFixed(2)} USDT`,
-      upgrade: `${championCost.toFixed(2)} USDT`,
+      collection: `${leaderPlan.matrixSize || 5} × ${formatUsdt(leaderCost)} = ${formatUsdt(leaderCost * (leaderPlan.matrixSize || 5))}`,
+      reSubscribe: formatUsdt(leaderCost),
+      upgrade: formatUsdt(championCost),
       requiredDirects: leaderPlan.requiredDirectReferrals ?? 2,
       requiredBuilders: leaderPlan.requiredQualifiedBuilders ?? 1,
       description: `The high tier. ${(leaderCost * (leaderPlan.matrixSize || 5)).toFixed(2)} USDT collected: ${leaderCost.toFixed(2)} USDT goes to Leader re-subscription and ${championCost.toFixed(2)} USDT automatically upgrades you to Champion.`,
@@ -249,15 +274,15 @@ export default function Plans({ basePlan = 1 }: { basePlan?: number } = {}) {
       slug: 'champion',
       name: 'Champion Booster',
       levelOrder: 4,
-      cost: `${championCost.toFixed(2)} USDT`,
+      cost: formatUsdt(championCost),
       costFormula: `${parseFloat(championPlan.joiningAmount || '64')} × Base Plan`,
-      collection: `${(championCost * (championPlan.matrixSize || 5)).toFixed(2)} USDT`,
-      reSubscribe: `${championCost.toFixed(2)} USDT`,
-      upgrade: `${mainPlanCost.toFixed(2)} USDT (to Main Plan)`,
-      income: `${(basePlan * 156).toFixed(2)} USDT (Net Income)`,
+      collection: `${championPlan.matrixSize || 5} × ${formatUsdt(championCost)} = ${formatUsdt(championCost * (championPlan.matrixSize || 5))}`,
+      reSubscribe: formatUsdt(championCost),
+      upgrade: `${formatUsdt(mainPlanCost)} (to Main Plan)`,
+      income: `${formatUsdt(basePlan * 156)} (Net Income)`,
       requiredDirects: championPlan.requiredDirectReferrals ?? 3,
       requiredBuilders: championPlan.requiredQualifiedBuilders ?? 2,
-      description: `The peak of Booster. Total collection of ${(championCost * (championPlan.matrixSize || 5)).toFixed(2)} USDT is distributed exactly: ${championCost.toFixed(2)} USDT for Champion re-topup, ${mainPlanCost.toFixed(2)} USDT to activate the Main Plan, leaving ${(basePlan * 156).toFixed(2)} USDT directly in your Wallet as "First Net Income".`,
+      description: `The peak of Booster. Total collection of ${formatUsdt(championCost * (championPlan.matrixSize || 5))} is distributed exactly: ${formatUsdt(championCost)} for Champion re-topup, ${formatUsdt(mainPlanCost)} to activate the Main Plan, leaving ${formatUsdt(basePlan * 156)} directly in your Wallet as "First Net Income".`,
       accent: 'border-purple-500 dark:border-purple-600',
       badgeBg: 'bg-purple-50 text-purple-600 dark:bg-purple-950/25 dark:text-purple-500',
       icon: <Trophy size={20} className="text-purple-600 dark:text-purple-500" />,
@@ -341,18 +366,24 @@ export default function Plans({ basePlan = 1 }: { basePlan?: number } = {}) {
 
         {/* Error Banner with Retry */}
         {error && (
-          <div className="mb-12 p-6 rounded-2xl border border-red-500/30 bg-red-500/5 text-center flex flex-col items-center justify-center space-y-3">
-            <div className="flex items-center space-x-2 text-red-600 dark:text-red-400 font-bold text-sm">
+          <div className="mb-12 p-6 rounded-2xl border border-amber-500/30 bg-amber-500/5 text-center flex flex-col items-center justify-center space-y-3">
+            <div className="flex items-center space-x-2 text-amber-600 dark:text-amber-400 font-bold text-sm">
               <AlertCircle size={18} />
               <span>{error}</span>
             </div>
             <button
               onClick={loadPlanData}
-              className="inline-flex items-center space-x-2 px-4 py-2 rounded-xl bg-red-600 text-white font-bold text-xs hover:bg-red-700 transition-all shadow-sm cursor-pointer"
+              className="inline-flex items-center space-x-2 px-4 py-2 rounded-xl bg-surface-elevated border border-border-theme text-prime font-bold text-xs hover:bg-surface transition-all shadow-sm cursor-pointer"
             >
               <RefreshCw size={14} className="animate-spin-slow" />
               <span>Retry Loading Booster Configurations</span>
             </button>
+          </div>
+        )}
+
+        {usingFallbackConfig && !error && (
+          <div className="mb-12 p-4 rounded-2xl border border-amber-500/30 bg-amber-500/5 text-center text-amber-600 dark:text-amber-400 text-sm font-bold">
+            Booster plan information is temporarily being loaded from the default configuration.
           </div>
         )}
 

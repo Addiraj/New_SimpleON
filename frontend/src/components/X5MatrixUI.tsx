@@ -5,7 +5,8 @@ import {
   Sparkles, ExternalLink, ChevronLeft, ChevronRight, Filter, Info, Zap, AlertCircle, Loader2
 } from 'lucide-react';
 import { useWeb3Store } from '../store/useWeb3Store';
-import { matrixApi } from '../services/api';
+import { boosterApi, matrixApi } from '../services/api';
+import { BOOSTER_TIER_CONFIGS, BoosterTierCode, BoosterTierConfig, formatUsdtPlain, getBoosterTierConfig } from '../data/boosterPlan';
 
 interface MatrixNode {
   slotNumber: number;
@@ -18,6 +19,11 @@ interface MatrixNode {
   incomeGenerated: number;
   reTopupAmount: number;
   upgradeWalletAmount: number;
+  mainPlanAmount?: number;
+  netIncome?: number;
+  placementType?: string;
+  memberId?: string;
+  transactionHash?: string | null;
 }
 
 interface CycleHistoryItem {
@@ -32,14 +38,15 @@ interface CycleHistoryItem {
 }
 
 export default function X5MatrixUI() {
-  const { basePlan } = useWeb3Store();
+  const { basePlan, address, isConnected } = useWeb3Store();
 
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
   const [selectedCycle, setSelectedCycle] = useState<number>(1);
   const [hoveredNode, setHoveredNode] = useState<MatrixNode | null>(null);
-  const [historyFilter, setHistoryFilter] = useState<'ALL' | 'COMPLETED' | 'IN_PROGRESS'>('ALL');
+  const [historyFilter, setHistoryFilter] = useState<'ALL' | 'COMPLETED' | 'IN_PROGRESS' | BoosterTierCode>('ALL');
+  const [activeTierConfig, setActiveTierConfig] = useState<BoosterTierConfig | null>(null);
 
   const [currentNodes, setCurrentNodes] = useState<MatrixNode[]>([]);
   const [matrixCyclesHistory, setMatrixCyclesHistory] = useState<CycleHistoryItem[]>([]);
@@ -55,18 +62,41 @@ export default function X5MatrixUI() {
     activeCycleNumber: 1,
   });
 
-  const mainPlanCost = basePlan * 100;
-  const x5PoolAmount = mainPlanCost * 0.15; // 15% of Main Plan
+  const urlTier = typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('tier') : null;
+  const x5PoolAmount = activeTierConfig ? activeTierConfig.subscriptionAmount * basePlan : null;
+  const slotValueLabel = x5PoolAmount === null ? '--' : formatUsdtPlain(x5PoolAmount);
 
   // Load Matrix Data from Backend API
   const fetchMatrixData = async () => {
     setLoading(true);
     setError(null);
     try {
+      const currentPlan = await boosterApi.getCurrentPlan().catch(() => null);
+      const currentTierCode = (urlTier || currentPlan?.currentLevel?.slug || currentPlan?.data?.currentLevel?.slug || 'starter') as BoosterTierCode;
+      const selectedTier = getBoosterTierConfig(currentTierCode) || BOOSTER_TIER_CONFIGS[0];
+      setActiveTierConfig(selectedTier);
+
+      if (!isConnected && !address) {
+        setCurrentNodes([]);
+        setMatrixCyclesHistory([]);
+        setSummaryData({
+          totalCompletedCycles: 0,
+          totalFilledNodes: 0,
+          totalGeneratedEarnings: 0,
+          activeCycleNumber: 0,
+        });
+        return;
+      }
+
+      const queryParams = {
+        tier: selectedTier.code,
+        address: address || undefined,
+      };
+
       const [summaryRes, currentRes, cyclesRes] = await Promise.allSettled([
-        matrixApi.getSummary(),
-        matrixApi.getCurrent(),
-        matrixApi.getCycles(),
+        matrixApi.getSummary(queryParams),
+        matrixApi.getCurrent(queryParams),
+        matrixApi.getCycles(queryParams),
       ]);
 
       if (summaryRes.status === 'fulfilled' && summaryRes.value) {
@@ -75,7 +105,7 @@ export default function X5MatrixUI() {
           totalCompletedCycles: s.totalCompletedCycles || 0,
           totalFilledNodes: s.totalFilledNodes || 0,
           totalGeneratedEarnings: s.totalGeneratedEarnings || 0,
-          activeCycleNumber: s.activeCycleNumber || 1,
+          activeCycleNumber: s.activeCycleNumber || 0,
         });
         setSelectedCycle(s.activeCycleNumber || 1);
       }
@@ -103,7 +133,7 @@ export default function X5MatrixUI() {
 
   useEffect(() => {
     fetchMatrixData();
-  }, []);
+  }, [address, isConnected]);
 
   // Handle cycle switching: Fetch positions for selected cycle
   const handleCycleSelect = async (cycleNumber: number) => {
@@ -119,7 +149,8 @@ export default function X5MatrixUI() {
             positionsMap.set(p.position_number, p);
           });
 
-          const rate = cycleNumber === 1 ? 0.4 : 0.8;
+          const tierConfig = activeTierConfig || BOOSTER_TIER_CONFIGS[0];
+          const slotAmount = tierConfig.subscriptionAmount * basePlan;
           const nodes: MatrixNode[] = [];
           for (let slot = 1; slot <= 5; slot++) {
             const pos = positionsMap.get(slot);
@@ -132,10 +163,14 @@ export default function X5MatrixUI() {
                 address: addr,
                 timestamp: pos.placed_at ? new Date(pos.placed_at).toISOString().replace('T', ' ').slice(0, 19) : '',
                 status: 'COMPLETED',
-                tierAmount: x5PoolAmount,
-                incomeGenerated: x5PoolAmount * rate,
-                reTopupAmount: x5PoolAmount * 0.2,
-                upgradeWalletAmount: cycleNumber === 1 ? x5PoolAmount * 0.4 : 0,
+                placementType: pos.placement_source?.toLowerCase(),
+                memberId: pos.member_user_id,
+                tierAmount: slotAmount,
+                incomeGenerated: slotAmount,
+                reTopupAmount: tierConfig.resubscribeAmount * basePlan,
+                upgradeWalletAmount: (tierConfig.upgradeAmount || 0) * basePlan,
+                mainPlanAmount: (tierConfig.mainPlanAmount || 0) * basePlan,
+                netIncome: (tierConfig.netIncome || 0) * basePlan,
               });
             } else {
               nodes.push({
@@ -143,7 +178,7 @@ export default function X5MatrixUI() {
                 label: slot === 5 ? `Position #${slot} (Auto-Recycle)` : `Position #${slot}`,
                 isFilled: false,
                 status: 'PENDING',
-                tierAmount: x5PoolAmount,
+                tierAmount: slotAmount,
                 incomeGenerated: 0,
                 reTopupAmount: 0,
                 upgradeWalletAmount: 0,
@@ -164,14 +199,15 @@ export default function X5MatrixUI() {
     label: i === 4 ? `Position #${i + 1} (Auto-Recycle)` : `Position #${i + 1}`,
     isFilled: false,
     status: 'PENDING' as const,
-    tierAmount: x5PoolAmount,
+    tierAmount: x5PoolAmount || 0,
     incomeGenerated: 0,
     reTopupAmount: 0,
     upgradeWalletAmount: 0,
   }));
 
   const activeCount = displayNodes.filter(n => n.isFilled).length;
-  const pendingCount = displayNodes.filter(n => !n.isFilled).length;
+  const pendingCount = Math.max(0, 5 - activeCount);
+  const currentCycleGeneratedAmount = (x5PoolAmount || 0) * activeCount;
 
   return (
     <div className="py-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-10">
@@ -184,13 +220,13 @@ export default function X5MatrixUI() {
           <div className="space-y-2">
             <div className="inline-flex items-center space-x-2 rounded-full bg-accent-red/10 px-3.5 py-1 text-xs font-bold text-accent-red border border-accent-red/20">
               <Layers size={14} />
-              <span>X5 Matrix Engine • 15% Allocation Pool</span>
+              <span>X5 Matrix Engine • Booster Pool Cycle</span>
             </div>
             <h1 className="text-3xl sm:text-4xl font-black text-prime tracking-tight">
               Interactive <span className="text-accent-red">X5 Matrix</span> Dashboard
             </h1>
             <p className="text-xs sm:text-sm text-sub max-w-2xl leading-relaxed">
-              Every 5th placement triggers automated matrix recycling. Cycle 1 splits payouts as 20% Re-topup, 40% Upgrade Wallet, and 40% Net Income. Cycle 2+ delivers <strong className="text-emerald-500 font-mono">80% direct net income</strong>!
+              Every 5th placement triggers automated Booster Pool recycling. Current values are loaded from the active Booster tier and verified backend configuration.
             </p>
           </div>
 
@@ -206,11 +242,11 @@ export default function X5MatrixUI() {
             </button>
             <div className="p-3 rounded-2xl bg-surface-elevated border border-border-theme text-right">
               <span className="text-[10px] font-mono text-sub block uppercase font-bold">Active Cycle</span>
-              <span className="text-2xl font-black font-mono text-accent-red">Cycle #{summaryData.activeCycleNumber}</span>
+              <span className="text-2xl font-black font-mono text-accent-red">{summaryData.activeCycleNumber ? `Cycle #${summaryData.activeCycleNumber}` : 'Unavailable'}</span>
             </div>
             <div className="p-3 rounded-2xl bg-surface-elevated border border-border-theme text-right">
               <span className="text-[10px] font-mono text-sub block uppercase font-bold">X5 Slot Value</span>
-              <span className="text-2xl font-black font-mono text-emerald-500">${x5PoolAmount.toFixed(2)}</span>
+              <span className="text-2xl font-black font-mono text-emerald-500">{slotValueLabel} USDT</span>
             </div>
           </div>
         </div>
@@ -258,8 +294,8 @@ export default function X5MatrixUI() {
 
         <div className="p-6 rounded-3xl bg-surface border border-border-theme shadow-md space-y-1">
           <span className="text-[10px] font-mono font-bold text-sub uppercase">Cycle #{selectedCycle} Generated Income</span>
-          <div className="text-3xl font-black font-mono text-emerald-500">${(summaryData.totalGeneratedEarnings || (x5PoolAmount * (selectedCycle === 1 ? 0.4 : 0.8) * activeCount)).toFixed(2)} USDT</div>
-          <p className="text-[11px] text-emerald-500 font-bold">{selectedCycle === 1 ? '40% Net Income (Cycle 1)' : '80% Net Payout Rate Active'}</p>
+          <div className="text-3xl font-black font-mono text-emerald-500">{formatUsdtPlain(currentCycleGeneratedAmount)} USDT</div>
+          <p className="text-[11px] text-emerald-500 font-bold">{activeCount} filled × {slotValueLabel} USDT</p>
         </div>
 
         <div className="p-6 rounded-3xl bg-surface border border-border-theme shadow-md space-y-1">
@@ -407,9 +443,9 @@ export default function X5MatrixUI() {
                   <div className="space-y-1 text-sub">
                     <p><strong className="text-prime">Wallet:</strong> {hoveredNode.address}</p>
                     <p><strong className="text-prime">Placed:</strong> {hoveredNode.timestamp || 'Recorded'}</p>
-                    <p><strong className="text-prime">Slot Amount:</strong> ${hoveredNode.tierAmount.toFixed(2)} USDT</p>
+                    <p><strong className="text-prime">Slot Amount:</strong> {formatUsdtPlain(hoveredNode.tierAmount)} USDT</p>
                     <p className="text-emerald-500 font-bold">
-                      Payout Net: +${hoveredNode.incomeGenerated.toFixed(2)} USDT
+                      Cycle Generated: +{formatUsdtPlain(hoveredNode.incomeGenerated)} USDT
                     </p>
                   </div>
                 ) : (
@@ -430,7 +466,7 @@ export default function X5MatrixUI() {
               <span>Cycle 1 Payout Formula</span>
             </h3>
             <p className="text-xs text-sub leading-relaxed">
-              <strong>20%</strong> Re-topup Pool + <strong>40%</strong> Auto-Upgrade Wallet + <strong>40%</strong> Direct Net Income. Ensures rapid progression to higher tiers.
+              <strong>{formatUsdtPlain(activeTierConfig?.resubscribeAmount || 0)} USDT</strong> Re-subscribe + <strong>{formatUsdtPlain(activeTierConfig?.upgradeAmount || 0)} USDT</strong> Auto Upgrade{activeTierConfig?.upgradeTarget ? ` to ${activeTierConfig.upgradeTarget}` : ''}.
             </p>
           </div>
 
@@ -440,7 +476,11 @@ export default function X5MatrixUI() {
               <span>Cycle 2+ Perpetual Recycling Formula</span>
             </h3>
             <p className="text-xs text-sub leading-relaxed">
-              <strong>20%</strong> Re-topup Pool + <strong>80% Direct Net Income</strong>. Provides maximum cashflow for continuous matrix cycles.
+              {activeTierConfig?.code === 'champion' ? (
+                <><strong>{formatUsdtPlain(activeTierConfig.mainPlanAmount || 0)} USDT</strong> Main Plan activation + <strong>{formatUsdtPlain(activeTierConfig.netIncome || 0)} USDT</strong> first net income.</>
+              ) : (
+                <>Cycle 2+ distribution is loaded from backend configuration when available.</>
+              )}
             </p>
           </div>
         </div>
@@ -466,6 +506,10 @@ export default function X5MatrixUI() {
               <option value="ALL">All Cycles</option>
               <option value="COMPLETED">Completed Cycles</option>
               <option value="IN_PROGRESS">Active In Progress</option>
+              <option value="starter">Starter Cycles</option>
+              <option value="builder">Builder Cycles</option>
+              <option value="leader">Leader Cycles</option>
+              <option value="champion">Champion Cycles</option>
             </select>
           </div>
         </div>
@@ -493,6 +537,7 @@ export default function X5MatrixUI() {
                   .filter(item => {
                     if (historyFilter === 'COMPLETED') return item.status === 'COMPLETED';
                     if (historyFilter === 'IN_PROGRESS') return item.status === 'ACTIVE' || item.status === 'IN_PROGRESS';
+                    if (['starter', 'builder', 'leader', 'champion'].includes(historyFilter)) return (item as any).levelSlug === historyFilter;
                     return true;
                   })
                   .map((item) => (
@@ -506,7 +551,7 @@ export default function X5MatrixUI() {
                         </span>
                       </td>
                       <td className="py-3.5 px-4 text-prime font-bold">{item.filledSlots} / {item.totalSlots || 5} Slots</td>
-                      <td className="py-3.5 px-4 font-bold text-emerald-500">${(item.earnings || 0).toFixed(2)} USDT</td>
+                      <td className="py-3.5 px-4 font-bold text-emerald-500">{formatUsdtPlain(item.earnings || 0)} USDT</td>
                       <td className="py-3.5 px-4 text-sub">{item.dateStarted || 'N/A'}</td>
                       <td className="py-3.5 px-4 text-sub">{item.dateCompleted || 'In Progress'}</td>
                       <td className="py-3.5 px-4 text-right">
