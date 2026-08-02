@@ -9,6 +9,7 @@ import {
 import QRCode from 'qrcode';
 import { useWeb3Store } from '../store/useWeb3Store';
 import { referralApi } from '../services/api';
+import { buildReferralUrl } from '../utils/referral';
 
 // Mock Referral Member Interface
 interface ReferralMember {
@@ -140,15 +141,19 @@ export default function ReferralDashboard() {
     };
 
     loadReferralData();
+    window.addEventListener('referral_assigned', loadReferralData);
+    window.addEventListener('dashboard_refresh', loadReferralData);
 
     return () => {
       isMounted = false;
+      window.removeEventListener('referral_assigned', loadReferralData);
+      window.removeEventListener('dashboard_refresh', loadReferralData);
     };
   }, [isAuthenticated]);
 
   const userAddress = address || '';
   const referralCode = summaryData?.referralCode || (address ? address.slice(-8).toUpperCase() : 'F6D8976F');
-  const referralUrl = summaryData?.referralUrl || `${window.location.origin}/?ref=${referralCode}`;
+  const referralUrl = buildReferralUrl(referralCode);
 
   useEffect(() => {
     let isMounted = true;
@@ -211,6 +216,7 @@ export default function ReferralDashboard() {
     }
 
     setCopiedLink(true);
+    console.info('Referral link copied successfully.');
     setTimeout(() => setCopiedLink(false), 2000);
   };
 
@@ -259,7 +265,7 @@ export default function ReferralDashboard() {
 
   // Social Share Handlers
   const handleShareTwitter = () => {
-    const text = encodeURIComponent(`${customInviteMsg}\n\nJoin here: ${referralUrl}`);
+    const text = encodeURIComponent(`${customInviteMsg}\n\n${referralUrl}`);
     window.open(`https://twitter.com/intent/tweet?text=${text}`, '_blank');
   };
 
@@ -269,7 +275,7 @@ export default function ReferralDashboard() {
   };
 
   const handleShareWhatsApp = () => {
-    const text = encodeURIComponent(`${customInviteMsg}\n${referralUrl}`);
+    const text = encodeURIComponent(`Join SimpleOn using my referral link: ${referralUrl}`);
     window.open(`https://api.whatsapp.com/send?text=${text}`, '_blank');
   };
 
@@ -277,8 +283,8 @@ export default function ReferralDashboard() {
     if (navigator.share) {
       try {
         await navigator.share({
-          title: 'SimpleOn Web3 Referral Invitation',
-          text: customInviteMsg,
+          title: 'Join SimpleOn',
+          text: 'Join SimpleOn using my referral link.',
           url: referralUrl,
         });
       } catch (err) {

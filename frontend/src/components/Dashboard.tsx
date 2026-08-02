@@ -13,6 +13,7 @@ import {
 import { useWeb3Store } from '../store/useWeb3Store';
 import { UiStateSwitcher, LoadingSkeletonCard, LoadingSkeletonTable, EmptyStateView, ErrorStateAlert, SuccessStateBanner } from './StateComponents';
 import { dashboardApi } from '../services/api';
+import { buildReferralUrl } from '../utils/referral';
 
 // Fallback Mock Analytics Data
 const earningsTrendData: any[] = [];
@@ -123,8 +124,8 @@ export default function Dashboard() {
 
   // Address and Link resolution
   const formattedAddress = dashboardData?.shortWalletAddress || (address ? `${address.slice(0, 6)}...${address.slice(-4)}` : '0x71C7...976F');
-  const targetReferralLink = dashboardData?.referralLink || (address ? `${window.location.origin}/?ref=${address}` : `${window.location.origin}/?ref=0x71C7...976F`);
   const targetReferralCode = dashboardData?.referralCode || (address ? address.slice(-8).toUpperCase() : 'F6D8976F');
+  const targetReferralLink = buildReferralUrl(targetReferralCode);
 
   const copyReferral = () => {
     if (navigator.clipboard && navigator.clipboard.writeText) {

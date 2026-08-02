@@ -224,8 +224,13 @@ export const referralApi = {
     return res.data || res;
   },
 
-  assignSponsor: async (referralCode: string) => {
-    const res: any = await api.post('/referrals/assign-sponsor', { referralCode });
+  assignSponsor: async (referralCode: string, source = 'referral_link') => {
+    const res: any = await api.post('/referrals/assign-sponsor', { referralCode, source });
+    return res.data || res;
+  },
+
+  assign: async (referralCode: string, source = 'referral_link') => {
+    const res: any = await api.post('/referrals/assign', { referralCode, source });
     return res.data || res;
   },
 };

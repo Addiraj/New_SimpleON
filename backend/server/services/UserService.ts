@@ -1,5 +1,6 @@
 import { UserRepository } from '../repositories/UserRepository.js';
 import { AppError } from '../utils/AppError.js';
+import { env } from '../config/env.js';
 
 export class UserService {
   /**
@@ -20,8 +21,15 @@ export class UserService {
     }
 
     const host = hostHeader || 'simpleon.io';
-    const protocol = host.includes('localhost') ? 'http' : 'https';
-    const referralLink = `${protocol}://${host}/?ref=${user.referral_code}`;
+    const configuredBaseUrl = env.APP_PUBLIC_URL || env.FRONTEND_URL;
+    const base = configuredBaseUrl && !configuredBaseUrl.includes('localhost')
+      ? configuredBaseUrl
+      : `${host.includes('localhost') ? 'http' : 'https'}://${host}`;
+    const referralBase = new URL(base.replace(/\/+$/, ''));
+    if (referralBase.protocol === 'http:' && !referralBase.hostname.includes('localhost') && referralBase.hostname !== '127.0.0.1') {
+      referralBase.protocol = 'https:';
+    }
+    const referralLink = `${referralBase.origin}/?ref=${encodeURIComponent(user.referral_code)}`;
 
     const shortAddress = this.formatShortAddress(user.wallet_address);
 
@@ -174,7 +182,7 @@ export class UserService {
     }
     return {
       user,
-      referralLink: `https://simpleon.io/?ref=${address}`,
+      referralLink: `${(env.APP_PUBLIC_URL || env.FRONTEND_URL || 'https://simpleon.io').replace(/\/+$/, '')}/?ref=${encodeURIComponent(address)}`,
       directReferrals: [],
     };
   }

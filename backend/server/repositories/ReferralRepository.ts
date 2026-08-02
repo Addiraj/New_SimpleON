@@ -96,10 +96,11 @@ export class ReferralRepository {
     try {
       if (!(await isDatabaseAvailable())) throw new Error('Database offline');
       const cleanTerm = codeOrAddress.trim().toLowerCase();
+      const cleanCode = codeOrAddress.trim();
       let user = await prisma.user.findFirst({
         where: {
           OR: [
-            { referral_code: { equals: codeOrAddress.trim() } },
+            { referral_code: { equals: cleanCode, mode: 'insensitive' } },
             { wallet_address: { equals: cleanTerm } },
           ],
         } as any,
@@ -131,6 +132,27 @@ export class ReferralRepository {
     }
   }
 
+  static async getRelationDepth(sponsorUserId: string, referredUserId: string): Promise<number | null> {
+    try {
+      if (!(await isDatabaseAvailable())) throw new Error('Database offline');
+      const rel = await prisma.referralRelation.findFirst({
+        where: {
+          sponsor_user_id: sponsorUserId,
+          referred_user_id: referredUserId,
+          status: 'ACTIVE',
+        },
+        select: { depth: true },
+        orderBy: { depth: 'asc' },
+      });
+      return rel?.depth ?? null;
+    } catch {
+      const rel = memoryReferralRelations
+        .filter((r) => r.sponsor_user_id === sponsorUserId && r.referred_user_id === referredUserId && r.status === 'ACTIVE')
+        .sort((a, b) => a.depth - b.depth)[0];
+      return rel?.depth ?? null;
+    }
+  }
+
   /**
    * Assign sponsor to user and establish direct & indirect referral relations
    */
@@ -153,14 +175,108 @@ export class ReferralRepository {
       throw AppError.badRequest('User already has an assigned sponsor relationship and cannot be changed');
     }
 
-    // Update user sponsor_id
     try {
       if (!(await isDatabaseAvailable())) throw new Error('Database offline');
-      await prisma.user.update({
-        where: { id: userId },
-        data: { sponsor_id: sponsorUserId },
+
+      const txResult = await prisma.$transaction(async (tx) => {
+        const lockedUser = await tx.user.findUnique({ where: { id: userId } });
+        const lockedSponsor = await tx.user.findUnique({ where: { id: sponsorUserId } });
+
+        if (!lockedUser) throw AppError.notFound('Referred user not found');
+        if (!lockedSponsor) throw AppError.notFound('Sponsor user not found');
+        if (lockedUser.id === lockedSponsor.id || lockedUser.wallet_address.toLowerCase() === lockedSponsor.wallet_address.toLowerCase()) {
+          throw AppError.badRequest('Self-referral: You cannot refer yourself');
+        }
+        if (lockedUser.sponsor_id && lockedUser.sponsor_id !== sponsorUserId) {
+          throw AppError.badRequest('User already has an assigned sponsor relationship and cannot be changed');
+        }
+
+        const cycleRelation = await tx.referralRelation.findFirst({
+          where: {
+            sponsor_user_id: userId,
+            referred_user_id: sponsorUserId,
+            status: 'ACTIVE',
+          },
+        });
+        if (cycleRelation) {
+          throw AppError.badRequest('Referral relationship cannot be created because it would form a loop');
+        }
+
+        if (!lockedUser.sponsor_id) {
+          const updateResult = await tx.user.updateMany({
+            where: { id: userId, sponsor_id: null },
+            data: { sponsor_id: sponsorUserId },
+          });
+          if (updateResult.count !== 1) {
+            throw AppError.conflict('User already has an assigned sponsor relationship and cannot be changed');
+          }
+        }
+
+        const directId = `rel-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`;
+        const directRelation = await tx.referralRelation.upsert({
+          where: {
+            sponsor_user_id_referred_user_id: {
+              sponsor_user_id: sponsorUserId,
+              referred_user_id: userId,
+            },
+          },
+          create: {
+            id: directId,
+            sponsor_user_id: sponsorUserId,
+            referred_user_id: userId,
+            depth: 1,
+            status: 'ACTIVE',
+          },
+          update: { status: 'ACTIVE', depth: 1 },
+        });
+
+        let relationsCreated = 1;
+        let currentSponsorId = lockedSponsor.sponsor_id;
+        let currentDepth = 2;
+
+        while (currentSponsorId && currentDepth <= maxDepth) {
+          if (currentSponsorId === userId) {
+            throw AppError.badRequest('Referral relationship cannot be created because it would form a loop');
+          }
+
+          const ancestorId = currentSponsorId;
+          const relId = `rel-${Date.now()}-d${currentDepth}-${Math.random().toString(36).substr(2, 4)}`;
+
+          await tx.referralRelation.upsert({
+            where: {
+              sponsor_user_id_referred_user_id: {
+                sponsor_user_id: ancestorId,
+                referred_user_id: userId,
+              },
+            },
+            create: {
+              id: relId,
+              sponsor_user_id: ancestorId,
+              referred_user_id: userId,
+              depth: currentDepth,
+              status: 'ACTIVE',
+            },
+            update: { status: 'ACTIVE', depth: currentDepth },
+          });
+          relationsCreated++;
+
+          const nextAncestor = await tx.user.findUnique({
+            where: { id: ancestorId },
+            select: { sponsor_id: true },
+          });
+          currentSponsorId = nextAncestor?.sponsor_id || null;
+          currentDepth++;
+        }
+
+        return {
+          directRelation: directRelation as unknown as ReferralRelationRecord,
+          totalRelationsCreated: relationsCreated,
+        };
       });
+
+      return txResult;
     } catch (err) {
+      if (err instanceof AppError) throw err;
       user.sponsor_id = sponsorUserId;
     }
 

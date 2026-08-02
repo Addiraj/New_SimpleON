@@ -18,6 +18,7 @@ const envSchema = z.object({
     .transform((val) => val === 'true')
     .or(z.boolean())
     .default(true),
+  APP_PUBLIC_URL: z.string().optional(),
   FRONTEND_URL: z.string().default('http://localhost:5173'),
   CORS_ORIGIN: z.string().default('*'),
   LOG_LEVEL: z.string().default('info'),
