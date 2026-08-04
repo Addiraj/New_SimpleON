@@ -93,6 +93,8 @@ enum TransactionType {
   DEPOSIT
   WITHDRAWAL
   REVERSAL
+  BOOSTER_REWARD
+  ADMIN_INCOME
 }
 
 enum TransactionStatus {
@@ -219,6 +221,7 @@ model User {
   audit_logs                AuditLog[]           @relation("AuditLogUser")
   admin_audit_logs          AuditLog[]           @relation("AuditLogAdmin")
   idempotency_keys          IdempotencyKey[]
+  booster_wallet            BoosterWallet?
 
   @@index([wallet_address])
   @@index([referral_code])
@@ -722,4 +725,55 @@ model SystemConfiguration {
   updated_at          DateTime @updatedAt @map("updated_at")
 
   @@map("system_configurations")
+}
+
+// ==========================================
+// 21. BOOSTER WALLETS
+// ==========================================
+
+model BoosterWallet {
+  id                        String   @id @default(uuid())
+  user_id                   String   @unique @map("user_id")
+  starter_resubscribe_fund  Decimal  @default(0) @map("starter_resubscribe_fund") @db.Decimal(20, 8)
+  builder_activation_fund   Decimal  @default(0) @map("builder_activation_fund") @db.Decimal(20, 8)
+  builder_resubscribe_fund  Decimal  @default(0) @map("builder_resubscribe_fund") @db.Decimal(20, 8)
+  leader_activation_fund    Decimal  @default(0) @map("leader_activation_fund") @db.Decimal(20, 8)
+  leader_resubscribe_fund   Decimal  @default(0) @map("leader_resubscribe_fund") @db.Decimal(20, 8)
+  champion_activation_fund  Decimal  @default(0) @map("champion_activation_fund") @db.Decimal(20, 8)
+  champion_resubscribe_fund Decimal  @default(0) @map("champion_resubscribe_fund") @db.Decimal(20, 8)
+  b_titan_reserve_fund      Decimal  @default(0) @map("b_titan_reserve_fund") @db.Decimal(20, 8)
+  main_plan_reserve_fund    Decimal  @default(0) @map("main_plan_reserve_fund") @db.Decimal(20, 8)
+  income_wallet             Decimal  @default(0) @map("income_wallet") @db.Decimal(20, 8)
+  
+  current_highest_pool      String   @default("STARTER") @map("current_highest_pool") @db.VarChar(32)
+
+  starter_cycle             Int      @default(1) @map("starter_cycle")
+  builder_cycle             Int      @default(1) @map("builder_cycle")
+  leader_cycle              Int      @default(1) @map("leader_cycle")
+  champion_cycle            Int      @default(1) @map("champion_cycle")
+  
+  starter_members_count     Int      @default(0) @map("starter_members_count")
+  builder_members_count     Int      @default(0) @map("builder_members_count")
+  leader_members_count      Int      @default(0) @map("leader_members_count")
+  champion_members_count    Int      @default(0) @map("champion_members_count")
+
+  created_at                DateTime @default(now()) @map("created_at")
+  updated_at                DateTime @updatedAt @map("updated_at")
+
+  user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@map("booster_wallets")
+}
+
+// ==========================================
+// 22. ADMIN WALLETS
+// ==========================================
+
+model AdminWallet {
+  id            String   @id @default("ADMIN")
+  total_income  Decimal  @default(0) @map("total_income") @db.Decimal(20, 8)
+  created_at    DateTime @default(now()) @map("created_at")
+  updated_at    DateTime @updatedAt @map("updated_at")
+
+  @@map("admin_wallets")
 }

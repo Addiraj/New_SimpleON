@@ -44,7 +44,7 @@ const defaultReferralTreeData: ReferralMember = {
 };
 
 export default function ReferralDashboard() {
-  const { address, isAuthenticated, openWalletModal } = useWeb3Store();
+  const { address, isAuthenticated, openWalletModal, userProfile } = useWeb3Store();
 
   const [copiedLink, setCopiedLink] = useState(false);
   const [copiedCode, setCopiedCode] = useState(false);
@@ -167,14 +167,24 @@ export default function ReferralDashboard() {
     setAssignMsg(null);
 
     try {
-      const res = await referralApi.assignSponsor(assignInput.trim());
-      setAssignMsg({ type: 'success', text: res?.message || 'Sponsor assigned successfully!' });
-      setAssignInput('');
-      // Refresh summary
-      const sumRes = await referralApi.getSummary();
-      if (sumRes?.data) setSummaryData(sumRes.data);
+      // @ts-ignore
+      const { walletApi } = await import('../services/api');
+      await walletApi.demoActivate(assignInput.trim());
+      setAssignMsg({ type: 'success', text: 'Sponsor Assigned & Demo Tier Activated!' });
+      
+      // Give them a moment to see the success message
+      setTimeout(() => {
+        setShowAssignModal(false);
+        setAssignInput('');
+        window.dispatchEvent(new Event('dashboard_refresh'));
+        
+        // Refresh summary
+        referralApi.getSummary().then(sumRes => {
+          if (sumRes?.data) setSummaryData(sumRes.data);
+        }).catch(console.error);
+      }, 2000);
     } catch (err: any) {
-      setAssignMsg({ type: 'error', text: err.message || 'Failed to assign sponsor' });
+      setAssignMsg({ type: 'error', text: err?.response?.data?.message || err.message || 'Failed to assign sponsor & activate' });
     } finally {
       setAssignLoading(false);
     }
@@ -250,13 +260,15 @@ export default function ReferralDashboard() {
           </div>
 
           <div className="flex items-center space-x-3 shrink-0">
-            <button
-              onClick={() => setShowAssignModal(true)}
-              className="p-3.5 rounded-2xl bg-surface-elevated hover:bg-surface border border-border-theme text-prime transition-colors flex items-center space-x-2 text-xs font-bold"
-            >
-              <UserCheck size={18} className="text-accent-blue" />
-              <span className="hidden sm:inline">Assign Upline</span>
-            </button>
+            {(!summaryData?.sponsor && userProfile?.status !== 'ACTIVE') && (
+              <button
+                onClick={() => setShowAssignModal(true)}
+                className="p-3.5 rounded-2xl bg-surface-elevated hover:bg-surface border border-border-theme text-prime transition-colors flex items-center space-x-2 text-xs font-bold"
+              >
+                <UserCheck size={18} className="text-accent-blue" />
+                <span className="hidden sm:inline">Assign Upline</span>
+              </button>
+            )}
 
             <button
               onClick={() => setShowInviteModal(true)}
@@ -817,7 +829,7 @@ export default function ReferralDashboard() {
                   className="w-full py-3.5 rounded-2xl bg-accent-blue text-white font-extrabold text-xs shadow-lg shadow-accent-blue/25 hover:bg-accent-blue/90 transition-all flex items-center justify-center space-x-2 disabled:opacity-50"
                 >
                   {assignLoading ? <RefreshCw size={16} className="animate-spin" /> : <UserCheck size={16} />}
-                  <span>{assignLoading ? 'Validating Upline...' : 'Confirm Sponsor Assignment'}</span>
+                  <span>{assignLoading ? 'Processing...' : 'Demo Start (Pay 10 USDT)'}</span>
                 </button>
               </form>
             </motion.div>

@@ -64,11 +64,11 @@ export default function AdminDashboard() {
   ];
 
   const planDistribution = [
-    { name: 'Starter ($1)', value: 45, color: '#DC2626' },
-    { name: 'Builder ($4)', value: 25, color: '#2563EB' },
-    { name: 'Leader ($16)', value: 15, color: '#F59E0B' },
-    { name: 'Champion ($64)', value: 10, color: '#9333EA' },
-    { name: 'Main Plan ($100)', value: 5, color: '#10B981' },
+    { name: 'Starter ($10)', value: 45, color: '#DC2626' },
+    { name: 'Builder ($40)', value: 25, color: '#2563EB' },
+    { name: 'Leader ($80)', value: 15, color: '#F59E0B' },
+    { name: 'Champion ($320)', value: 10, color: '#9333EA' },
+    { name: 'Main Plan ($500)', value: 5, color: '#10B981' },
   ];
 
   const dailyIncomeData = [
@@ -82,9 +82,9 @@ export default function AdminDashboard() {
   ];
 
   const recentUsers = [
-    { id: '1', address: '0x71C7656EC7ab88b098defB751B7401B5f6d8976F', tier: 'VIP ($1000)', joined: '2026-07-22', earnings: '$2,450.00', status: 'ACTIVE' },
-    { id: '2', address: '0x8f3C91029381A063b4f8a2910d', tier: 'LEADER ($500)', joined: '2026-07-21', earnings: '$490.00', status: 'ACTIVE' },
-    { id: '3', address: '0x4e5d6c7b8a901234567890ab', tier: 'BUILDER ($250)', joined: '2026-07-20', earnings: '$364.00', status: 'ACTIVE' },
+    { id: '1', address: '0x71C7656EC7ab88b098defB751B7401B5f6d8976F', tier: 'CHAMPION ($320)', joined: '2026-07-22', earnings: '$2,450.00', status: 'ACTIVE' },
+    { id: '2', address: '0x8f3C91029381A063b4f8a2910d', tier: 'LEADER ($80)', joined: '2026-07-21', earnings: '$490.00', status: 'ACTIVE' },
+    { id: '3', address: '0x4e5d6c7b8a901234567890ab', tier: 'BUILDER ($40)', joined: '2026-07-20', earnings: '$364.00', status: 'ACTIVE' },
   ];
 
   return (
@@ -317,6 +317,66 @@ export default function AdminDashboard() {
                   </td>
                 </tr>
               ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* ADMIN WALLET & TRANSACTION HISTORY */}
+      <div className="p-6 sm:p-8 rounded-3xl bg-surface border border-border-theme shadow-xl space-y-6">
+        <div className="flex items-center space-x-2 pb-4 border-b border-border-theme">
+          <DollarSign size={20} className="text-emerald-500" />
+          <h2 className="text-lg font-black text-prime uppercase">Admin Wallet & Transactions</h2>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+          <div className="p-4 rounded-2xl bg-surface-elevated border border-border-theme space-y-1">
+            <p className="text-[10px] text-sub font-mono uppercase font-bold">Total Admin Balance</p>
+            <p className="text-2xl font-black text-emerald-500">$45,200.00 USDT</p>
+          </div>
+          <div className="p-4 rounded-2xl bg-surface-elevated border border-border-theme space-y-1">
+            <p className="text-[10px] text-sub font-mono uppercase font-bold">Independent Buys</p>
+            <p className="text-2xl font-black text-prime">$12,400.00 USDT</p>
+          </div>
+          <div className="p-4 rounded-2xl bg-surface-elevated border border-border-theme space-y-1">
+            <p className="text-[10px] text-sub font-mono uppercase font-bold">Roll-up / Compression</p>
+            <p className="text-2xl font-black text-accent-blue">$32,800.00 USDT</p>
+          </div>
+        </div>
+
+        <div className="overflow-x-auto">
+          <table className="w-full text-left font-mono text-xs border-collapse">
+            <thead>
+              <tr className="border-b border-border-theme text-sub uppercase text-[10px]">
+                <th className="py-3 px-4">Tx Hash / ID</th>
+                <th className="py-3 px-4">Type</th>
+                <th className="py-3 px-4">Amount</th>
+                <th className="py-3 px-4">From User</th>
+                <th className="py-3 px-4 text-right">Date</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-border-theme">
+              <tr className="hover:bg-surface-elevated/50 transition-colors">
+                <td className="py-3.5 px-4 font-bold text-prime">TX-99281A</td>
+                <td className="py-3.5 px-4"><span className="px-2 py-1 rounded bg-accent-blue/10 text-accent-blue font-bold text-[10px]">ROLL_UP</span></td>
+                <td className="py-3.5 px-4 font-bold text-emerald-500">+$40.00</td>
+                <td className="py-3.5 px-4 text-sub">0x4e5d...90ab</td>
+                <td className="py-3.5 px-4 text-right text-sub">Just now</td>
+              </tr>
+              <tr className="hover:bg-surface-elevated/50 transition-colors">
+                <td className="py-3.5 px-4 font-bold text-prime">TX-992819</td>
+                <td className="py-3.5 px-4"><span className="px-2 py-1 rounded bg-amber-500/10 text-amber-500 font-bold text-[10px]">INDEPENDENT_BUY</span></td>
+                <td className="py-3.5 px-4 font-bold text-emerald-500">+$10.00</td>
+                <td className="py-3.5 px-4 text-sub">0x8f3C...10d</td>
+                <td className="py-3.5 px-4 text-right text-sub">2 mins ago</td>
+              </tr>
+              <tr className="hover:bg-surface-elevated/50 transition-colors">
+                <td className="py-3.5 px-4 font-bold text-prime">TX-992818</td>
+                <td className="py-3.5 px-4"><span className="px-2 py-1 rounded bg-accent-blue/10 text-accent-blue font-bold text-[10px]">ROLL_UP</span></td>
+                <td className="py-3.5 px-4 font-bold text-emerald-500">+$80.00</td>
+                <td className="py-3.5 px-4 text-sub">0x71C7...76F</td>
+                <td className="py-3.5 px-4 text-right text-sub">15 mins ago</td>
+              </tr>
             </tbody>
           </table>
         </div>

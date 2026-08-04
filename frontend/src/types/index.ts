@@ -11,6 +11,7 @@ export interface UserProfile {
   dailyCappingLimit: number;
   cyclesCompletedToday: number;
   createdAt: string;
+  status?: 'ACTIVE' | 'PENDING' | 'INACTIVE';
 }
 
 export interface BoosterTierDetail {

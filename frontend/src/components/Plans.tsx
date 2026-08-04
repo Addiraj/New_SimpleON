@@ -29,7 +29,7 @@ export interface FormattedPlanApi {
 }
 
 export default function Plans({ basePlan = 1 }: { basePlan?: number } = {}) {
-  const { isConnected, isAuthenticated, openWalletModal } = useWeb3Store();
+  const { isConnected, isAuthenticated, openWalletModal, userProfile } = useWeb3Store();
   const [expandedSection, setExpandedSection] = useState<'booster' | 'main' | null>('booster');
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
@@ -215,11 +215,11 @@ export default function Plans({ basePlan = 1 }: { basePlan?: number } = {}) {
     requiredQualifiedBuilders: 2,
   };
 
-  const starterCost = basePlan * parseFloat(starterPlan.joiningAmount || '1');
-  const builderCost = basePlan * parseFloat(builderPlan.joiningAmount || '4');
-  const leaderCost = basePlan * parseFloat(leaderPlan.joiningAmount || '16');
-  const championCost = basePlan * parseFloat(championPlan.joiningAmount || '64');
-  const mainPlanCost = basePlan * 100;
+  const starterCost = basePlan * parseFloat(starterPlan.joiningAmount || '10');
+  const builderCost = basePlan * parseFloat(builderPlan.joiningAmount || '40');
+  const leaderCost = basePlan * parseFloat(leaderPlan.joiningAmount || '80');
+  const championCost = basePlan * parseFloat(championPlan.joiningAmount || '320');
+  const mainPlanCost = basePlan * 500;
 
   const boosterTiers = [
     {
@@ -227,7 +227,7 @@ export default function Plans({ basePlan = 1 }: { basePlan?: number } = {}) {
       name: 'Starter Booster',
       levelOrder: 1,
       cost: formatUsdt(starterCost),
-      costFormula: `${parseFloat(starterPlan.joiningAmount || '1')} × Base Plan`,
+      costFormula: `${parseFloat(starterPlan.joiningAmount || '10')} × Base Plan`,
       collection: `${starterPlan.matrixSize || 5} × ${formatUsdt(starterCost)} = ${formatUsdt(starterCost * (starterPlan.matrixSize || 5))}`,
       reSubscribe: formatUsdt(starterCost),
       upgrade: formatUsdt(builderCost),
@@ -243,7 +243,7 @@ export default function Plans({ basePlan = 1 }: { basePlan?: number } = {}) {
       name: 'Builder Booster',
       levelOrder: 2,
       cost: formatUsdt(builderCost),
-      costFormula: `${parseFloat(builderPlan.joiningAmount || '4')} × Base Plan`,
+      costFormula: `${parseFloat(builderPlan.joiningAmount || '40')} × Base Plan`,
       collection: `${builderPlan.matrixSize || 5} × ${formatUsdt(builderCost)} = ${formatUsdt(builderCost * (builderPlan.matrixSize || 5))}`,
       reSubscribe: formatUsdt(builderCost),
       upgrade: formatUsdt(leaderCost),
@@ -259,7 +259,7 @@ export default function Plans({ basePlan = 1 }: { basePlan?: number } = {}) {
       name: 'Leader Booster',
       levelOrder: 3,
       cost: formatUsdt(leaderCost),
-      costFormula: `${parseFloat(leaderPlan.joiningAmount || '16')} × Base Plan`,
+      costFormula: `${parseFloat(leaderPlan.joiningAmount || '80')} × Base Plan`,
       collection: `${leaderPlan.matrixSize || 5} × ${formatUsdt(leaderCost)} = ${formatUsdt(leaderCost * (leaderPlan.matrixSize || 5))}`,
       reSubscribe: formatUsdt(leaderCost),
       upgrade: formatUsdt(championCost),
@@ -275,7 +275,7 @@ export default function Plans({ basePlan = 1 }: { basePlan?: number } = {}) {
       name: 'Champion Booster',
       levelOrder: 4,
       cost: formatUsdt(championCost),
-      costFormula: `${parseFloat(championPlan.joiningAmount || '64')} × Base Plan`,
+      costFormula: `${parseFloat(championPlan.joiningAmount || '320')} × Base Plan`,
       collection: `${championPlan.matrixSize || 5} × ${formatUsdt(championCost)} = ${formatUsdt(championCost * (championPlan.matrixSize || 5))}`,
       reSubscribe: formatUsdt(championCost),
       upgrade: `${formatUsdt(mainPlanCost)} (to Main Plan)`,
@@ -510,10 +510,10 @@ export default function Plans({ basePlan = 1 }: { basePlan?: number } = {}) {
                       : isConfirmedIntent ? tier.levelOrder : 0;
 
                     const currentOrder = Math.max(rawOrder, confirmedLevelOrder);
-                    const isCurrentOrPassed = currentOrder >= tier.levelOrder && currentOrder > 0;
+                    const isCurrentOrPassed = (currentOrder >= tier.levelOrder && currentOrder > 0) || (tier.slug === 'starter' && userProfile?.status === 'ACTIVE');
                     const isTargetLevel = tier.levelOrder === (currentOrder === 0 ? 1 : currentOrder + 1);
-                    const isEligibleForUpgrade = isTargetLevel && (eligibilityData?.eligible ?? true);
-                    const isLocked = tier.levelOrder > currentOrder + 1 || (isTargetLevel && !eligibilityData?.eligible);
+                    const isEligibleForUpgrade = isTargetLevel && (eligibilityData?.eligible ?? true) && !isCurrentOrPassed;
+                    const isLocked = (tier.levelOrder > currentOrder + 1) || (isTargetLevel && !eligibilityData?.eligible);
 
                     return (
                       <div
@@ -569,16 +569,29 @@ export default function Plans({ basePlan = 1 }: { basePlan?: number } = {}) {
                         {/* Plan Action Button (Disabled when ineligible) */}
                         <div className="mt-6 pt-3 border-t border-border-theme space-y-3">
                           <button
-                            disabled={isLocked || isCurrentOrPassed || actionLoadingSlug === tier.slug}
-                            onClick={() => {
-                              if (isEligibleForUpgrade) {
-                                const pType = currentOrder === 0 ? 'JOIN' : 'UPGRADE';
-                                handleCreateIntent(pType, tier.slug);
+                            disabled={tier.slug !== 'starter' || isLocked || isCurrentOrPassed || actionLoadingSlug === tier.slug}
+                            onClick={async () => {
+                              if (isEligibleForUpgrade && tier.slug === 'starter') {
+                                setActionLoadingSlug(tier.slug);
+                                try {
+                                  // @ts-ignore
+                                  const { walletApi } = await import('../services/api');
+                                  await walletApi.demoActivate();
+                                  alert('Demo Join Successful!');
+                                  window.dispatchEvent(new Event('dashboard_refresh'));
+                                  loadPlanData();
+                                } catch (err: any) {
+                                  alert(err?.response?.data?.message || err.message || 'Demo Join failed');
+                                } finally {
+                                  setActionLoadingSlug(null);
+                                }
                               }
                             }}
                             className={`w-full py-2.5 px-3 rounded-xl text-xs font-black flex items-center justify-center space-x-2 transition-all ${
                               isCurrentOrPassed
                                 ? 'bg-green-500/10 text-green-600 dark:text-green-400 border border-green-500/30 cursor-default'
+                                : tier.slug !== 'starter'
+                                ? 'bg-surface-elevated text-sub border border-border-theme opacity-60 cursor-not-allowed'
                                 : isEligibleForUpgrade
                                 ? 'bg-accent-red text-white hover:bg-accent-red/90 shadow-sm cursor-pointer'
                                 : 'bg-surface-elevated text-sub border border-border-theme opacity-60 cursor-not-allowed'
@@ -587,17 +600,22 @@ export default function Plans({ basePlan = 1 }: { basePlan?: number } = {}) {
                             {actionLoadingSlug === tier.slug ? (
                               <>
                                 <RefreshCw size={14} className="animate-spin" />
-                                <span>Generating Intent...</span>
+                                <span>Activating...</span>
                               </>
                             ) : isCurrentOrPassed ? (
                               <>
                                 <CheckCircle2 size={14} />
                                 <span>Active Tier</span>
                               </>
+                            ) : tier.slug !== 'starter' ? (
+                              <>
+                                <Lock size={14} />
+                                <span>Auto Upgrades Only</span>
+                              </>
                             ) : isEligibleForUpgrade ? (
                               <>
                                 <Rocket size={14} />
-                                <span>{currentOrder === 0 ? 'Join Tier' : 'Upgrade Tier'}</span>
+                                <span>Demo Join (10 USDT)</span>
                               </>
                             ) : (
                               <>

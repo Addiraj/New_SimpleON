@@ -27,7 +27,7 @@ export default function CtaSection({ onConnectWallet, onOpenSimulator }: CtaSect
           </h2>
 
           <p className="mt-6 text-base sm:text-lg text-sub max-w-2xl mx-auto leading-relaxed">
-            Subscribe starting at $100 USDT (Starter Booster). Enjoy 100% peer-to-peer payout security, automatic slot re-topups, and 13-Level forced matrix spillovers.
+            Subscribe starting at $10 USDT (Starter Booster). Enjoy 100% peer-to-peer payout security, automatic slot re-topups, and 13-Level forced matrix spillovers.
           </p>
 
           <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">

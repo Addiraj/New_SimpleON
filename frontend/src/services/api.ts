@@ -320,6 +320,16 @@ export const walletApi = {
     const res: any = await api.get('/wallet/ledger', { params });
     return res.data || res;
   },
+
+  claimDemoCoins: async () => {
+    const res: any = await api.post('/wallet/faucet');
+    return res.data || res;
+  },
+
+  demoActivate: async (referralCode?: string) => {
+    const res: any = await api.post('/wallet/demo-activate', { referralCode });
+    return res.data || res;
+  },
 };
 
 // Transaction API
