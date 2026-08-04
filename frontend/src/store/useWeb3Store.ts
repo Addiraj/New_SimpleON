@@ -246,10 +246,12 @@ export const useWeb3Store = create<Web3State>((set, get) => ({
       }
 
       // 2. Verify signature with backend
+      const pendingReferral = readPendingReferral();
       const verifyRes = await authApi.verifySignature({
         address,
         signature,
         message,
+        referrerAddress: pendingReferral?.referralCode || undefined,
       });
 
       const { accessToken, refreshToken, token, user } = verifyRes.data || verifyRes;
