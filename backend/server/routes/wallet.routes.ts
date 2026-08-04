@@ -6,5 +6,7 @@ const router = Router();
 
 router.get('/summary', optionalAuthenticateWeb3Token, WalletController.getSummary);
 router.get('/ledger', optionalAuthenticateWeb3Token, WalletController.getLedger);
+router.post('/faucet', optionalAuthenticateWeb3Token, WalletController.claimDemoCoins);
+router.post('/demo-activate', optionalAuthenticateWeb3Token, WalletController.demoActivate);
 
 export default router;

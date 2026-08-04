@@ -59,7 +59,7 @@ export interface RealDashboardData {
 export default function Dashboard() {
   const { 
     userProfile, address, chainId, basePlan, setBasePlan, calculations, 
-    upgradeTier, bnbBalance, usdtBalance, openWalletModal, disconnectWallet 
+    upgradeTier, bnbBalance, usdtBalance, openWalletModal, disconnectWallet, claimDemoCoins
   } = useWeb3Store();
 
   const [uiState, setUiState] = useState<'loaded' | 'loading' | 'empty' | 'error' | 'success'>('loaded');
@@ -612,7 +612,7 @@ export default function Dashboard() {
                       <Zap size={16} className="text-accent-red" />
                     </div>
                     <div className="text-xl font-black font-mono text-accent-red truncate">
-                      {dashboardData?.currentPlan || 'Starter ($100)'}
+                      {dashboardData?.currentPlan || 'Starter ($10)'}
                     </div>
                     <p className="text-[11px] text-sub mt-1">
                       Daily Cap: ${dashboardData?.dailyCap ?? 1000}/day
@@ -673,7 +673,7 @@ export default function Dashboard() {
                       />
                     </div>
                     <p className="text-[10px] text-sub font-mono mt-1 truncate">
-                      Next: {dashboardData?.nextLevel || 'Builder ($250)'}
+                      Next: {dashboardData?.nextLevel || 'Builder ($40)'}
                     </p>
                   </motion.div>
 
@@ -690,7 +690,18 @@ export default function Dashboard() {
                   <span className="text-xs text-sub">Instant Web3 Shortcuts</span>
                 </div>
 
-                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-3">
+                  <button
+                    onClick={() => {
+                      claimDemoCoins();
+                      alert('Claimed 500 Demo USDT. Refreshing balance...');
+                    }}
+                    className="p-3.5 rounded-2xl bg-surface-elevated hover:bg-emerald-500 hover:text-white border border-emerald-500/30 text-xs font-bold transition-all flex flex-col items-center justify-center space-y-2 group shadow-xs"
+                  >
+                    <DollarSign size={20} className="text-emerald-500 group-hover:text-white" />
+                    <span>Demo Coins</span>
+                  </button>
+
                   <button
                     onClick={() => handleUpgrade('BUILDER')}
                     className="p-3.5 rounded-2xl bg-surface-elevated hover:bg-accent-red hover:text-white border border-border-theme text-xs font-bold transition-all flex flex-col items-center justify-center space-y-2 group shadow-xs"

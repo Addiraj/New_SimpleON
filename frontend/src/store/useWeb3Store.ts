@@ -59,6 +59,7 @@ interface Web3State {
   fetchUnreadCount: () => Promise<void>;
   upgradeTier: (targetTier: string) => Promise<void>;
   switchChain: (targetChainId: number) => Promise<void>;
+  claimDemoCoins: () => Promise<void>;
 }
 
 export const useWeb3Store = create<Web3State>((set, get) => ({
@@ -365,6 +366,18 @@ export const useWeb3Store = create<Web3State>((set, get) => ({
       }
     } else {
       set({ chainId: targetChainId });
+    }
+  },
+
+  claimDemoCoins: async () => {
+    try {
+      // @ts-ignore
+      const { walletApi } = await import('../services/api');
+      await walletApi.claimDemoCoins();
+      // Dispatch a dashboard refresh event to quickly update numbers everywhere
+      window.dispatchEvent(new Event('dashboard_refresh'));
+    } catch (err: any) {
+      console.error('Failed to claim demo coins:', err);
     }
   },
 }));

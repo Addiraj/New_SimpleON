@@ -148,9 +148,9 @@ export default function Simulator({
       };
     });
 
-    const championAmount = boosters[3]?.amount || basePlan * 64;
-    const championCollection = boosters[3]?.collection || basePlan * 320;
-    const isSanityCheckPassed = Math.abs(championCollection - (championAmount + mainPlanTotal + basePlan * 156)) < 0.0001;
+    const championAmount = boosters[3]?.amount || basePlan * 320;
+    const championCollection = boosters[3]?.collection || basePlan * 1600;
+    const isSanityCheckPassed = Math.abs(championCollection - (championAmount + mainPlanTotal + basePlan * 780)) < 0.0001;
 
     // X5 Matrix cycle split calculations
     const x5Split = {
