@@ -9,7 +9,7 @@ export class TransactionController {
    */
   static async getTransactions(req: Request, res: Response) {
     try {
-      const userId = (req as any).user?.id || (req.query.userId as string);
+      const userId = (req as any).userId || (req.query.userId as string);
       if (!userId) {
         return res.status(401).json({
           status: 'error',
@@ -54,7 +54,7 @@ export class TransactionController {
    */
   static async exportTransactions(req: Request, res: Response) {
     try {
-      const userId = (req as any).user?.id || (req.query.userId as string);
+      const userId = (req as any).userId || (req.query.userId as string);
       if (!userId) {
         return res.status(401).json({
           status: 'error',
@@ -96,7 +96,7 @@ export class TransactionController {
    */
   static async getTransactionById(req: Request, res: Response) {
     try {
-      const userId = (req as any).user?.id || (req.query.userId as string);
+      const userId = (req as any).userId || (req.query.userId as string);
       if (!userId) {
         return res.status(401).json({
           status: 'error',

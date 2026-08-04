@@ -3,25 +3,26 @@ import { motion } from 'motion/react';
 import { Users, Copy, Check, Share2, Sparkles, PieChart, ArrowUpRight, Network } from 'lucide-react';
 import { useWeb3Store } from '../store/useWeb3Store';
 import { referralApi } from '../services/api';
+import { buildReferralUrl } from '../utils/referral';
 
 export default function ReferralSection() {
   const { address, isAuthenticated } = useWeb3Store();
   const [copied, setCopied] = useState(false);
-  const [liveLink, setLiveLink] = useState('');
+  const [liveReferralCode, setLiveReferralCode] = useState('');
 
   useEffect(() => {
     if (isAuthenticated) {
       referralApi.getLink().then((res) => {
-        if (res?.data?.referralUrl) {
-          setLiveLink(res.data.referralUrl);
+        const data = res?.data || res;
+        if (data?.referralCode) {
+          setLiveReferralCode(data.referralCode);
         }
       }).catch(() => {});
     }
   }, [isAuthenticated]);
 
-  const referralLink = liveLink || (address 
-    ? `${window.location.origin}/?ref=${address}` 
-    : 'https://simpleon.io/?ref=0x71C7656EC7ab88b098defB751B7401B5f6d8976F');
+  const referralCode = liveReferralCode || (address ? `SO-${address.slice(-8).toUpperCase()}` : 'SO-F6D8976F');
+  const referralLink = buildReferralUrl(referralCode);
 
   const handleCopy = () => {
     navigator.clipboard.writeText(referralLink);

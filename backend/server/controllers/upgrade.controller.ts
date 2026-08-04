@@ -11,7 +11,7 @@ export class UpgradeController {
    */
   static async getEligibility(req: Request, res: Response) {
     try {
-      const userId = (req as any).user?.id || (req.query.userId as string);
+      const userId = (req as any).userId || (req.query.userId as string);
       if (!userId) {
         return res.status(401).json({
           status: 'error',
@@ -41,7 +41,7 @@ export class UpgradeController {
    */
   static async getHistory(req: Request, res: Response) {
     try {
-      const userId = (req as any).user?.id || (req.query.userId as string);
+      const userId = (req as any).userId || (req.query.userId as string);
       if (!userId) {
         return res.status(401).json({
           status: 'error',
@@ -78,7 +78,7 @@ export class UpgradeController {
    */
   static async executeUpgrade(req: Request, res: Response) {
     try {
-      const userId = (req as any).user?.id || req.body.userId;
+      const userId = (req as any).userId || req.body.userId;
       if (!userId) {
         return res.status(401).json({
           status: 'error',
@@ -113,7 +113,7 @@ export class UpgradeController {
    */
   static async createPaymentIntent(req: Request, res: Response) {
     try {
-      const userId = (req as any).user?.id || req.body.userId;
+      const userId = (req as any).userId || req.body.userId;
       if (!userId) {
         return res.status(401).json({
           status: 'error',

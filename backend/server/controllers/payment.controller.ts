@@ -50,7 +50,13 @@ export class PaymentController {
         message: 'Join payment intent created successfully',
         data: { intent, ...intent },
       });
-    } catch (err) {
+    } catch (err: any) {
+      if (err.message === 'User is already active') {
+        return res.status(200).json({
+          status: 'info',
+          message: 'User is already active',
+        });
+      }
       next(err);
     }
   }

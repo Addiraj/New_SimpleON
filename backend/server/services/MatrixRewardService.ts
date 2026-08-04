@@ -2,6 +2,7 @@ import { Prisma } from '@prisma/client';
 import { prisma } from '../config/database.js';
 import { logger } from '../config/logger.js';
 import { DailyCappingService } from './DailyCappingService.js';
+import { BoosterConfigService } from './BoosterConfigService.js';
 
 export interface RewardCalculationResult {
   grossReward: number;
@@ -32,20 +33,10 @@ export class MatrixRewardService {
     const cycleId = cycle.id;
     const cycleNumber = cycle.cycle_number;
 
-    // 1. Determine reward basis
-    const joiningAmount = parseFloat(configSnapshot.joining_amount || '100');
-    const slotValue = joiningAmount * 0.15; // 15% slot allocation
-    const totalSlots = cycle.total_positions || configSnapshot.matrix_size || 5;
-    const totalCyclePool = totalSlots * slotValue;
-
-    // Net income rate: Cycle 1 = 40% (40% upgrade wallet + 20% retopup + 40% net income), Cycle 2+ = 80% (20% retopup + 80% net income)
-    const netPayoutRate = cycleNumber === 1 ? 0.40 : 0.80;
-
-    // Configured cycle_reward override or calculated pool
-    const configuredReward = configSnapshot.cycle_reward ? parseFloat(configSnapshot.cycle_reward) : null;
-    const grossReward = configuredReward !== null && !isNaN(configuredReward) && configuredReward > 0
-      ? configuredReward
-      : totalCyclePool * netPayoutRate;
+    // 1. Determine verified Booster distribution. Non-Champion pools upgrade forward;
+    // only Champion has approved first net income in the current business rules.
+    const tierConfig = BoosterConfigService.getTierConfig(configSnapshot.slug) || BoosterConfigService.assertTierConfig('starter');
+    const grossReward = tierConfig.netIncome || 0;
 
     // 2. Check and apply Daily Capping via DailyCappingService
     const cappingEval = await DailyCappingService.evaluateAndApplyCapping(
@@ -92,7 +83,7 @@ export class MatrixRewardService {
         amount: new Prisma.Decimal(allowedReward),
         currency: 'USDT',
         status: 'COMPLETED',
-        description: `Matrix Cycle #${cycleNumber} Reward (${(netPayoutRate * 100)}% payout rate)`,
+        description: `Matrix Cycle #${cycleNumber} Verified Booster Net Income`,
         metadata: {
           cycle_id: cycleId,
           cycle_number: cycleNumber,
@@ -100,6 +91,7 @@ export class MatrixRewardService {
           allowed_reward: allowedReward,
           capped_excess: cappedExcess,
           daily_cap: dailyCapLimit,
+          tier_code: tierConfig.code,
         },
         completed_at: new Date(),
       },
@@ -120,7 +112,7 @@ export class MatrixRewardService {
         source_id: cycleId,
         metadata: {
           cycle_number: cycleNumber,
-          net_payout_rate: netPayoutRate,
+          tier_code: tierConfig.code,
         },
       },
     });

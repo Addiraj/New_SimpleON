@@ -13,7 +13,7 @@ export default function Navbar({ theme, toggleTheme, activeTab, setActiveTab }: 
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { 
     isConnected, address, chainId, openWalletModal, disconnectWallet, 
-    toggleNotificationCenter, unreadNotificationCount 
+    toggleNotificationCenter, unreadNotificationCount, userProfile
   } = useWeb3Store();
 
   const formattedAddress = address ? `${address.slice(0, 6)}...${address.slice(-4)}` : '';
@@ -53,8 +53,13 @@ export default function Navbar({ theme, toggleTheme, activeTab, setActiveTab }: 
             <span id="logo-s" className="relative z-10 text-xl font-black text-white select-none italic tracking-wider">S</span>
           </div>
           <div id="brand-text" className="flex flex-col">
-            <span id="brand-name" className="text-xl font-extrabold tracking-tight text-prime">
-              Simple<span className="text-accent-red">On</span>
+            <span id="brand-name" className="text-xl font-extrabold tracking-tight text-prime flex items-center">
+              <span>Simple<span className="text-accent-red">On</span></span>
+              {userProfile?.status === 'ACTIVE' && (
+                <span className="hidden sm:inline-flex items-center px-2 py-0.5 rounded text-[10px] font-black bg-accent-red text-white uppercase tracking-wider ml-2">
+                  {userProfile.tier || 'Starter'}
+                </span>
+              )}
             </span>
             <span id="brand-tag" className="text-[9px] uppercase tracking-widest text-sub font-bold -mt-1">
               Web3 Booster

@@ -7,7 +7,7 @@ export default function About() {
     {
       number: '01',
       title: 'Enter with 1 USDT',
-      description: 'Subscribe to the Starter Booster Plan for just 1 USDT base plan. This unlocks your Starter matrix position.'
+      description: 'Subscribe to the Starter Booster Plan for just 10 USDT base plan. This unlocks your Starter matrix position.'
     },
     {
       number: '02',
@@ -17,12 +17,12 @@ export default function About() {
     {
       number: '03',
       title: 'Booster Upgrades',
-      description: 'Automatically advance from Starter (1) to Builder (4), Leader (16), and Champion (64) tiers as team members scale up.'
+      description: 'Automatically advance from Starter (10) to Builder (40), Leader (80), and Champion (320) tiers as team members scale up.'
     },
     {
       number: '04',
       title: 'Trigger Main Plan',
-      description: 'Upgrade from Champion into the Main Plan (100 USDT). Unlock the 15% X5 split, 65% 13-Level Pool, and 20% X4 Spillover modules.'
+      description: 'Upgrade from Champion into the Main Plan (500 USDT). Unlock the 15% X5 split, 65% 13-Level Pool, and 20% X4 Spillover modules.'
     }
   ];
 

@@ -171,8 +171,8 @@ export const userApi = {
 
 // Booster Plan API
 export const boosterApi = {
-  getPlans: async () => {
-    const res: any = await api.get('/booster/plans');
+  getPlans: async (signal?: AbortSignal) => {
+    const res: any = await api.get('/booster/plans', { signal });
     return res.data || res;
   },
 
@@ -191,8 +191,8 @@ export const boosterApi = {
     return res.data || res;
   },
 
-  calculate: async (basePlan: number) => {
-    const res: any = await api.post('/booster/calculate', { basePlan });
+  calculate: async (basePlan: number, signal?: AbortSignal) => {
+    const res: any = await api.post('/booster/calculate', { basePlan }, { signal });
     return res.data || res;
   },
 };
@@ -224,8 +224,13 @@ export const referralApi = {
     return res.data || res;
   },
 
-  assignSponsor: async (referralCode: string) => {
-    const res: any = await api.post('/referrals/assign-sponsor', { referralCode });
+  assignSponsor: async (referralCode: string, source = 'referral_link') => {
+    const res: any = await api.post('/referrals/assign-sponsor', { referralCode, source });
+    return res.data || res;
+  },
+
+  assign: async (referralCode: string, source = 'referral_link') => {
+    const res: any = await api.post('/referrals/assign', { referralCode, source });
     return res.data || res;
   },
 };
@@ -320,6 +325,16 @@ export const walletApi = {
     const res: any = await api.get('/wallet/ledger', { params });
     return res.data || res;
   },
+
+  claimDemoCoins: async () => {
+    const res: any = await api.post('/wallet/faucet');
+    return res.data || res;
+  },
+
+  demoActivate: async (referralCode?: string) => {
+    const res: any = await api.post('/wallet/demo-activate', { referralCode });
+    return res.data || res;
+  },
 };
 
 // Transaction API
@@ -342,18 +357,18 @@ export const transactionApi = {
 
 // Matrix API
 export const matrixApi = {
-  getSummary: async (params?: { levelConfigId?: string }) => {
-    const res: any = await api.get('/matrix/summary', { params });
+  getSummary: async (params?: { levelConfigId?: string; tier?: string; tierCode?: string; address?: string }, signal?: AbortSignal) => {
+    const res: any = await api.get('/matrix/summary', { params, signal });
     return res.data || res;
   },
 
-  getCurrent: async (params?: { levelConfigId?: string }) => {
-    const res: any = await api.get('/matrix/current', { params });
+  getCurrent: async (params?: { levelConfigId?: string; tier?: string; tierCode?: string; address?: string }, signal?: AbortSignal) => {
+    const res: any = await api.get('/matrix/current', { params, signal });
     return res.data || res;
   },
 
-  getCycles: async (params?: { levelConfigId?: string; page?: number; limit?: number }) => {
-    const res: any = await api.get('/matrix/cycles', { params });
+  getCycles: async (params?: { levelConfigId?: string; tier?: string; tierCode?: string; address?: string; page?: number; limit?: number }, signal?: AbortSignal) => {
+    const res: any = await api.get('/matrix/cycles', { params, signal });
     return res.data || res;
   },
 

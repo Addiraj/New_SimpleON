@@ -1,4 +1,5 @@
 import { AuthService } from './AuthService.js';
+import { BoosterConfigService } from './BoosterConfigService.js';
 
 export class MatrixService {
   /**
@@ -46,23 +47,27 @@ export class MatrixService {
    * Generates X5 and X4 Matrix split stats
    */
   static getSpecialMatrices(userAddress: string) {
-    const user = AuthService.getUser(userAddress);
-    const basePlan = user ? user.basePlanAmount : 1.0;
-    const mainPlanCost = basePlan * 100;
+    const tiers = BoosterConfigService.getAllTierConfigs();
+    const starterTier = BoosterConfigService.assertTierConfig('starter');
+    const mainPlanCost = 100;
 
     return {
       x5Matrix: {
-        name: 'X5 Matrix Split',
-        totalPercentage: '15%',
-        allocationUsdt: mainPlanCost * 0.15,
+        name: 'X5 Booster Matrix',
+        totalPercentage: 'Booster Pool',
+        allocationUsdt: starterTier.collectionAmount,
         cycle: 1,
-        positions: [
-          { index: 1, type: 'Re-topup Wallet', percentage: '20%', amount: mainPlanCost * 0.15 * 0.20 },
-          { index: 2, type: 'Upgrade Wallet', percentage: '40%', amount: mainPlanCost * 0.15 * 0.40 },
-          { index: 3, type: 'Direct Net Income', percentage: '40%', amount: mainPlanCost * 0.15 * 0.40 },
-          { index: 4, type: 'Filled', percentage: 'Direct', amount: mainPlanCost * 0.15 },
-          { index: 5, type: 'Recycle Trigger', percentage: 'Auto', amount: mainPlanCost * 0.15 },
-        ]
+        positions: tiers.map((tier, index) => ({
+          index: index + 1,
+          type: tier.name,
+          percentage: 'Verified Booster',
+          slotValue: tier.subscriptionAmount,
+          collectionAmount: tier.collectionAmount,
+          retopupAmount: tier.resubscribeAmount,
+          upgradeAmount: tier.upgradeAmount,
+          mainPlanAmount: tier.mainPlanAmount,
+          netIncome: tier.netIncome,
+        })),
       },
       x4Matrix: {
         name: 'X4 Passive 2x2 Spillover Matrix',

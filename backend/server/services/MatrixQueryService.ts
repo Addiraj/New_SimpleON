@@ -1,5 +1,7 @@
 import { prisma } from '../config/database.js';
 import { logger } from '../config/logger.js';
+import { BoosterConfigService } from './BoosterConfigService.js';
+import { X5MatrixService } from './X5MatrixService.js';
 
 export class MatrixQueryService {
   /**
@@ -32,7 +34,7 @@ export class MatrixQueryService {
   /**
    * Helper to resolve Level Configuration ID
    */
-  private static async resolveLevelConfigId(levelConfigId?: string): Promise<string> {
+  private static async resolveLevelConfigId(levelConfigId?: string, tierCode?: string, userId?: string): Promise<string> {
     if (levelConfigId) {
       const found = await prisma.levelConfiguration.findFirst({
         where: {
@@ -46,6 +48,23 @@ export class MatrixQueryService {
       if (found) return found.id;
     }
 
+    if (tierCode) {
+      const level = await prisma.levelConfiguration.findFirst({
+        where: { status: 'ACTIVE', slug: tierCode.toLowerCase() },
+        orderBy: { version: 'desc' },
+        select: { id: true },
+      });
+      if (level) return level.id;
+    }
+
+    if (userId) {
+      const user = await prisma.user.findUnique({
+        where: { id: userId },
+        select: { current_level_id: true },
+      });
+      if (user?.current_level_id) return user.current_level_id;
+    }
+
     const level = await prisma.levelConfiguration.findFirst({
       where: { status: 'ACTIVE' },
       orderBy: { level_order: 'asc' },
@@ -56,13 +75,18 @@ export class MatrixQueryService {
     return 'default-level-1';
   }
 
+  private static getTierConfigFromCycle(cycle: any) {
+    const slug = cycle?.level_configuration?.slug || 'starter';
+    return BoosterConfigService.getTierConfig(slug) || BoosterConfigService.assertTierConfig('starter');
+  }
+
   /**
    * 1. GET /api/matrix/summary
    * Aggregates X5 Matrix statistics for a user.
    */
-  static async getSummary(userId?: string, walletAddress?: string, levelConfigId?: string) {
+  static async getSummary(userId?: string, walletAddress?: string, levelConfigId?: string, tierCode?: string) {
     const targetUserId = await this.resolveUserId(userId, walletAddress);
-    const targetLevelId = levelConfigId ? await this.resolveLevelConfigId(levelConfigId) : undefined;
+    const targetLevelId = await this.resolveLevelConfigId(levelConfigId, tierCode, targetUserId);
 
     const whereClause: any = { user_id: targetUserId };
     if (targetLevelId) {
@@ -87,13 +111,10 @@ export class MatrixQueryService {
       totalFilledNodes += c.filled_positions;
     });
 
-    // Calculate income based on level configuration joining amount * 0.15 * 0.8
     let totalGeneratedEarnings = 0;
     cycles.forEach((c) => {
-      const levelCost = parseFloat(c.level_configuration?.joining_amount?.toString() || '100');
-      const slotVal = levelCost * 0.15;
-      const rate = c.cycle_number === 1 ? 0.4 : 0.8;
-      totalGeneratedEarnings += slotVal * rate * c.filled_positions;
+      const tier = this.getTierConfigFromCycle(c);
+      totalGeneratedEarnings += X5MatrixService.calculateCurrentCycleGeneratedAmount(tier.code, c.filled_positions);
     });
 
     return {
@@ -111,7 +132,7 @@ export class MatrixQueryService {
         totalPositions: c.total_positions,
         levelName: c.level_configuration?.name || 'Level 1',
         levelSlug: c.level_configuration?.slug || 'booster-1',
-        joiningAmount: parseFloat(c.level_configuration?.joining_amount?.toString() || '100'),
+        joiningAmount: this.getTierConfigFromCycle(c).subscriptionAmount,
         startedAt: c.started_at,
         completedAt: c.completed_at,
       })),
@@ -122,9 +143,9 @@ export class MatrixQueryService {
    * 2. GET /api/matrix/current
    * Returns current active cycle for user with 5 positions formatted for UI.
    */
-  static async getCurrentCycle(userId?: string, walletAddress?: string, levelConfigId?: string) {
+  static async getCurrentCycle(userId?: string, walletAddress?: string, levelConfigId?: string, tierCode?: string) {
     const targetUserId = await this.resolveUserId(userId, walletAddress);
-    const targetLevelId = await this.resolveLevelConfigId(levelConfigId);
+    const targetLevelId = await this.resolveLevelConfigId(levelConfigId, tierCode, targetUserId);
 
     let activeCycle = await prisma.matrixCycle.findFirst({
       where: {
@@ -166,12 +187,9 @@ export class MatrixQueryService {
       });
     }
 
-    const joiningAmount = parseFloat(
-      activeCycle?.level_configuration?.joining_amount?.toString() || '100'
-    );
-    const slotValue = joiningAmount * 0.15;
+    const tierConfig = this.getTierConfigFromCycle(activeCycle);
+    const slotValue = tierConfig.subscriptionAmount;
     const cycleNum = activeCycle?.cycle_number || 1;
-    const netPayoutRate = cycleNum === 1 ? 0.4 : 0.8;
 
     // Map 5 position nodes (1 through 5)
     const positionsMap = new Map<number, any>();
@@ -195,10 +213,15 @@ export class MatrixQueryService {
           timestamp: pos.placed_at ? new Date(pos.placed_at).toISOString().replace('T', ' ').slice(0, 19) : '',
           status: 'COMPLETED',
           placementSource: pos.placement_source,
+          placementType: pos.placement_source?.toLowerCase(),
+          memberId: pos.member_user_id,
           tierAmount: slotValue,
-          incomeGenerated: slotValue * netPayoutRate,
-          reTopupAmount: slotValue * 0.2,
-          upgradeWalletAmount: cycleNum === 1 ? slotValue * 0.4 : 0,
+          incomeGenerated: slotValue,
+          reTopupAmount: tierConfig.resubscribeAmount,
+          upgradeWalletAmount: tierConfig.upgradeAmount || 0,
+          mainPlanAmount: tierConfig.mainPlanAmount || 0,
+          netIncome: tierConfig.netIncome || 0,
+          transactionHash: null,
         });
       } else {
         currentNodes.push({
@@ -221,8 +244,11 @@ export class MatrixQueryService {
       filledPositions: activeCycle?.filled_positions || currentNodes.filter((n) => n.isFilled).length,
       totalPositions: activeCycle?.total_positions || 5,
       slotValueUsdt: slotValue,
-      levelName: activeCycle?.level_configuration?.name || 'Booster 1',
-      levelSlug: activeCycle?.level_configuration?.slug || 'booster-1',
+      generatedAmount: X5MatrixService.calculateCurrentCycleGeneratedAmount(tierConfig.code, activeCycle?.filled_positions || currentNodes.filter((n) => n.isFilled).length),
+      pendingPositions: X5MatrixService.calculatePendingSlots(activeCycle?.filled_positions || currentNodes.filter((n) => n.isFilled).length, activeCycle?.total_positions || 5),
+      levelName: tierConfig.name,
+      levelSlug: tierConfig.code,
+      tier: tierConfig,
       currentNodes,
     };
   }
@@ -235,16 +261,15 @@ export class MatrixQueryService {
     userId?: string,
     walletAddress?: string,
     levelConfigId?: string,
+    tierCode?: string,
     page = 1,
     limit = 10
   ) {
     const targetUserId = await this.resolveUserId(userId, walletAddress);
+    const targetLevelId = await this.resolveLevelConfigId(levelConfigId, tierCode, targetUserId);
     const skip = (page - 1) * limit;
 
-    const whereCondition: any = { user_id: targetUserId };
-    if (levelConfigId) {
-      whereCondition.level_configuration_id = levelConfigId;
-    }
+    const whereCondition: any = { user_id: targetUserId, level_configuration_id: targetLevelId };
 
     const total = await prisma.matrixCycle.count({ where: whereCondition });
 
@@ -260,10 +285,9 @@ export class MatrixQueryService {
 
     return {
       cycles: cycles.map((c) => {
-        const joiningAmount = parseFloat(c.level_configuration?.joining_amount?.toString() || '100');
-        const slotValue = joiningAmount * 0.15;
-        const rate = c.cycle_number === 1 ? 0.4 : 0.8;
-        const earnings = c.filled_positions * slotValue * rate;
+        const tier = this.getTierConfigFromCycle(c);
+        const slotValue = tier.subscriptionAmount;
+        const earnings = X5MatrixService.calculateCurrentCycleGeneratedAmount(tier.code, c.filled_positions);
 
         return {
           cycle: c.cycle_number,
@@ -271,8 +295,16 @@ export class MatrixQueryService {
           status: c.status,
           filledSlots: c.filled_positions,
           totalSlots: c.total_positions,
+          slotValue,
           earnings,
-          levelName: c.level_configuration?.name || 'Level 1',
+          totalCollection: c.total_positions * slotValue,
+          resubscribeAmount: tier.resubscribeAmount,
+          upgradeAmount: tier.upgradeAmount,
+          upgradeTarget: tier.upgradeTarget,
+          mainPlanAmount: tier.mainPlanAmount,
+          netIncome: tier.netIncome,
+          levelName: tier.name,
+          levelSlug: tier.code,
           dateStarted: c.started_at ? new Date(c.started_at).toISOString().slice(0, 10) : '',
           dateCompleted: c.completed_at ? new Date(c.completed_at).toISOString().slice(0, 10) : null,
         };

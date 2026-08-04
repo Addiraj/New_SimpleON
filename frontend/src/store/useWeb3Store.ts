@@ -3,6 +3,7 @@ import { ethers } from 'ethers';
 import { api, authApi, notificationApi } from '../services/api';
 import { UserProfile, BoosterCalculationsResponse } from '../types';
 import { appKitModal } from '../appkit';
+import { readReferralCodeFromSearch, savePendingReferral } from '../utils/referral';
 
 interface Web3State {
   // Wallet Connection
@@ -13,6 +14,7 @@ interface Web3State {
   isConnecting: boolean;
   walletType: 'metamask' | 'walletconnect' | 'trustwallet' | 'coinbase' | 'injected' | string | null;
   connectionError: string | null;
+  hasPromptedSiwe: boolean;
 
   // Balances
   bnbBalance: string;
@@ -48,6 +50,7 @@ interface Web3State {
   signSiweAndLogin: () => Promise<void>;
   disconnectWallet: () => Promise<void>;
   setConnectionError: (errorMsg: string | null) => void;
+  setHasPromptedSiwe: (status: boolean) => void;
   simulateState: (state: 'loading' | 'success' | 'disconnected' | 'error') => void;
 
   setBasePlan: (amount: number) => Promise<void>;
@@ -56,6 +59,7 @@ interface Web3State {
   fetchUnreadCount: () => Promise<void>;
   upgradeTier: (targetTier: string) => Promise<void>;
   switchChain: (targetChainId: number) => Promise<void>;
+  claimDemoCoins: () => Promise<void>;
 }
 
 export const useWeb3Store = create<Web3State>((set, get) => ({
@@ -66,6 +70,7 @@ export const useWeb3Store = create<Web3State>((set, get) => ({
   isConnecting: false,
   walletType: null,
   connectionError: null,
+  hasPromptedSiwe: false,
 
   bnbBalance: '0.00',
   usdtBalance: '0.00',
@@ -103,6 +108,7 @@ export const useWeb3Store = create<Web3State>((set, get) => ({
   },
 
   setConnectionError: (errorMsg) => set({ connectionError: errorMsg }),
+  setHasPromptedSiwe: (status) => set({ hasPromptedSiwe: status }),
 
   /**
    * Initialize authentication on store load & detect URL referral code
@@ -110,10 +116,9 @@ export const useWeb3Store = create<Web3State>((set, get) => ({
   initAuth: async () => {
     // Detect URL referral code parameter (e.g. ?ref=SO-A1B2C3D4 or ?ref=0x123...)
     if (typeof window !== 'undefined') {
-      const urlParams = new URLSearchParams(window.location.search);
-      const refCode = urlParams.get('ref') || urlParams.get('referral');
-      if (refCode && refCode.trim()) {
-        localStorage.setItem('simpleon_referrer_code', refCode.trim());
+      const refCode = readReferralCodeFromSearch();
+      if (refCode) {
+        savePendingReferral(refCode);
       }
     }
 
@@ -241,12 +246,10 @@ export const useWeb3Store = create<Web3State>((set, get) => ({
       }
 
       // 2. Verify signature with backend
-      const storedReferrer = localStorage.getItem('simpleon_referrer_code') || undefined;
       const verifyRes = await authApi.verifySignature({
         address,
         signature,
         message,
-        referrerAddress: storedReferrer,
       });
 
       const { accessToken, refreshToken, token, user } = verifyRes.data || verifyRes;
@@ -306,6 +309,7 @@ export const useWeb3Store = create<Web3State>((set, get) => ({
       isConnecting: false,
       connectionError: null,
       activeView: 'landing',
+      hasPromptedSiwe: false,
     });
   },
 
@@ -362,6 +366,18 @@ export const useWeb3Store = create<Web3State>((set, get) => ({
       }
     } else {
       set({ chainId: targetChainId });
+    }
+  },
+
+  claimDemoCoins: async () => {
+    try {
+      // @ts-ignore
+      const { walletApi } = await import('../services/api');
+      await walletApi.claimDemoCoins();
+      // Dispatch a dashboard refresh event to quickly update numbers everywhere
+      window.dispatchEvent(new Event('dashboard_refresh'));
+    } catch (err: any) {
+      console.error('Failed to claim demo coins:', err);
     }
   },
 }));

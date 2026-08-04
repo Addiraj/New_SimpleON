@@ -13,6 +13,7 @@ import {
 import { useWeb3Store } from '../store/useWeb3Store';
 import { UiStateSwitcher, LoadingSkeletonCard, LoadingSkeletonTable, EmptyStateView, ErrorStateAlert, SuccessStateBanner } from './StateComponents';
 import { dashboardApi } from '../services/api';
+import { buildReferralUrl } from '../utils/referral';
 
 // Fallback Mock Analytics Data
 const earningsTrendData: any[] = [];
@@ -58,7 +59,7 @@ export interface RealDashboardData {
 export default function Dashboard() {
   const { 
     userProfile, address, chainId, basePlan, setBasePlan, calculations, 
-    upgradeTier, bnbBalance, usdtBalance, openWalletModal, disconnectWallet 
+    upgradeTier, bnbBalance, usdtBalance, openWalletModal, disconnectWallet, claimDemoCoins
   } = useWeb3Store();
 
   const [uiState, setUiState] = useState<'loaded' | 'loading' | 'empty' | 'error' | 'success'>('loaded');
@@ -123,8 +124,8 @@ export default function Dashboard() {
 
   // Address and Link resolution
   const formattedAddress = dashboardData?.shortWalletAddress || (address ? `${address.slice(0, 6)}...${address.slice(-4)}` : '0x71C7...976F');
-  const targetReferralLink = dashboardData?.referralLink || (address ? `${window.location.origin}/?ref=${address}` : `${window.location.origin}/?ref=0x71C7...976F`);
   const targetReferralCode = dashboardData?.referralCode || (address ? address.slice(-8).toUpperCase() : 'F6D8976F');
+  const targetReferralLink = buildReferralUrl(targetReferralCode);
 
   const copyReferral = () => {
     if (navigator.clipboard && navigator.clipboard.writeText) {
@@ -350,7 +351,7 @@ export default function Dashboard() {
                 >
                   <div className="pb-3 border-b border-border-theme space-y-1">
                     <div className="text-xs font-mono font-extrabold text-prime break-all">
-                      {dashboardData?.walletAddress || address || '0x71C7656EC7ab88b098defB751B7401B5f6d8976F'}
+                      {dashboardData?.walletAddress || address || 'Not Connected'}
                     </div>
                     <div className="text-[10px] text-emerald-500 font-bold flex items-center space-x-1">
                       <ShieldCheck size={12} />
@@ -611,7 +612,7 @@ export default function Dashboard() {
                       <Zap size={16} className="text-accent-red" />
                     </div>
                     <div className="text-xl font-black font-mono text-accent-red truncate">
-                      {dashboardData?.currentPlan || 'Starter ($100)'}
+                      {dashboardData?.currentPlan || 'Starter ($10)'}
                     </div>
                     <p className="text-[11px] text-sub mt-1">
                       Daily Cap: ${dashboardData?.dailyCap ?? 1000}/day
@@ -672,7 +673,7 @@ export default function Dashboard() {
                       />
                     </div>
                     <p className="text-[10px] text-sub font-mono mt-1 truncate">
-                      Next: {dashboardData?.nextLevel || 'Builder ($250)'}
+                      Next: {dashboardData?.nextLevel || 'Builder ($40)'}
                     </p>
                   </motion.div>
 
@@ -689,7 +690,18 @@ export default function Dashboard() {
                   <span className="text-xs text-sub">Instant Web3 Shortcuts</span>
                 </div>
 
-                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-3">
+                  <button
+                    onClick={() => {
+                      claimDemoCoins();
+                      alert('Claimed 500 Demo USDT. Refreshing balance...');
+                    }}
+                    className="p-3.5 rounded-2xl bg-surface-elevated hover:bg-emerald-500 hover:text-white border border-emerald-500/30 text-xs font-bold transition-all flex flex-col items-center justify-center space-y-2 group shadow-xs"
+                  >
+                    <DollarSign size={20} className="text-emerald-500 group-hover:text-white" />
+                    <span>Demo Coins</span>
+                  </button>
+
                   <button
                     onClick={() => handleUpgrade('BUILDER')}
                     className="p-3.5 rounded-2xl bg-surface-elevated hover:bg-accent-red hover:text-white border border-border-theme text-xs font-bold transition-all flex flex-col items-center justify-center space-y-2 group shadow-xs"
@@ -925,7 +937,7 @@ export default function Dashboard() {
                         <div className="text-[10px] text-sub">Instant partner commissions</div>
                       </div>
                       <span className="font-extrabold text-emerald-500 text-sm">
-                        ${((dashboardData?.totalEarnings || 1245) * 0.20).toFixed(2)}
+                        ${((dashboardData?.totalEarnings || 0) * 0.20).toFixed(2)}
                       </span>
                     </div>
 
@@ -935,7 +947,7 @@ export default function Dashboard() {
                         <div className="text-[10px] text-sub">Forced matrix tree allocation</div>
                       </div>
                       <span className="font-extrabold text-accent-blue text-sm">
-                        ${((dashboardData?.totalEarnings || 1245) * 0.65).toFixed(2)}
+                        ${((dashboardData?.totalEarnings || 0) * 0.65).toFixed(2)}
                       </span>
                     </div>
 
@@ -945,7 +957,7 @@ export default function Dashboard() {
                         <div className="text-[10px] text-sub">Auto re-topup cycle pool</div>
                       </div>
                       <span className="font-extrabold text-amber-500 text-sm">
-                        ${((dashboardData?.totalEarnings || 1245) * 0.15).toFixed(2)}
+                        ${((dashboardData?.totalEarnings || 0) * 0.15).toFixed(2)}
                       </span>
                     </div>
 
@@ -1000,7 +1012,7 @@ export default function Dashboard() {
                 <input
                   type="text"
                   disabled
-                  value={dashboardData?.walletAddress || address || '0x71C7656EC7ab88b098defB751B7401B5f6d8976F'}
+                  value={dashboardData?.walletAddress || address || ''}
                   className="w-full p-3 rounded-xl bg-surface-elevated border border-border-theme font-mono text-xs text-prime"
                 />
               </div>

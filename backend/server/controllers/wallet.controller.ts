@@ -1,6 +1,9 @@
 import { Request, Response } from 'express';
 import { logger } from '../config/logger.js';
 import { WalletService } from '../services/WalletService.js';
+import { AuthRepository } from '../repositories/AuthRepository.js';
+import { ReferralService } from '../services/ReferralService.js';
+import { PaymentService } from '../services/PaymentService.js';
 
 export class WalletController {
   /**
@@ -9,7 +12,7 @@ export class WalletController {
    */
   static async getSummary(req: Request, res: Response) {
     try {
-      const userId = (req as any).user?.id || (req.query.userId as string);
+      const userId = (req as any).userId || (req.query.userId as string);
       if (!userId) {
         return res.status(401).json({
           status: 'error',
@@ -38,7 +41,7 @@ export class WalletController {
    */
   static async getLedger(req: Request, res: Response) {
     try {
-      const userId = (req as any).user?.id || (req.query.userId as string);
+      const userId = (req as any).userId || (req.query.userId as string);
       if (!userId) {
         return res.status(401).json({
           status: 'error',
@@ -75,6 +78,122 @@ export class WalletController {
       return res.status(err.statusCode || 500).json({
         status: 'error',
         message: err.message || 'Failed to fetch wallet ledger',
+      });
+    }
+  }
+  /**
+   * POST /api/wallet/faucet
+   * Claims demo coins for testing
+   */
+  static async claimDemoCoins(req: Request, res: Response) {
+    try {
+      const userId = (req as any).userId || (req.body.userId as string);
+      if (!userId) {
+        return res.status(401).json({
+          status: 'error',
+          message: 'Authentication required to claim demo coins',
+        });
+      }
+
+      // Allow claiming an unlimited number of times for testing
+      // Each claim will give 500 USDT
+      const idempotencyKey = `faucet_${userId}_${Date.now()}_${Math.random().toString(36).substring(7)}`;
+
+      await WalletService.addLedgerEntry({
+        userId,
+        entryType: 'DEPOSIT',
+        direction: 'CREDIT',
+        amount: 500,
+        idempotencyKey,
+        sourceType: 'FAUCET',
+        sourceId: 'dev_faucet',
+        status: 'COMPLETED',
+        metadata: { isFaucet: true },
+      });
+
+      return res.status(200).json({
+        status: 'success',
+        message: 'Successfully claimed 500 demo USDT',
+      });
+    } catch (err: any) {
+      logger.error({ error: err.message }, '[WalletController] Error claiming demo coins');
+      return res.status(err.statusCode || 500).json({
+        status: 'error',
+        message: err.message || 'Failed to claim demo coins',
+      });
+    }
+  }
+
+  /**
+   * POST /api/wallet/demo-activate
+   * Activates the starter plan (deducting 10 Demo USDT) and optionally assigns a sponsor
+   */
+  static async demoActivate(req: Request, res: Response) {
+    try {
+      const userId = (req as any).userId || (req.body.userId as string);
+      if (!userId) {
+        return res.status(401).json({ status: 'error', message: 'Authentication required' });
+      }
+
+      const { referralCode } = req.body;
+
+      // 1. Check if user is already ACTIVE
+      const user = await AuthRepository.findUserById(userId);
+      if (!user) {
+        return res.status(404).json({ status: 'error', message: 'User not found' });
+      }
+      if (user.status === 'ACTIVE') {
+        return res.status(200).json({ status: 'info', message: 'User is already active' });
+      }
+
+      // 2. Assign Sponsor if provided
+      if (referralCode) {
+        try {
+          await ReferralService.assignSponsor(userId, referralCode);
+        } catch (err: any) {
+          // If relationship already exists, ignore, else return error
+          if (!err.message.includes('already exists') && !err.message.includes('already has an assigned sponsor')) {
+            return res.status(err.statusCode || 400).json({ status: 'error', message: err.message });
+          }
+        }
+      }
+
+      // 3. Check Demo Balance
+      const summary = await WalletService.getSummary(userId);
+      if (summary.availableBalance < 10) {
+        return res.status(400).json({
+          status: 'error',
+          message: 'Insufficient Demo Coins. Claim 500 USDT from the Dashboard first.',
+        });
+      }
+
+      // 4. Deduct 10 USDT
+      await WalletService.addLedgerEntry({
+        userId,
+        entryType: 'PLAN_JOIN',
+        direction: 'DEBIT',
+        amount: 10,
+        idempotencyKey: `demo_activate_${userId}_${Date.now()}`,
+        sourceType: 'BOOSTER_PLAN',
+        sourceId: 'demo_join',
+        status: 'COMPLETED',
+        metadata: { isDemo: true, description: 'Demo Starter Plan Activation' },
+      });
+
+      // 5. Create and Confirm Intent
+      const intent = await PaymentService.createJoinIntent(userId);
+      const result = await PaymentService.confirmMockPayment(intent.id, userId, `0xmock_demo_${Date.now()}`);
+
+      return res.status(200).json({
+        status: 'success',
+        message: 'Successfully activated Demo Starter Plan',
+        data: result,
+      });
+    } catch (err: any) {
+      logger.error({ error: err.message }, '[WalletController] Error in demo activate');
+      return res.status(err.statusCode || 500).json({
+        status: 'error',
+        message: err.message || 'Failed to activate demo plan',
       });
     }
   }

@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import { useWeb3Store } from '../store/useWeb3Store';
 import { userApi } from '../services/api';
+import { buildReferralUrl } from '../utils/referral';
 
 export default function ProfileSettings() {
   const { address, walletType, isConnected, isAuthenticated, openWalletModal, signSiweAndLogin } = useWeb3Store();
@@ -32,7 +33,9 @@ export default function ProfileSettings() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [feedback, setFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
 
-  const userAddress = address || profile?.walletAddress || '0x71C7656EC7ab88b098defB751B7401B5f6d8976F';
+  const userAddress = address || profile?.walletAddress || '';
+  const profileReferralCode = profile?.referralCode || 'SO-ROOT';
+  const profileReferralLink = buildReferralUrl(profileReferralCode);
 
   // Load profile and preferences on mount / address change
   useEffect(() => {
@@ -277,12 +280,12 @@ export default function ProfileSettings() {
 
                 <div>
                   <span className="text-sub block text-[10px]">Referral Code (Non-Editable)</span>
-                  <span className="font-bold text-accent-red">{profile?.referralCode || 'SO-ROOT'}</span>
+                  <span className="font-bold text-accent-red">{profileReferralCode}</span>
                 </div>
 
                 <div>
                   <span className="text-sub block text-[10px]">Referral Link</span>
-                  <span className="font-bold text-prime text-[11px] break-all">{profile?.referralLink || `https://simpleon.io/?ref=${profile?.referralCode || 'SO-ROOT'}`}</span>
+                  <span className="font-bold text-prime text-[11px] break-all">{profileReferralLink}</span>
                 </div>
 
                 <div>

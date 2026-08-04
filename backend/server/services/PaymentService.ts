@@ -109,7 +109,7 @@ export class PaymentService {
 
     // Prevent duplicate joins
     if (user.current_level_id) {
-      throw new AppError('User has already joined and is active', 400);
+      throw new AppError('User is already active', 400); // Handled by controller to return 200
     }
 
     // 2. Load target level (Order 1 / Starter by default)
