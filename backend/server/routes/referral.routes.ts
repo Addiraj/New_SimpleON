@@ -35,5 +35,6 @@ router.get('/validate/:referralCode', optionalAuthenticateWeb3Token, validateRef
 
 // POST /api/referrals/assign-sponsor
 router.post('/assign-sponsor', authenticateWeb3Token, assignSponsor);
+router.post('/assign', authenticateWeb3Token, assignSponsor);
 
 export default router;

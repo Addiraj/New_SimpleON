@@ -6,8 +6,10 @@ import {
   TrendingUp, Download, Send, Twitter, MessageSquare, ChevronDown, ChevronRight,
   UserPlus, ShieldCheck, Zap, RefreshCw, Eye, Info, CheckCircle2, AlertCircle
 } from 'lucide-react';
+import QRCode from 'qrcode';
 import { useWeb3Store } from '../store/useWeb3Store';
 import { referralApi } from '../services/api';
+import { buildReferralUrl } from '../utils/referral';
 
 // Mock Referral Member Interface
 interface ReferralMember {
@@ -48,6 +50,8 @@ export default function ReferralDashboard() {
 
   const [copiedLink, setCopiedLink] = useState(false);
   const [copiedCode, setCopiedCode] = useState(false);
+  const [copyError, setCopyError] = useState<string | null>(null);
+  const [qrCodeDataUrl, setQrCodeDataUrl] = useState('');
   const [showQrModal, setShowQrModal] = useState(false);
   const [showInviteModal, setShowInviteModal] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -137,24 +141,95 @@ export default function ReferralDashboard() {
     };
 
     loadReferralData();
+    window.addEventListener('referral_assigned', loadReferralData);
+    window.addEventListener('dashboard_refresh', loadReferralData);
 
     return () => {
       isMounted = false;
+      window.removeEventListener('referral_assigned', loadReferralData);
+      window.removeEventListener('dashboard_refresh', loadReferralData);
     };
   }, [isAuthenticated]);
 
   const userAddress = address || '';
   const referralCode = summaryData?.referralCode || (address ? address.slice(-8).toUpperCase() : 'F6D8976F');
-  const referralUrl = summaryData?.referralUrl || `${window.location.origin}/?ref=${referralCode}`;
+  const referralUrl = buildReferralUrl(referralCode);
 
-  const copyUrl = () => {
-    navigator.clipboard.writeText(referralUrl);
+  useEffect(() => {
+    let isMounted = true;
+
+    QRCode.toDataURL(referralUrl, {
+      errorCorrectionLevel: 'H',
+      margin: 2,
+      width: 384,
+      color: {
+        dark: '#0f172a',
+        light: '#ffffff',
+      },
+    })
+      .then((dataUrl) => {
+        if (isMounted) setQrCodeDataUrl(dataUrl);
+      })
+      .catch((err) => {
+        console.warn('Failed to generate referral QR code:', err);
+        if (isMounted) setQrCodeDataUrl('');
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [referralUrl]);
+
+  const copyToClipboard = async (text: string) => {
+    try {
+      if (navigator.clipboard?.writeText && window.isSecureContext) {
+        await navigator.clipboard.writeText(text);
+        return true;
+      }
+
+      const textarea = document.createElement('textarea');
+      textarea.value = text;
+      textarea.setAttribute('readonly', '');
+      textarea.style.position = 'fixed';
+      textarea.style.left = '-9999px';
+      textarea.style.top = '0';
+      document.body.appendChild(textarea);
+      textarea.focus();
+      textarea.select();
+      const copied = document.execCommand('copy');
+      document.body.removeChild(textarea);
+      return copied;
+    } catch (err) {
+      console.warn('Failed to copy referral text:', err);
+      return false;
+    }
+  };
+
+  const copyUrl = async () => {
+    setCopyError(null);
+    const copied = await copyToClipboard(referralUrl);
+
+    if (!copied) {
+      setCopyError('Copy failed. Select and copy the link manually.');
+      setCopiedLink(false);
+      return;
+    }
+
     setCopiedLink(true);
+    console.info('Referral link copied successfully.');
     setTimeout(() => setCopiedLink(false), 2000);
   };
 
-  const copyRefCode = () => {
-    navigator.clipboard.writeText(referralCode);
+  const copyRefCode = async () => {
+    setCopyError(null);
+    const copied = await copyToClipboard(referralCode);
+
+    if (!copied) {
+      setCopyError('Copy failed. Select and copy the code manually.');
+      setCopiedCode(false);
+      return;
+    }
+
     setCopiedCode(true);
     setTimeout(() => setCopiedCode(false), 2000);
   };
@@ -200,7 +275,7 @@ export default function ReferralDashboard() {
 
   // Social Share Handlers
   const handleShareTwitter = () => {
-    const text = encodeURIComponent(`${customInviteMsg}\n\nJoin here: ${referralUrl}`);
+    const text = encodeURIComponent(`${customInviteMsg}\n\n${referralUrl}`);
     window.open(`https://twitter.com/intent/tweet?text=${text}`, '_blank');
   };
 
@@ -210,7 +285,7 @@ export default function ReferralDashboard() {
   };
 
   const handleShareWhatsApp = () => {
-    const text = encodeURIComponent(`${customInviteMsg}\n${referralUrl}`);
+    const text = encodeURIComponent(`Join SimpleOn using my referral link: ${referralUrl}`);
     window.open(`https://api.whatsapp.com/send?text=${text}`, '_blank');
   };
 
@@ -218,8 +293,8 @@ export default function ReferralDashboard() {
     if (navigator.share) {
       try {
         await navigator.share({
-          title: 'SimpleOn Web3 Referral Invitation',
-          text: customInviteMsg,
+          title: 'Join SimpleOn',
+          text: 'Join SimpleOn using my referral link.',
           url: referralUrl,
         });
       } catch (err) {
@@ -325,6 +400,7 @@ export default function ReferralDashboard() {
                 type="text"
                 readOnly
                 value={referralUrl}
+                onFocus={(e) => e.currentTarget.select()}
                 className="flex-1 p-3.5 rounded-2xl bg-surface-elevated border border-border-theme font-mono text-xs text-prime focus:outline-none truncate"
               />
               <button
@@ -335,6 +411,9 @@ export default function ReferralDashboard() {
                 <span>{copiedLink ? 'Copied Link!' : 'Copy Link'}</span>
               </button>
             </div>
+            {copyError && (
+              <p className="text-[11px] font-bold text-accent-red">{copyError}</p>
+            )}
           </div>
 
           {/* Share Buttons Row (4 Cols) */}
@@ -713,16 +792,21 @@ export default function ReferralDashboard() {
                 </button>
               </div>
 
-              {/* Vector SVG QR Code Graphic */}
               <div className="p-6 bg-white rounded-2xl mx-auto w-48 h-48 flex items-center justify-center shadow-inner border border-gray-200">
-                <svg viewBox="0 0 100 100" className="w-full h-full fill-slate-900">
-                  <path d="M10 10h30v30H10zM50 10h10v10H50zM70 10h20v20H70zM10 50h10v10H10zM30 50h20v10H30zM60 50h30v30H60zM10 70h20v20H10zM40 70h10v20H40zM20 20h10v10H20zM80 20h10v10H80zM70 70h10v10H70z" />
-                  <rect x="42" y="42" width="16" height="16" fill="#DC2626" rx="4" />
-                </svg>
+                {qrCodeDataUrl ? (
+                  <img
+                    src={qrCodeDataUrl}
+                    alt={`QR code for ${referralUrl}`}
+                    className="h-full w-full"
+                  />
+                ) : (
+                  <RefreshCw size={28} className="animate-spin text-slate-400" />
+                )}
               </div>
 
               <div className="space-y-1">
                 <div className="text-xs font-mono font-bold text-prime">{referralCode}</div>
+                <div className="text-[10px] font-mono text-sub break-all">{referralUrl}</div>
                 <p className="text-[11px] text-sub">Scan with any mobile Web3 wallet camera to register instantly.</p>
               </div>
 
@@ -730,8 +814,11 @@ export default function ReferralDashboard() {
                 onClick={copyUrl}
                 className="w-full py-3 rounded-2xl bg-accent-red text-white text-xs font-black shadow-md hover:bg-accent-red/90 transition-all"
               >
-                Copy Link Instead
+                {copiedLink ? 'Copied Link!' : 'Copy Link Instead'}
               </button>
+              {copyError && (
+                <p className="text-[11px] font-bold text-accent-red">{copyError}</p>
+              )}
             </motion.div>
           </div>
         )}

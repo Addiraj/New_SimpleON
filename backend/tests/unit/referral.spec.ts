@@ -50,8 +50,9 @@ describe('17-22. Referral & Sponsor Tree Unit Tests', () => {
       .set('Authorization', `Bearer ${token}`)
       .send({ sponsor: testWallet.address });
 
-    expect(res.status).toBe(400);
-    expect(res.body.error.message).toContain('Self-referral');
+    expect(res.status).toBe(200);
+    expect(res.body.data.status).toBe('self_referral');
+    expect(res.body.data.message).toContain('own referral link');
   });
 
   it('20. Duplicate sponsor assignment prevents reassigning an existing sponsor', async () => {
@@ -70,8 +71,9 @@ describe('17-22. Referral & Sponsor Tree Unit Tests', () => {
       .set('Authorization', `Bearer ${memberToken}`)
       .send({ sponsor: otherSponsorWallet.address });
 
-    expect(res.status).toBe(400);
-    expect(res.body.error.message).toContain('already has an assigned sponsor');
+    expect(res.status).toBe(200);
+    expect(res.body.data.status).toBe('already_assigned_different_sponsor');
+    expect(res.body.data.message).toContain('already linked to another sponsor');
   });
 
   it('21. Direct referrals endpoint lists all directly sponsored users', async () => {

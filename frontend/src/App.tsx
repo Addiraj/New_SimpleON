@@ -19,6 +19,7 @@ import NotificationCenter from './components/NotificationCenter';
 import MobileBottomNav from './components/MobileBottomNav';
 import ArchitectureDocs from './components/ArchitectureDocs';
 import LedgerTransactions from './components/LedgerTransactions';
+import ReferralLinkProcessor from './components/ReferralLinkProcessor';
 import { useWeb3Store } from './store/useWeb3Store';
 import AppKitSync from './components/AppKitSync';
 
@@ -242,6 +243,7 @@ export default function App() {
 
       {currentTab !== 'admin' && <Footer setActiveTab={handleTabChange} />}
       <WalletModal />
+      <ReferralLinkProcessor />
       {currentTab !== 'admin' && <NotificationCenter />}
       {currentTab !== 'admin' && <MobileBottomNav />}
       <AppKitSync />

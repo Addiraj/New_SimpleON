@@ -6,7 +6,7 @@ import { sendSuccess, catchAsync } from '../utils/apiResponse.js';
 export const getSummary = catchAsync(async (req: AuthRequest, res: Response) => {
   const userId = req.userId!;
   const host = req.get('host') || 'simpleon.io';
-  const protocol = req.protocol || 'https';
+  const protocol = (req.get('x-forwarded-proto') || req.protocol || 'https').split(',')[0].trim();
 
   const summary = await ReferralService.getSummary(userId, host, protocol);
   return sendSuccess(res, summary, 'Referral summary retrieved successfully');
@@ -35,7 +35,7 @@ export const getTree = catchAsync(async (req: AuthRequest, res: Response) => {
 export const getLink = catchAsync(async (req: AuthRequest, res: Response) => {
   const userId = req.userId!;
   const host = req.get('host') || 'simpleon.io';
-  const protocol = req.protocol || 'https';
+  const protocol = (req.get('x-forwarded-proto') || req.protocol || 'https').split(',')[0].trim();
 
   const linkInfo = await ReferralService.getReferralLink(userId, host, protocol);
   return sendSuccess(res, linkInfo, 'Referral link retrieved successfully');
