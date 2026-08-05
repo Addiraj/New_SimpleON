@@ -46,7 +46,7 @@ const defaultReferralTreeData: ReferralMember = {
 };
 
 export default function ReferralDashboard() {
-  const { address, isAuthenticated, openWalletModal, userProfile } = useWeb3Store();
+  const { address, isAuthenticated, userProfile, openWalletModal, fetchProfile } = useWeb3Store();
 
   const [copiedLink, setCopiedLink] = useState(false);
   const [copiedCode, setCopiedCode] = useState(false);
@@ -245,6 +245,7 @@ export default function ReferralDashboard() {
       // @ts-ignore
       const { walletApi } = await import('../services/api');
       await walletApi.demoActivate(assignInput.trim());
+      await fetchProfile();
       setAssignMsg({ type: 'success', text: 'Sponsor Assigned & Demo Tier Activated!' });
       
       // Give them a moment to see the success message
