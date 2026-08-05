@@ -35,7 +35,18 @@ export class MatrixQueryService {
    * Helper to resolve Level Configuration ID
    */
   private static async resolveLevelConfigId(levelConfigId?: string, tierCode?: string, userId?: string): Promise<string> {
-    if (levelConfigId) return levelConfigId;
+    if (levelConfigId) {
+      const found = await prisma.levelConfiguration.findFirst({
+        where: {
+          OR: [
+            { id: levelConfigId },
+            { slug: levelConfigId.toLowerCase().trim() },
+          ],
+        },
+        select: { id: true },
+      });
+      if (found) return found.id;
+    }
 
     if (tierCode) {
       const level = await prisma.levelConfiguration.findFirst({
@@ -77,9 +88,14 @@ export class MatrixQueryService {
     const targetUserId = await this.resolveUserId(userId, walletAddress);
     const targetLevelId = await this.resolveLevelConfigId(levelConfigId, tierCode, targetUserId);
 
+    const whereClause: any = { user_id: targetUserId };
+    if (targetLevelId) {
+      whereClause.level_configuration_id = targetLevelId;
+    }
+
     // Fetch user cycles
     const cycles = await prisma.matrixCycle.findMany({
-      where: { user_id: targetUserId, level_configuration_id: targetLevelId },
+      where: whereClause,
       include: {
         level_configuration: true,
         positions: true,

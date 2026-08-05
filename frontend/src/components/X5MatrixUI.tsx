@@ -43,6 +43,7 @@ export default function X5MatrixUI() {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
+  const [selectedTierSlug, setSelectedTierSlug] = useState<string>('starter');
   const [selectedCycle, setSelectedCycle] = useState<number>(1);
   const [hoveredNode, setHoveredNode] = useState<MatrixNode | null>(null);
   const [historyFilter, setHistoryFilter] = useState<'ALL' | 'COMPLETED' | 'IN_PROGRESS' | BoosterTierCode>('ALL');
@@ -63,11 +64,20 @@ export default function X5MatrixUI() {
   });
 
   const urlTier = typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('tier') : null;
-  const x5PoolAmount = activeTierConfig ? activeTierConfig.subscriptionAmount * basePlan : null;
+  const tierTabs = [
+    { slug: 'starter', name: 'Starter Booster', badge: '$1.00 USDT', icon: '🚀', amount: basePlan * 1.0 },
+    { slug: 'builder', name: 'Builder Booster', badge: '$4.00 USDT', icon: '📈', amount: basePlan * 4.0 },
+    { slug: 'leader', name: 'Leader Booster', badge: '$16.00 USDT', icon: '👥', amount: basePlan * 16.0 },
+    { slug: 'champion', name: 'Champion Booster', badge: '$64.00 USDT', icon: '🏆', amount: basePlan * 64.0 },
+    { slug: 'main', name: 'Main Plan ($100 Entry)', badge: '$15.00 Pool', icon: '💎', amount: basePlan * 15.0 },
+  ];
+
+  const currentTierObj = tierTabs.find((t) => t.slug === selectedTierSlug) || tierTabs[0];
+  const x5PoolAmount = activeTierConfig ? activeTierConfig.subscriptionAmount * basePlan : currentTierObj.amount;
   const slotValueLabel = x5PoolAmount === null ? '--' : formatUsdtPlain(x5PoolAmount);
 
   // Load Matrix Data from Backend API
-  const fetchMatrixData = async () => {
+  const fetchMatrixData = async (slugToFetch = selectedTierSlug) => {
     setLoading(true);
     setError(null);
     try {
@@ -100,7 +110,7 @@ export default function X5MatrixUI() {
       ]);
 
       if (summaryRes.status === 'fulfilled' && summaryRes.value) {
-        const s = summaryRes.value;
+        const s = summaryRes.value.data || summaryRes.value;
         setSummaryData({
           totalCompletedCycles: s.totalCompletedCycles || 0,
           totalFilledNodes: s.totalFilledNodes || 0,
@@ -111,14 +121,14 @@ export default function X5MatrixUI() {
       }
 
       if (currentRes.status === 'fulfilled' && currentRes.value) {
-        const c = currentRes.value;
+        const c = currentRes.value.data || currentRes.value;
         if (c.currentNodes && Array.isArray(c.currentNodes)) {
           setCurrentNodes(c.currentNodes);
         }
       }
 
       if (cyclesRes.status === 'fulfilled' && cyclesRes.value) {
-        const cy = cyclesRes.value;
+        const cy = cyclesRes.value.data || cyclesRes.value;
         if (cy.cycles && Array.isArray(cy.cycles)) {
           setMatrixCyclesHistory(cy.cycles);
         }
@@ -250,6 +260,32 @@ export default function X5MatrixUI() {
             </div>
           </div>
         </div>
+      </div>
+
+      {/* Tier Selection Bar */}
+      <div className="flex items-center space-x-2 overflow-x-auto pb-2 scrollbar-none">
+        {tierTabs.map((tier) => (
+          <button
+            key={tier.slug}
+            onClick={() => {
+              setSelectedTierSlug(tier.slug);
+              fetchMatrixData(tier.slug);
+            }}
+            className={`px-4 py-2.5 rounded-2xl text-xs font-bold flex items-center space-x-2 whitespace-nowrap transition-all cursor-pointer ${
+              selectedTierSlug === tier.slug
+                ? 'bg-accent-red text-white shadow-lg shadow-accent-red/25 border border-accent-red'
+                : 'bg-surface-elevated text-sub hover:text-prime border border-border-theme hover:bg-surface'
+            }`}
+          >
+            <span>{tier.icon}</span>
+            <span>{tier.name}</span>
+            <span className={`text-[10px] px-2 py-0.5 rounded-lg font-mono ${
+              selectedTierSlug === tier.slug ? 'bg-white/20 text-white' : 'bg-surface text-sub'
+            }`}>
+              {tier.badge}
+            </span>
+          </button>
+        ))}
       </div>
 
       {/* Error Alert State */}

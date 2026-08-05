@@ -86,8 +86,21 @@ export function savePendingReferral(referralCode: string): PendingReferralContex
 }
 
 export function readPendingReferral(): PendingReferralContext | null {
-  const raw = sessionStorage.getItem(PENDING_REFERRAL_KEY);
-  if (!raw) return null;
+  let raw = sessionStorage.getItem(PENDING_REFERRAL_KEY);
+  if (!raw) {
+    const legacyCode = localStorage.getItem(LEGACY_REFERRER_KEY);
+    if (legacyCode) {
+      const normalized = normalizeReferralCode(legacyCode);
+      if (normalized) {
+        return {
+          referralCode: normalized,
+          source: 'referral_link',
+          capturedAt: new Date().toISOString(),
+        };
+      }
+    }
+    return null;
+  }
 
   try {
     const pending = JSON.parse(raw) as PendingReferralContext;
