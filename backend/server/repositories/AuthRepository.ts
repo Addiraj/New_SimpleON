@@ -247,8 +247,8 @@ export class AuthRepository {
           referral_code: referralCode,
           sponsor_id: data.sponsorId || null,
           role: 'USER',
-          status: 'ACTIVE',
-          joined_at: now,
+          status: 'PENDING',
+          current_level_id: null,
           last_login_at: now,
         },
       });

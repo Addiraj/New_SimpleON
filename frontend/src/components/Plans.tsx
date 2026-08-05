@@ -29,7 +29,7 @@ export interface FormattedPlanApi {
 }
 
 export default function Plans({ basePlan = 1 }: { basePlan?: number } = {}) {
-  const { isConnected, isAuthenticated, openWalletModal, userProfile } = useWeb3Store();
+  const { isConnected, isAuthenticated, openWalletModal, userProfile, fetchProfile } = useWeb3Store();
   const [expandedSection, setExpandedSection] = useState<'booster' | 'main' | null>('booster');
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
@@ -579,6 +579,7 @@ export default function Plans({ basePlan = 1 }: { basePlan?: number } = {}) {
                                   await walletApi.demoActivate();
                                   alert('Demo Join Successful!');
                                   window.dispatchEvent(new Event('dashboard_refresh'));
+                                  await fetchProfile(); // Instantly update user status in the UI
                                   loadPlanData();
                                 } catch (err: any) {
                                   alert(err?.response?.data?.message || err.message || 'Demo Join failed');

@@ -4,6 +4,9 @@ import { WalletService } from '../services/WalletService.js';
 import { AuthRepository } from '../repositories/AuthRepository.js';
 import { ReferralService } from '../services/ReferralService.js';
 import { PaymentService } from '../services/PaymentService.js';
+import { MatrixPlacementService } from '../services/MatrixPlacementService.js';
+import { BoosterRepository } from '../repositories/BoosterRepository.js';
+import { prisma } from '../config/database.js';
 
 export class WalletController {
   /**
@@ -183,6 +186,16 @@ export class WalletController {
       // 5. Create and Confirm Intent
       const intent = await PaymentService.createJoinIntent(userId);
       const result = await PaymentService.confirmMockPayment(intent.id, userId, `0xmock_demo_${Date.now()}`);
+
+      // 6. Ensure Matrix placement happens if it didn't already
+      try {
+        const levelConfigId = result.level?.id;
+        if (levelConfigId) {
+          await MatrixPlacementService.placeUserInMatrix(userId, levelConfigId);
+        }
+      } catch (mErr: any) {
+        logger.warn({ error: mErr.message }, '[WalletController] Matrix placement notification warning in demoActivate');
+      }
 
       return res.status(200).json({
         status: 'success',
