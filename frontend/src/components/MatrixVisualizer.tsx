@@ -89,7 +89,7 @@ export default function MatrixVisualizer() {
             </div>
           </div>
 
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto scrollbar-none">
             <table className="w-full text-left text-xs">
               <thead>
                 <tr className="border-b border-border-theme text-sub font-black uppercase text-[10px] tracking-wider">

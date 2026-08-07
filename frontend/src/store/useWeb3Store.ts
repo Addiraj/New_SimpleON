@@ -3,7 +3,7 @@ import { ethers } from 'ethers';
 import { api, authApi, notificationApi } from '../services/api';
 import { UserProfile, BoosterCalculationsResponse } from '../types';
 import { appKitModal } from '../appkit';
-import { readReferralCodeFromSearch, savePendingReferral } from '../utils/referral';
+import { readReferralCodeFromSearch, savePendingReferral, readPendingReferral } from '../utils/referral';
 
 interface Web3State {
   // Wallet Connection
