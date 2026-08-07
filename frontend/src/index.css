@@ -95,3 +95,11 @@
   animation: shimmer 1.8s infinite linear;
 }
 
+/* Hide scrollbars for mobile diagram swipes */
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}
+.scrollbar-none {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
+}

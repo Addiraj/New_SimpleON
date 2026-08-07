@@ -243,7 +243,7 @@ export default function X5MatrixUI() {
           {/* Cycle Selector Cards & Refresh Action */}
           <div className="flex items-center space-x-3 shrink-0">
             <button
-              onClick={fetchMatrixData}
+              onClick={() => fetchMatrixData()}
               disabled={loading}
               className="p-3 rounded-2xl bg-surface-elevated border border-border-theme hover:bg-surface text-sub hover:text-prime transition-colors flex items-center justify-center cursor-pointer"
               title="Refresh Dashboard & Wallet Data"
@@ -296,7 +296,7 @@ export default function X5MatrixUI() {
             <span>{error}</span>
           </div>
           <button
-            onClick={fetchMatrixData}
+            onClick={() => fetchMatrixData()}
             className="px-3 py-1 rounded-xl bg-accent-red text-white font-bold hover:bg-accent-red/80 transition-colors"
           >
             Retry
@@ -366,9 +366,16 @@ export default function X5MatrixUI() {
           </div>
         </div>
 
+        {/* Mobile Swipe Hint */}
+        <div className="sm:hidden flex items-center justify-center -mb-2 mt-2">
+           <div className="text-[10px] text-sub font-mono flex items-center space-x-1 bg-surface-elevated px-3 py-1 rounded-full border border-border-theme shadow-sm opacity-80 animate-pulse">
+             <span>← Swipe horizontally to view full matrix →</span>
+           </div>
+        </div>
+
         {/* SVG Graphic Canvas */}
-        <div className="relative p-8 rounded-2xl bg-surface-elevated/80 border border-border-theme flex flex-col items-center justify-center min-h-[420px]">
-          
+        <div className="relative p-4 sm:p-8 rounded-2xl bg-surface-elevated/80 border border-border-theme overflow-x-auto scrollbar-none mt-4 sm:mt-0">
+          <div className="min-w-[600px] flex flex-col items-center justify-center min-h-[420px]">
           <svg className="w-full max-w-2xl h-80 overflow-visible" viewBox="0 0 600 320">
             {/* Connector Lines from Root (300, 50) to 5 Nodes */}
             <g stroke="currentColor" className="text-border-theme" strokeWidth="2" strokeDasharray="4 4">
@@ -492,6 +499,7 @@ export default function X5MatrixUI() {
               </motion.div>
             )}
           </AnimatePresence>
+          </div>
         </div>
 
         {/* Cycle Breakdown Flow Chart */}

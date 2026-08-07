@@ -543,8 +543,15 @@ export default function ReferralDashboard() {
           </div>
         </div>
 
+        {/* Mobile Swipe Hint */}
+        <div className="sm:hidden flex items-center justify-center -mb-2 mt-2">
+           <div className="text-[10px] text-sub font-mono flex items-center space-x-1 bg-surface-elevated px-3 py-1 rounded-full border border-border-theme shadow-sm opacity-80 animate-pulse">
+             <span>← Swipe horizontally to view full tree →</span>
+           </div>
+        </div>
+
         {/* Visual Tree Rendering */}
-        <div className="p-6 rounded-2xl bg-surface-elevated/80 border border-border-theme overflow-x-auto">
+        <div className="p-4 sm:p-6 rounded-2xl bg-surface-elevated/80 border border-border-theme overflow-x-auto scrollbar-none mt-4 sm:mt-0">
           <div className="min-w-[700px] flex flex-col items-center space-y-8 py-4">
             
             {/* Level 0: Root Node (User) */}
