@@ -41,10 +41,16 @@ export class DailyEarningService {
       include: { current_level: true },
     });
 
-    const levelConfig = user?.current_level;
+    let levelConfig = user?.current_level;
+    if (!levelConfig) {
+      levelConfig = await db.levelConfiguration.findFirst({
+        where: { level_order: 1, status: 'ACTIVE' },
+      });
+    }
+
     const configuredCap = levelConfig?.daily_cap
       ? parseFloat(levelConfig.daily_cap.toString())
-      : 1000;
+      : 50;
 
     // 2. Fetch or calculate DailyEarning and DailyCapping records
     const [dailyEarningRecord, dailyCappingRecord] = await Promise.all([

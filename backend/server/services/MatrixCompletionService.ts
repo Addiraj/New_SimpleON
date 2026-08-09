@@ -73,7 +73,7 @@ export class MatrixCompletionService {
         retopup_amount: levelConfig?.retopup_amount?.toString() || '20',
         retopup_enabled: levelConfig?.retopup_enabled ?? true,
         auto_upgrade_enabled: levelConfig?.auto_upgrade_enabled ?? true,
-        daily_cap: levelConfig?.daily_cap?.toString() || '1000',
+        daily_cap: levelConfig?.daily_cap?.toString() || '50',
         matrix_size: levelConfig?.matrix_size || 5,
         captured_at: new Date().toISOString(),
       };

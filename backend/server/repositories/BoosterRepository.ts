@@ -11,8 +11,10 @@ export interface LevelConfigRecord {
   matrix_size: number;
   income_per_position: string;
   cycle_reward: string;
+  cycle_reward: string;
   retopup_amount: string;
   daily_cap: string;
+  daily_cycle_limit: number;
   required_direct_referrals: number;
   required_qualified_builders: number;
   auto_upgrade_enabled: boolean;
@@ -58,6 +60,9 @@ export interface FormattedPlan {
   daily_cap: string;
   dailyCapUsdt?: string;
   'Daily cap': string;
+  dailyCycleLimit: number;
+  daily_cycle_limit: number;
+  'Daily cycle limit': number;
   requiredDirectReferrals: number;
   required_direct_referrals: number;
   'Required direct referrals': number;
@@ -82,13 +87,14 @@ const DEFAULT_LEVEL_CONFIGS: LevelConfigRecord[] = [
     name: 'Starter',
     slug: 'starter',
     level_order: 1,
-    joining_amount: '1.00000000',
-    upgrade_amount: '4.00000000',
+    joining_amount: '10.00000000',
+    upgrade_amount: '40.00000000',
     matrix_size: 5,
-    income_per_position: '0.00000000',
-    cycle_reward: '5.00000000',
-    retopup_amount: '1.00000000',
-    daily_cap: '5.00000000',
+    income_per_position: '2.00000000',
+    cycle_reward: '10.00000000',
+    retopup_amount: '10.00000000',
+    daily_cap: '0.00000000',
+    daily_cycle_limit: 5,
     required_direct_referrals: 0,
     required_qualified_builders: 0,
     auto_upgrade_enabled: true,
@@ -105,13 +111,14 @@ const DEFAULT_LEVEL_CONFIGS: LevelConfigRecord[] = [
     name: 'Builder',
     slug: 'builder',
     level_order: 2,
-    joining_amount: '4.00000000',
-    upgrade_amount: '16.00000000',
+    joining_amount: '40.00000000',
+    upgrade_amount: '80.00000000',
     matrix_size: 5,
-    income_per_position: '0.00000000',
-    cycle_reward: '20.00000000',
-    retopup_amount: '4.00000000',
-    daily_cap: '5.00000000',
+    income_per_position: '8.00000000',
+    cycle_reward: '40.00000000',
+    retopup_amount: '40.00000000',
+    daily_cap: '0.00000000',
+    daily_cycle_limit: 5,
     required_direct_referrals: 1,
     required_qualified_builders: 0,
     auto_upgrade_enabled: true,
@@ -128,13 +135,14 @@ const DEFAULT_LEVEL_CONFIGS: LevelConfigRecord[] = [
     name: 'Leader',
     slug: 'leader',
     level_order: 3,
-    joining_amount: '16.00000000',
-    upgrade_amount: '64.00000000',
+    joining_amount: '80.00000000',
+    upgrade_amount: '320.00000000',
     matrix_size: 5,
-    income_per_position: '0.00000000',
+    income_per_position: '16.00000000',
     cycle_reward: '80.00000000',
-    retopup_amount: '16.00000000',
-    daily_cap: '5.00000000',
+    retopup_amount: '80.00000000',
+    daily_cap: '0.00000000',
+    daily_cycle_limit: 5,
     required_direct_referrals: 2,
     required_qualified_builders: 1,
     auto_upgrade_enabled: true,
@@ -151,13 +159,14 @@ const DEFAULT_LEVEL_CONFIGS: LevelConfigRecord[] = [
     name: 'Champion',
     slug: 'champion',
     level_order: 4,
-    joining_amount: '64.00000000',
-    upgrade_amount: '100.00000000',
+    joining_amount: '320.00000000',
+    upgrade_amount: '0.00000000',
     matrix_size: 5,
-    income_per_position: '31.20000000',
+    income_per_position: '64.00000000',
     cycle_reward: '320.00000000',
-    retopup_amount: '64.00000000',
-    daily_cap: '5.00000000',
+    retopup_amount: '320.00000000',
+    daily_cap: '0.00000000',
+    daily_cycle_limit: 5,
     required_direct_referrals: 3,
     required_qualified_builders: 2,
     auto_upgrade_enabled: true,
@@ -216,6 +225,9 @@ export class BoosterRepository {
       daily_cap: dailyCap,
       dailyCapUsdt: dailyCap,
       'Daily cap': dailyCap,
+      dailyCycleLimit: config.daily_cycle_limit || 5,
+      daily_cycle_limit: config.daily_cycle_limit || 5,
+      'Daily cycle limit': config.daily_cycle_limit || 5,
       requiredDirectReferrals: config.required_direct_referrals,
       required_direct_referrals: config.required_direct_referrals,
       'Required direct referrals': config.required_direct_referrals,
