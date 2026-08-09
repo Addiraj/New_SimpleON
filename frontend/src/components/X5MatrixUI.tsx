@@ -69,7 +69,7 @@ export default function X5MatrixUI() {
     { slug: 'builder', name: 'Builder Booster', badge: '$4.00 USDT', icon: '📈', amount: basePlan * 4.0 },
     { slug: 'leader', name: 'Leader Booster', badge: '$16.00 USDT', icon: '👥', amount: basePlan * 16.0 },
     { slug: 'champion', name: 'Champion Booster', badge: '$64.00 USDT', icon: '🏆', amount: basePlan * 64.0 },
-    { slug: 'main', name: 'Main Plan ($100 Entry)', badge: '$15.00 Pool', icon: '💎', amount: basePlan * 15.0 },
+    { slug: 'main', name: 'Main Plan', badge: '$15.00 Pool', icon: '💎', amount: basePlan * 15.0 },
   ];
 
   const currentTierObj = tierTabs.find((t) => t.slug === selectedTierSlug) || tierTabs[0];
@@ -288,6 +288,13 @@ export default function X5MatrixUI() {
         ))}
       </div>
 
+      {selectedTierSlug === 'main' ? (
+        <div className="py-24 text-center border border-border-theme bg-surface-elevated/40 rounded-3xl">
+           <h4 className="text-2xl font-black text-prime mb-2">Coming Soon</h4>
+           <p className="text-sm text-sub">Main Plan is currently unavailable and will be available soon.</p>
+        </div>
+      ) : (
+        <>
       {/* Error Alert State */}
       {error && (
         <div className="p-4 rounded-2xl bg-accent-red/10 border border-accent-red/20 text-accent-red flex items-center justify-between text-xs font-mono">
@@ -613,7 +620,8 @@ export default function X5MatrixUI() {
           )}
         </div>
       </div>
-
+      </>
+      )}
     </div>
   );
 }

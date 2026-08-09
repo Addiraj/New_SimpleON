@@ -78,55 +78,13 @@ export default function Simulator({
           accent: t.accent || 'text-accent-red bg-accent-red/10 border-accent-red/25',
           iconName: (t.iconName as any) || 'rocket',
         }))
-      : [
-          {
-            name: 'Starter',
-            amount: basePlan * 1,
-            collection: basePlan * 5,
-            retopup: basePlan * 1,
-            upgrade: basePlan * 4,
-            dailyCap: Math.max(5, qualified.builders),
-            accent: 'text-accent-red bg-accent-red/10 border-accent-red/25',
-            iconName: 'rocket',
-          },
-          {
-            name: 'Builder',
-            amount: basePlan * 4,
-            collection: basePlan * 20,
-            retopup: basePlan * 4,
-            upgrade: basePlan * 16,
-            dailyCap: Math.max(5, qualified.leaders),
-            accent: 'text-accent-blue bg-accent-blue/10 border-accent-blue/25',
-            iconName: 'trending-up',
-          },
-          {
-            name: 'Leader',
-            amount: basePlan * 16,
-            collection: basePlan * 80,
-            retopup: basePlan * 16,
-            upgrade: basePlan * 64,
-            dailyCap: Math.max(5, qualified.champions),
-            accent: 'text-accent-orange bg-accent-orange/10 border-accent-orange/25',
-            iconName: 'users',
-          },
-          {
-            name: 'Champion',
-            amount: basePlan * 64,
-            collection: basePlan * 320,
-            retopup: basePlan * 64,
-            upgrade: basePlan * 100,
-            firstNetIncome: basePlan * 156,
-            dailyCap: Math.max(5, qualified.champions),
-            accent: 'text-accent-purple bg-accent-purple/10 border-accent-purple/25',
-            iconName: 'trophy',
-          },
-        ];
+      : [];
 
     // Main Plan Split
-    const mainPlanTotal = apiResult?.mainPlan?.totalAmount ?? basePlan * 100;
-    const x5Amount = apiResult?.mainPlan?.x5MatrixSplit ?? mainPlanTotal * 0.15;
-    const levelPoolAmount = apiResult?.mainPlan?.forcedLevelPool ?? mainPlanTotal * 0.65;
-    const x4Amount = apiResult?.mainPlan?.x4MatrixAllocation ?? mainPlanTotal * 0.20;
+    const mainPlanTotal = apiResult?.mainPlan?.totalAmount ?? 0;
+    const x5Amount = apiResult?.mainPlan?.x5MatrixSplit ?? 0;
+    const levelPoolAmount = apiResult?.mainPlan?.forcedLevelPool ?? 0;
+    const x4Amount = apiResult?.mainPlan?.x4MatrixAllocation ?? 0;
 
     const mainPlan: MainPlanBreakdown = {
       x5Amount,
@@ -148,9 +106,9 @@ export default function Simulator({
       };
     });
 
-    const championAmount = boosters[3]?.amount || basePlan * 320;
-    const championCollection = boosters[3]?.collection || basePlan * 1600;
-    const isSanityCheckPassed = Math.abs(championCollection - (championAmount + mainPlanTotal + basePlan * 780)) < 0.0001;
+    const championAmount = boosters[3]?.amount || 0;
+    const championCollection = boosters[3]?.collection || 0;
+    const isSanityCheckPassed = championCollection > 0;
 
     // X5 Matrix cycle split calculations
     const x5Split = {
@@ -166,7 +124,7 @@ export default function Simulator({
       perLevelAmount,
       isSanityCheckPassed,
       x5Split,
-      totalInvestedToReachMain: apiResult?.totalInvestedToMain ?? basePlan * 85,
+      totalInvestedToReachMain: apiResult?.totalInvestedToMain ?? 0,
     };
   }, [apiResult, basePlan, qualified, selectedX5Cycle]);
 
@@ -389,12 +347,9 @@ export default function Simulator({
                 <div className="text-[10px] text-sub mt-1">Credited at Champion phase</div>
               </div>
 
-              <div className="rounded-2xl border border-border-theme bg-surface p-5 shadow-sm transition-all">
+              <div className="rounded-2xl border border-border-theme bg-surface p-5 shadow-sm transition-all flex flex-col justify-center items-center text-center">
                 <span className="text-xs font-bold text-sub">Main Plan Subscription</span>
-                <div className="text-2xl font-black text-prime mt-1">
-                  {calculations.mainPlan.mainPlanTotal.toFixed(2)} <span className="text-xs font-bold text-sub">USDT</span>
-                </div>
-                <div className="text-[10px] text-sub mt-1">Activated from Champion upgrades</div>
+                <div className="text-lg font-black text-prime mt-1">Coming Soon</div>
               </div>
             </div>
 
@@ -461,148 +416,18 @@ export default function Simulator({
 
             {/* Main Plan Split & Matrix simulator */}
             <div className="grid md:grid-cols-2 gap-6">
-              
-              {/* Main Plan Splitting ratios */}
-              <div className="rounded-2xl border border-border-theme bg-surface p-6 shadow-sm transition-all">
-                <h3 className="text-base font-extrabold text-prime mb-4">Main Plan Breakdown (100x Base)</h3>
-                <div className="space-y-4">
-                  
-                  {/* X5 Allocation */}
-                  <div className="flex justify-between items-center text-xs">
-                    <div>
-                      <div className="font-bold text-prime">X5 Matrix Allocation (15%)</div>
-                      <div className="text-sub text-[10px]">P2P dynamic cycle system</div>
-                    </div>
-                    <div className="text-right font-bold text-prime">
-                      {calculations.mainPlan.x5Amount.toFixed(2)} USDT
-                    </div>
-                  </div>
-
-                  {/* Level Pool Allocation */}
-                  <div className="flex justify-between items-center text-xs border-t border-border-theme pt-3">
-                    <div>
-                      <div className="font-bold text-prime">13-Level Income Pool (65%)</div>
-                      <div className="text-sub text-[10px]">{(calculations.mainPlan.levelPoolAmount / NUMBER_OF_LEVELS).toFixed(2)} USDT per level</div>
-                    </div>
-                    <div className="text-right font-bold text-prime">
-                      {calculations.mainPlan.levelPoolAmount.toFixed(2)} USDT
-                    </div>
-                  </div>
-
-                  {/* X4 Allocation */}
-                  <div className="flex justify-between items-center text-xs border-t border-border-theme pt-3">
-                    <div>
-                      <div className="font-bold text-prime">X4 Matrix Spillover (20%)</div>
-                      <div className="text-sub text-[10px]">2×2 forced passive placement</div>
-                    </div>
-                    <div className="text-right font-bold text-prime">
-                      {calculations.mainPlan.x4Amount.toFixed(2)} USDT
-                    </div>
-                  </div>
-
-                  <div className="text-center pt-3 border-t border-dashed border-border-theme text-[10px] text-sub">
-                    Backend Multipliers: 15% X5 + 65% Level Pool + 20% X4 = 100%
-                  </div>
-                </div>
+              <div className="rounded-2xl border border-border-theme bg-surface p-12 shadow-sm transition-all md:col-span-2 flex flex-col items-center justify-center text-center">
+                <h3 className="text-xl font-extrabold text-prime mb-2">Main Plan</h3>
+                <h4 className="text-2xl font-black text-prime mb-2">Coming Soon</h4>
+                <p className="text-sm text-sub">Main Plan is currently unavailable and will be available soon.</p>
               </div>
-
-              {/* X5 Split cycle simulator */}
-              <div className="rounded-2xl border border-border-theme bg-surface p-6 shadow-sm transition-all flex flex-col justify-between">
-                <div>
-                  <div className="flex justify-between items-center mb-4">
-                    <h3 className="text-base font-extrabold text-prime mb-4">X5 Split Tester</h3>
-                    <div className="flex space-x-1.5">
-                      <button 
-                        onClick={() => setSelectedX5Cycle(1)}
-                        className={`px-2 py-1 text-[10px] font-bold rounded-lg ${selectedX5Cycle === 1 ? 'bg-red-600 text-white' : 'bg-surface-elevated text-prime'}`}
-                      >
-                        Cycle 1
-                      </button>
-                      <button 
-                        onClick={() => setSelectedX5Cycle(2)}
-                        className={`px-2 py-1 text-[10px] font-bold rounded-lg ${selectedX5Cycle > 1 ? 'bg-red-600 text-white' : 'bg-surface-elevated text-prime'}`}
-                      >
-                        Cycle 2+
-                      </button>
-                    </div>
-                  </div>
-
-                  <div className="space-y-3 text-xs">
-                    <div className="flex justify-between text-sub font-bold">
-                      <span>Re-topup (20%):</span>
-                      <span className="text-prime">{calculations.x5Split.retopup.toFixed(2)} USDT</span>
-                    </div>
-
-                    <div className="flex justify-between text-sub font-bold pt-2 border-t border-border-theme">
-                      <span>Upgrade Wallet ({selectedX5Cycle === 1 ? '40%' : '0%'}):</span>
-                      <span className="text-prime">{calculations.x5Split.upgradeWallet.toFixed(2)} USDT</span>
-                    </div>
-
-                    <div className="flex justify-between text-green-600 font-bold pt-2 border-t border-border-theme">
-                      <span>Income Wallet ({selectedX5Cycle === 1 ? '40%' : '80%'}):</span>
-                      <span className="font-extrabold">{calculations.x5Split.incomeWallet.toFixed(2)} USDT</span>
-                    </div>
-                  </div>
-                </div>
-
-                <p className="text-[10px] text-sub leading-normal mt-4 italic">
-                  Note: Cycle 1 routes upgrades to higher pools. Subsequent cycles payout 80% directly into your Income Wallet.
-                </p>
-              </div>
-
             </div>
 
           </div>
 
         </div>
 
-        {/* 13-Level Forced Pool Collapsible Table */}
-        <div id="simulator-level-pool" className="border border-border-theme rounded-3xl overflow-hidden bg-surface shadow-sm transition-all mb-12">
-          <button
-            onClick={() => setLevelPoolCollapsed(!levelPoolCollapsed)}
-            className="w-full flex items-center justify-between p-6 md:p-8 text-left focus:outline-none hover:bg-surface-elevated/40 transition-colors"
-          >
-            <div className="flex items-center space-x-4">
-              <div className="p-3 rounded-2xl bg-accent-red/10 text-accent-red">
-                <Layers size={24} />
-              </div>
-              <div>
-                <h3 className="text-lg font-bold text-prime">13-Level Forced Income Pool Matrix</h3>
-                <p className="text-xs text-sub mt-1">Detailed list of 13 levels showing split values and 3×3 matrix spillover potentials</p>
-              </div>
-            </div>
-            <div>
-              {levelPoolCollapsed ? <ChevronDown size={20} className="text-sub" /> : <ChevronUp size={20} className="text-sub" />}
-            </div>
-          </button>
 
-          {!levelPoolCollapsed && (
-            <div className="p-6 md:p-8 border-t border-border-theme bg-surface-elevated/20">
-              <div className="overflow-x-auto">
-                <table className="w-full text-left text-xs font-bold border-collapse">
-                  <thead>
-                    <tr className="border-b border-border-theme text-sub uppercase tracking-wider text-[10px]">
-                      <th className="py-3 px-4">Level</th>
-                      <th className="py-3 px-4">Direct Allocation</th>
-                      <th className="py-3 px-4">3×3 Members</th>
-                      <th className="py-3 px-4 text-right">Potential Max Income</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-border-theme text-prime">
-                    {calculations.levelPoolRows.map((row, idx) => (
-                      <tr key={idx} className="hover:bg-surface-elevated/20">
-                        <td className="py-3.5 px-4 text-prime">Level {row.level}</td>
-                        <td className="py-3.5 px-4">{row.amount.toFixed(2)} USDT</td>
-                        <td className="py-3.5 px-4 text-sub">{row.members.toLocaleString()}</td>
-                        <td className="py-3.5 px-4 text-right text-accent-red font-extrabold">{row.potentialIncome.toLocaleString(undefined, { maximumFractionDigits: 2 })} USDT</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          )}
-        </div>
 
       </div>
     </section>

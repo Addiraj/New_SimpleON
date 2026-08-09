@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
+import { statsApi } from '../services/api';
 import { 
   ShieldCheck, Zap, RefreshCw, Layers, ArrowRight, Play, Calculator, 
   Wallet, Sparkles, CheckCircle2, TrendingUp, Users, Network, ArrowUpRight 
@@ -11,6 +12,20 @@ interface HeroProps {
 }
 
 export default function Hero({ onCtaClick, onConnectWallet }: HeroProps) {
+  const [stats, setStats] = useState<any>(null);
+
+  useEffect(() => {
+    let mounted = true;
+    const fetchStats = async () => {
+      try {
+        const response = await statsApi.getGlobalStats();
+        if (mounted && response) setStats(response);
+      } catch (err) {}
+    };
+    fetchStats();
+    return () => { mounted = false; };
+  }, []);
+
   const containerVariants = {
     hidden: { opacity: 0 },
     visible: {
@@ -57,7 +72,8 @@ export default function Hero({ onCtaClick, onConnectWallet }: HeroProps) {
             variants={itemVariants} 
             className="mt-6 text-4xl font-black tracking-tight text-prime sm:text-6xl lg:text-7xl leading-[1.08]"
           >
-            Maximize Your Web3 Wealth with <span className="bg-gradient-to-r from-accent-red via-red-500 to-accent-orange bg-clip-text text-transparent">SimpleOn</span>
+            <span className="bg-gradient-to-r from-accent-red via-red-500 to-accent-orange bg-clip-text text-transparent">SimpleOn</span><br/>
+            Start Small. Grow Smart. Build Bigger.
           </motion.h1>
 
           {/* Subtitle */}
@@ -142,7 +158,7 @@ export default function Hero({ onCtaClick, onConnectWallet }: HeroProps) {
                     <Sparkles size={48} />
                   </div>
                   <div className="text-xs font-mono uppercase text-sub font-bold mb-1">Live Accumulated USDT</div>
-                  <div className="text-3xl font-black font-mono text-prime">$1,245.00 <span className="text-xs text-emerald-500 font-bold">+100% P2P</span></div>
+                  <div className="text-3xl font-black font-mono text-prime">{stats?.totalUsdtDistributed ? `$${stats.totalUsdtDistributed.toLocaleString(undefined, {minimumFractionDigits: 2})}` : '--'} <span className="text-xs text-emerald-500 font-bold">+100% P2P</span></div>
                   <div className="mt-3 flex items-center justify-between text-xs pt-3 border-t border-border-theme">
                     <span className="text-sub">Cycle Status:</span>
                     <span className="font-bold text-accent-red">5-Partner Auto Re-Topup Active</span>
@@ -151,24 +167,21 @@ export default function Hero({ onCtaClick, onConnectWallet }: HeroProps) {
 
                 <div className="p-5 rounded-2xl bg-surface-elevated border border-border-theme shadow-sm">
                   <div className="flex justify-between items-center text-xs font-bold text-sub mb-3">
-                    <span>Recent On-Chain Payouts</span>
+                    <span>Recent Payouts</span>
                     <span className="text-[10px] text-emerald-500 font-mono">0.02 sec avg</span>
                   </div>
                   <div className="space-y-2 font-mono text-[11px]">
-                    <div className="flex items-center justify-between p-2 rounded-xl bg-surface border border-border-theme/60">
-                      <div className="flex items-center space-x-2">
-                        <span className="w-2 h-2 rounded-full bg-emerald-500" />
-                        <span className="text-prime font-bold">0x8f3C...A063</span>
+                    {stats?.recentPayouts ? stats.recentPayouts.slice(0, 2).map((tx: any, idx: number) => (
+                      <div key={tx.id || idx} className="flex items-center justify-between p-2 rounded-xl bg-surface border border-border-theme/60">
+                        <div className="flex items-center space-x-2">
+                          <span className={`w-2 h-2 rounded-full ${idx % 2 === 0 ? 'bg-emerald-500' : 'bg-accent-blue'}`} />
+                          <span className="text-prime font-bold">{tx.recipient ? `${tx.recipient.substring(0,6)}...${tx.recipient.substring(tx.recipient.length-4)}` : 'UNKNOWN'}</span>
+                        </div>
+                        <span className={`${idx % 2 === 0 ? 'text-emerald-500' : 'text-accent-blue'} font-bold`}>+${tx.amount.toFixed(2)} USDT</span>
                       </div>
-                      <span className="text-emerald-500 font-bold">+$100.00 USDT</span>
-                    </div>
-                    <div className="flex items-center justify-between p-2 rounded-xl bg-surface border border-border-theme/60">
-                      <div className="flex items-center space-x-2">
-                        <span className="w-2 h-2 rounded-full bg-accent-blue" />
-                        <span className="text-prime font-bold">0x3c44...d293</span>
-                      </div>
-                      <span className="text-accent-blue font-bold">+$325.00 USDT</span>
-                    </div>
+                    )) : (
+                      <div className="text-sub text-center py-2 text-xs">--</div>
+                    )}
                   </div>
                 </div>
               </div>
@@ -209,15 +222,12 @@ export default function Hero({ onCtaClick, onConnectWallet }: HeroProps) {
                   <div className="flex justify-between w-full max-w-sm px-4">
                     <div className="p-2.5 rounded-xl bg-surface border border-accent-red/40 text-center font-mono text-[10px] space-y-0.5">
                       <div className="font-bold text-accent-red">Direct A</div>
-                      <div className="text-sub">+$20 USDT</div>
                     </div>
                     <div className="p-2.5 rounded-xl bg-surface border border-accent-blue/40 text-center font-mono text-[10px] space-y-0.5">
                       <div className="font-bold text-accent-blue">Direct B</div>
-                      <div className="text-sub">+$20 USDT</div>
                     </div>
                     <div className="p-2.5 rounded-xl bg-surface border border-accent-orange/40 text-center font-mono text-[10px] space-y-0.5">
                       <div className="font-bold text-accent-orange">Spillover C</div>
-                      <div className="text-sub">+$15 USDT</div>
                     </div>
                   </div>
                 </div>

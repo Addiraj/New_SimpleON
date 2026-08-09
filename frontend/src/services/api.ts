@@ -428,3 +428,11 @@ export const notificationApi = {
     return res.data || res;
   },
 };
+
+// Stats API
+export const statsApi = {
+  getGlobalStats: async () => {
+    const res: any = await api.get('/stats/global');
+    return res.data || res;
+  }
+};

@@ -1,19 +1,80 @@
 import { Request, Response, NextFunction } from 'express';
-import { AuthService } from '../services/AuthService.js';
+import { prisma } from '../config/database.js';
+import { FinancialDateService } from '../services/FinancialDateService.js';
+import { TransactionType } from '@prisma/client';
 
 export class StatsController {
-  static getGlobalStats(_req: Request, res: Response, next: NextFunction) {
+  static async getGlobalStats(_req: Request, res: Response, next: NextFunction) {
     try {
-      const allUsers = AuthService.getAllUsers();
-      const totalUsersCount = allUsers.length;
-      const totalUsdtDistributed = allUsers.reduce((sum, u) => sum + u.totalEarningsUsdt, 0);
+      // 1. Active Participants
+      const activeParticipants = await prisma.user.count({
+        where: { status: 'ACTIVE' }
+      });
+
+      // Valid Earning Transaction Types
+      const earningTypes = [
+        TransactionType.MATRIX_REWARD,
+        TransactionType.BOOSTER_REWARD,
+        TransactionType.REFERRAL_REWARD
+      ];
+
+      // 2. Total Distributed
+      const totalDistributedResult = await prisma.transaction.aggregate({
+        _sum: { amount: true },
+        where: {
+          status: 'COMPLETED',
+          transaction_type: { in: earningTypes }
+        }
+      });
+      const totalUsdtDistributed = totalDistributedResult._sum.amount ? Number(totalDistributedResult._sum.amount) : 0;
+
+      // 3. Distributed Today
+      const businessDate = FinancialDateService.getBusinessDate();
+      const { startUtc, endUtc } = FinancialDateService.getStartAndEndOfBusinessDay(businessDate);
+      const distributedTodayResult = await prisma.transaction.aggregate({
+        _sum: { amount: true },
+        where: {
+          status: 'COMPLETED',
+          transaction_type: { in: earningTypes },
+          completed_at: {
+            gte: startUtc,
+            lte: endUtc
+          }
+        }
+      });
+      const distributedToday = distributedTodayResult._sum.amount ? Number(distributedTodayResult._sum.amount) : 0;
+
+      // 4. Recent Payouts
+      const recentPayoutsRecords = await prisma.transaction.findMany({
+        where: {
+          status: 'COMPLETED',
+          transaction_type: { in: earningTypes }
+        },
+        orderBy: { completed_at: 'desc' },
+        take: 10,
+        include: {
+          user: {
+            select: { wallet_address: true }
+          }
+        }
+      });
+
+      const recentPayouts = recentPayoutsRecords.map(tx => ({
+        id: tx.id,
+        recipient: tx.user?.wallet_address || 'UNKNOWN',
+        amount: Number(tx.amount),
+        timestamp: tx.completed_at || tx.created_at,
+        type: tx.transaction_type,
+        blockchainHash: tx.blockchain_transaction_hash || null
+      }));
 
       res.json({
         success: true,
         data: {
-          totalUsers: totalUsersCount + 18240, // Simulated network base + active
-          totalUsdtDistributed: totalUsdtDistributed + 894200.0,
-          activeBoosterCycles: 4580,
+          totalUsdtDistributed,
+          activeParticipants,
+          distributedToday,
+          recentPayouts,
           currentNetworkStatus: 'OPERATIONAL',
           supportedChains: ['BNB Chain Testnet (97)', 'BNB Chain Mainnet (56)'],
           timestamp: new Date().toISOString()

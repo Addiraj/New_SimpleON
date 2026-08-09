@@ -733,8 +733,8 @@ export default function Plans({ basePlan = 1 }: { basePlan?: number } = {}) {
                   <Layers size={24} />
                 </div>
                 <div>
-                  <h3 id="main-header-title" className="text-xl font-bold text-prime">Main Plan ({mainPlanCost.toFixed(0)} USDT Entry)</h3>
-                  <p id="main-header-desc" className="text-xs text-sub mt-1">Multi-tiered matrix engine with high-volume pool spillovers</p>
+                  <h3 id="main-header-title" className="text-xl font-bold text-prime">Main Plan</h3>
+                  <p id="main-header-desc" className="text-xs text-sub mt-1">Multi-tiered matrix engine</p>
                 </div>
               </div>
               <div id="main-header-toggle">
@@ -743,34 +743,9 @@ export default function Plans({ basePlan = 1 }: { basePlan?: number } = {}) {
             </button>
 
             {expandedSection === 'main' && (
-              <div id="plans-accordion-main-content" className="p-6 md:p-8 border-t border-border-theme bg-surface-elevated/40">
-                <div id="main-allocations-grid" className="grid gap-6 lg:grid-cols-3">
-                  {mainPlanAllocations.map((alloc, idx) => (
-                    <div
-                      key={idx}
-                      id={`main-alloc-card-${idx}`}
-                      className="rounded-2xl border border-border-theme bg-surface p-6 shadow-sm flex flex-col"
-                    >
-                      <div id={`main-alloc-header-${idx}`} className="flex items-center justify-between mb-4">
-                        <span id={`main-alloc-badge-${idx}`} className="inline-flex items-center px-2.5 py-1 text-xs font-black rounded-lg bg-accent-red/10 text-accent-red">
-                          {alloc.percentage}
-                        </span>
-                        <span id={`main-alloc-amount-${idx}`} className="text-base font-extrabold text-prime">{alloc.amount}</span>
-                      </div>
-                      
-                      <h4 id={`main-alloc-title-${idx}`} className="text-base font-bold text-prime mb-2">{alloc.module}</h4>
-                      <p id={`main-alloc-desc-${idx}`} className="text-xs text-sub leading-relaxed mb-4 flex-grow">{alloc.description}</p>
-                      
-                      <div id={`main-alloc-formula-${idx}`} className="pt-3 border-t border-border-theme text-[11px] text-sub">
-                        Formula: <span className="text-prime font-bold">{alloc.formula}</span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-
-                <div id="main-plan-note" className="mt-8 p-4 rounded-xl border border-accent-red/20 bg-accent-red/5 text-xs text-accent-red text-center max-w-3xl mx-auto font-medium">
-                  Note: The entire system scales proportionally. When the Base Plan input is changed (e.g. from 1 USDT to 10 USDT), all corresponding payouts, subscriptions, and pool allocations are dynamically scaled by that factor.
-                </div>
+              <div id="plans-accordion-main-content" className="p-12 md:p-16 border-t border-border-theme bg-surface-elevated/40 flex flex-col items-center justify-center text-center">
+                <h4 className="text-2xl font-black text-prime mb-2">Coming Soon</h4>
+                <p className="text-sm text-sub">Main Plan is currently unavailable and will be available soon.</p>
               </div>
             )}
           </div>

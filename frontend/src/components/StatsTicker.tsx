@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
-import { Landmark, Users, TrendingUp, Globe } from 'lucide-react';
+import { Landmark, Users, TrendingUp } from 'lucide-react';
+import { statsApi } from '../services/api';
 
 interface CountUpProps {
-  end: number;
+  end: number | null;
   prefix?: string;
   suffix?: string;
   duration?: number;
@@ -13,6 +14,7 @@ function CountUp({ end, prefix = '', suffix = '', duration = 1.5 }: CountUpProps
   const [count, setCount] = useState(0);
 
   useEffect(() => {
+    if (end === null) return;
     let startTime: number | null = null;
     const step = (timestamp: number) => {
       if (!startTime) startTime = timestamp;
@@ -26,6 +28,10 @@ function CountUp({ end, prefix = '', suffix = '', duration = 1.5 }: CountUpProps
     };
     window.requestAnimationFrame(step);
   }, [end, duration]);
+
+  if (end === null) {
+    return <span className="font-mono tracking-tight text-2xl sm:text-3xl font-black tabular-nums">--</span>;
+  }
 
   const formatNumber = (num: number) => {
     return num.toLocaleString();
@@ -41,6 +47,37 @@ function CountUp({ end, prefix = '', suffix = '', duration = 1.5 }: CountUpProps
 }
 
 export default function StatsTicker() {
+  const [stats, setStats] = useState<{ totalUsdtDistributed: number; activeParticipants: number; distributedToday: number } | null>(null);
+
+  useEffect(() => {
+    let mounted = true;
+    let timeoutId: number | undefined;
+
+    const fetchStats = async () => {
+      try {
+        const response = await statsApi.getGlobalStats();
+        if (mounted && response) {
+          setStats(response);
+        }
+      } catch (err) {
+        console.error('Failed to fetch global stats:', err);
+      } finally {
+        if (mounted) {
+          timeoutId = window.setTimeout(fetchStats, 30000);
+        }
+      }
+    };
+
+    fetchStats();
+
+    return () => {
+      mounted = false;
+      if (timeoutId) {
+        window.clearTimeout(timeoutId);
+      }
+    };
+  }, []);
+
   return (
     <div 
       id="live-stats-ticker" 
@@ -54,7 +91,7 @@ export default function StatsTicker() {
         <div className="absolute top-0 left-1/4 h-20 w-40 rounded-full bg-accent-red/5 blur-2xl pointer-events-none" />
         <div className="absolute bottom-0 right-1/4 h-20 w-40 rounded-full bg-accent-blue/5 blur-2xl pointer-events-none" />
 
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-6 sm:gap-8 items-center text-center">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8 items-center text-center">
           
           {/* Stat 1 */}
           <div id="stat-total-distributed" className="flex flex-col items-center space-y-2">
@@ -62,7 +99,7 @@ export default function StatsTicker() {
               <Landmark size={20} />
             </div>
             <div className="text-prime">
-              <CountUp end={1245680} prefix="" suffix=" USDT" />
+              <CountUp end={stats?.totalUsdtDistributed ?? null} prefix="" suffix=" USDT" />
             </div>
             <span className="text-[10px] sm:text-xs font-black text-sub uppercase tracking-wider">
               Total Distributed
@@ -70,12 +107,12 @@ export default function StatsTicker() {
           </div>
 
           {/* Stat 2 */}
-          <div id="stat-active-participants" className="flex flex-col items-center space-y-2 border-l border-border-theme/40 md:border-l">
+          <div id="stat-active-participants" className="flex flex-col items-center space-y-2 border-t border-border-theme/40 pt-6 md:border-t-0 md:pt-0 md:border-l">
             <div className="p-2.5 bg-accent-blue/10 text-accent-blue rounded-xl">
               <Users size={20} />
             </div>
             <div className="text-prime">
-              <CountUp end={142395} />
+              <CountUp end={stats?.activeParticipants ?? null} />
             </div>
             <span className="text-[10px] sm:text-xs font-black text-sub uppercase tracking-wider">
               Active Participants
@@ -83,28 +120,15 @@ export default function StatsTicker() {
           </div>
 
           {/* Stat 3 */}
-          <div id="stat-distributed-today" className="flex flex-col items-center space-y-2 border-l border-border-theme/40 md:border-l">
+          <div id="stat-distributed-today" className="flex flex-col items-center space-y-2 border-t border-border-theme/40 pt-6 md:border-t-0 md:pt-0 md:border-l">
             <div className="p-2.5 bg-accent-orange/10 text-accent-orange rounded-xl">
               <TrendingUp size={20} />
             </div>
             <div className="text-prime">
-              <CountUp end={48512} suffix=" USDT" />
+              <CountUp end={stats?.distributedToday ?? null} suffix=" USDT" />
             </div>
             <span className="text-[10px] sm:text-xs font-black text-sub uppercase tracking-wider">
               Distributed Today
-            </span>
-          </div>
-
-          {/* Stat 4 */}
-          <div id="stat-countries-represented" className="flex flex-col items-center space-y-2 border-l border-border-theme/40 md:border-l">
-            <div className="p-2.5 bg-accent-purple/10 text-accent-purple rounded-xl">
-              <Globe size={20} />
-            </div>
-            <div className="text-prime">
-              <CountUp end={118} />
-            </div>
-            <span className="text-[10px] sm:text-xs font-black text-sub uppercase tracking-wider">
-              Countries Active
             </span>
           </div>
 
@@ -115,7 +139,7 @@ export default function StatsTicker() {
           id="stats-ticker-caption" 
           className="mt-6 text-center text-[10px] sm:text-xs text-sub/80 border-t border-border-theme/50 pt-4 font-medium"
         >
-          Illustrative simulation data — not live platform statistics. All numbers are for structural demonstration purposes.
+          Live backend data refreshed every 30 seconds.
         </div>
       </div>
     </div>
