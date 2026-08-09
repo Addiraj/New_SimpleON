@@ -49,11 +49,12 @@ export class MatrixRepository {
       });
       if (cycle) return cycle as unknown as MatrixCycleRecord;
     } catch (err) {
-      // Memory fallback
-      for (const c of memoryCycles.values()) {
-        if (c.user_id === userId && c.level_configuration_id === levelConfigId && c.status === 'ACTIVE') {
-          return c;
-        }
+      // Ignore DB errors
+    }
+
+    for (const c of memoryCycles.values()) {
+      if (c.user_id === userId && c.level_configuration_id === levelConfigId && c.status === 'ACTIVE') {
+        return c;
       }
     }
     return null;

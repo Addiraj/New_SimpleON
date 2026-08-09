@@ -4,6 +4,8 @@ import { logger } from '../config/logger.js';
 export interface UserQualificationData {
   directCount: number;
   builderCount: number;
+  leaderCount: number;
+  championCount: number;
   teamSize: number;
   totalEarnings: number;
   completedCycles: number;
@@ -46,6 +48,34 @@ export class QualifiedBuilderService {
         },
       });
 
+      // 2a. Qualified leaders count: Direct referrals who have reached Leader level (level_order >= 3)
+      const leaderCount = await db.referralRelation.count({
+        where: {
+          sponsor_user_id: userId,
+          depth: 1,
+          status: 'ACTIVE',
+          referred: {
+            current_level: {
+              level_order: { gte: 3 },
+            },
+          },
+        },
+      });
+
+      // 2b. Qualified champions count: Direct referrals who have reached Champion level (level_order >= 4)
+      const championCount = await db.referralRelation.count({
+        where: {
+          sponsor_user_id: userId,
+          depth: 1,
+          status: 'ACTIVE',
+          referred: {
+            current_level: {
+              level_order: { gte: 4 },
+            },
+          },
+        },
+      });
+
       // 3. Team size (total downline team members)
       const teamSize = await db.referralRelation.count({
         where: {
@@ -80,6 +110,8 @@ export class QualifiedBuilderService {
       return {
         directCount,
         builderCount,
+        leaderCount,
+        championCount,
         teamSize,
         totalEarnings,
         completedCycles,
@@ -92,6 +124,8 @@ export class QualifiedBuilderService {
       return {
         directCount: 0,
         builderCount: 0,
+        leaderCount: 0,
+        championCount: 0,
         teamSize: 0,
         totalEarnings: 0,
         completedCycles: 0,

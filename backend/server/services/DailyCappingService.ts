@@ -2,252 +2,208 @@ import { Prisma, CappingHandlingType } from '@prisma/client';
 import { prisma } from '../config/database.js';
 import { logger } from '../config/logger.js';
 import { FinancialDateService } from './FinancialDateService.js';
-import { DailyEarningService, DailyEarningMetrics } from './DailyEarningService.js';
 import { QualifiedBuilderService } from './QualifiedBuilderService.js';
+import { BoosterConfigService } from './BoosterConfigService.js';
 
 export interface CappingEvaluationResult {
   businessDate: string;
+  isCapped: boolean;
+  dailyCycleLimit: number;
+  completedCycleCount: number;
+  cappedCycleCount: number;
   grossEarnings: number;
   creditedEarnings: number;
-  dailyCap: number;
-  remainingCap: number;
-  cappedAmount: number;
-  heldAmount: number;
-  carriedForwardAmount: number;
-  qualifiedBuilderCount: number;
-  completedCycleCount: number;
-  allowedThisTransaction: number;
   excessThisTransaction: number;
+  allowedThisTransaction: number;
   dailyCappingRecord: any;
-  dailyEarningRecord: any;
 }
 
 export class DailyCappingService {
   /**
    * Evaluates and applies daily earning capping within a database transaction.
-   * Calculates gross earnings, already credited earnings, remaining cap, allowed credit,
-   * excess amount, and applies configured excess handling (HELD, FORFEITED, CARRIED_FORWARD).
-   * Stores calculation snapshot and ensures non-negative numbers and idempotency.
-   *
-   * @param userId User ID
-   * @param grossAmount Proposed new earning amount
-   * @param handlingType Excess handling type: HELD, FORFEITED, CARRIED_FORWARD (Default: HELD)
-   * @param customDate Optional date override
-   * @param db Prisma transaction or database client
+   * Cycle limits are evaluated independently for each Booster Pool.
    */
   static async evaluateAndApplyCapping(
     userId: string,
+    levelConfigId: string,
     grossAmount: number,
     handlingType: CappingHandlingType = CappingHandlingType.HELD,
     customDate?: Date,
     db: any = prisma
   ): Promise<CappingEvaluationResult> {
     const executeCapping = async (tx: any) => {
-      // 1. Determine configured business date & timezone
       const businessDate = FinancialDateService.getBusinessDate(customDate);
       const businessDateStr = FinancialDateService.getBusinessDateString(customDate);
-      const timezone = FinancialDateService.getTimezone();
-
       const safeGrossInput = Math.max(0, grossAmount);
 
-      // 2. Load user and current level configuration
+      // 1. Verify user has an active level
       const user = await tx.user.findUnique({
         where: { id: userId },
-        include: { current_level: true },
       });
 
-      if (!user) {
-        throw new Error(`User ${userId} not found`);
+      if (!user || !user.current_level_id) {
+        throw new Error(`User ${userId} does not have an active Booster level. Earning eligibility denied.`);
       }
 
-      // 3. Determine daily cap limit from active level configuration
-      let levelConfig = user.current_level;
+      // 2. Load the pool configuration that generated the reward
+      const levelConfig = await tx.levelConfiguration.findUnique({
+        where: { id: levelConfigId },
+      });
+
       if (!levelConfig) {
-        levelConfig = await tx.levelConfiguration.findFirst({
-          where: { level_order: 1, status: 'ACTIVE' },
-        });
+        throw new Error(`Level Configuration ${levelConfigId} not found`);
       }
 
-      const levelConfigId = levelConfig?.id || 'default-level';
-      const dailyCapLimit = levelConfig?.daily_cap
-        ? Math.max(0, parseFloat(levelConfig.daily_cap.toString()))
-        : 1000;
+      const tierConfig = BoosterConfigService.assertTierConfig(levelConfig.slug);
 
-      // 4. Fetch existing records for user and business date
-      let dailyEarning = await tx.dailyEarning.findUnique({
-        where: {
-          user_id_business_date: {
-            user_id: userId,
-            business_date: businessDate,
-          },
-        },
-      });
-
-      let dailyCapping = await tx.dailyCapping.findUnique({
-        where: {
-          user_id_business_date: {
-            user_id: userId,
-            business_date: businessDate,
-          },
-        },
-      });
-
-      // 5. Calculate existing credited earnings & remaining cap
-      const currentGross = Math.max(
-        0,
-        dailyEarning ? parseFloat(dailyEarning.gross_amount.toString()) : 0
-      );
-
-      const currentCredited = Math.max(
-        0,
-        dailyEarning ? parseFloat(dailyEarning.credited_amount.toString()) : 0
-      );
-
-      const remainingCapBefore = Math.max(0, dailyCapLimit - currentCredited);
-
-      // 6. Calculate allowed credit and excess
-      const allowedThisTransaction = Math.min(safeGrossInput, remainingCapBefore);
-      const excessThisTransaction = Math.max(0, safeGrossInput - allowedThisTransaction);
-
-      // 7. Calculate excess breakdown based on handlingType
-      let addHeld = 0;
-      let addCapped = 0;
-      let addCarried = 0;
-
-      if (excessThisTransaction > 0) {
-        if (handlingType === CappingHandlingType.FORFEITED) {
-          addCapped = excessThisTransaction;
-        } else if (handlingType === CappingHandlingType.CARRIED_FORWARD) {
-          addCarried = excessThisTransaction;
-        } else {
-          // Default: HELD
-          addHeld = excessThisTransaction;
-        }
-      }
-
-      const newGross = Math.max(0, currentGross + safeGrossInput);
-      const newCredited = Math.max(0, currentCredited + allowedThisTransaction);
-      const remainingCapAfter = Math.max(0, dailyCapLimit - newCredited);
-
-      // 8. Fetch builder qualifications and cycle counts
+      // 3. Fetch qualification data
       const qualification = await QualifiedBuilderService.getQualificationData(userId, tx);
 
-      // 9. Store calculation snapshot
+      // 4. Calculate dynamic cycle limit for this specific pool
+      const dailyCycleLimit = BoosterConfigService.calculateBoosterDailyCapping(tierConfig.code, {
+        qualifiedBuilders: qualification.builderCount,
+        qualifiedLeaders: qualification.leaderCount,
+        qualifiedChampions: qualification.championCount,
+        leaderDailyCapping: Math.max(5, qualification.championCount),
+      });
+
+      // 5. Ensure row exists atomically (row creation race protection)
+      await tx.$executeRaw`
+        INSERT INTO daily_cappings (
+          id, user_id, level_configuration_id, business_date,
+          gross_earning, allowed_earning, excess_earning, handling_type,
+          qualified_builder_count, completed_cycle_count, daily_cycle_limit, capped_cycle_count, created_at, updated_at
+        ) VALUES (
+          gen_random_uuid(), ${userId}, ${levelConfigId}, ${businessDate}::date,
+          0, 0, 0, 'HELD'::"CappingHandlingType",
+          ${qualification.builderCount}, 0, ${dailyCycleLimit}, 0, NOW(), NOW()
+        )
+        ON CONFLICT (user_id, level_configuration_id, business_date) DO NOTHING;
+      `;
+
+      // 6. Lock the exact DailyCapping row for UPDATE
+      const lockedRecords: any[] = await tx.$queryRaw`
+        SELECT id, completed_cycle_count, capped_cycle_count, gross_earning, allowed_earning, excess_earning
+        FROM daily_cappings
+        WHERE user_id = ${userId}
+          AND level_configuration_id = ${levelConfigId}
+          AND business_date = ${businessDate}::date
+        FOR UPDATE;
+      `;
+
+      if (!lockedRecords || lockedRecords.length === 0) {
+        throw new Error(`Failed to lock DailyCapping record for user ${userId}`);
+      }
+
+      const lockedRecord = lockedRecords[0];
+
+      const currentCompletedCycles = Number(lockedRecord.completed_cycle_count);
+      const currentCappedCycles = Number(lockedRecord.capped_cycle_count);
+      const currentGross = parseFloat(lockedRecord.gross_earning.toString());
+      const currentCredited = parseFloat(lockedRecord.allowed_earning.toString());
+      const currentExcess = parseFloat(lockedRecord.excess_earning.toString());
+
+      // 7. Evaluate Cycle Capping (using strictly the locked completed_cycle_count)
+      const isCapped = currentCompletedCycles >= dailyCycleLimit;
+
+      let allowedThisTransaction = 0;
+      let excessThisTransaction = 0;
+      let newCompletedCycles = currentCompletedCycles;
+      let newCappedCycles = currentCappedCycles;
+
+      if (isCapped) {
+        // Capped! Reward goes to Immediate Sponsor
+        allowedThisTransaction = 0;
+        excessThisTransaction = safeGrossInput;
+        newCappedCycles++;
+      } else {
+        // Eligible! Reward goes to Participant
+        allowedThisTransaction = safeGrossInput;
+        excessThisTransaction = 0;
+        newCompletedCycles++;
+      }
+
+      const newGross = currentGross + safeGrossInput;
+      const newCredited = currentCredited + allowedThisTransaction;
+      const newExcess = currentExcess + excessThisTransaction;
+
+      // 8. Store snapshot
       const snapshot = {
         evaluatedAt: new Date().toISOString(),
         userId,
         businessDate: businessDateStr,
         levelConfigurationId: levelConfigId,
-        levelName: levelConfig?.name || 'Starter Booster',
-        dailyCapLimit,
+        tierCode: tierConfig.code,
+        dailyCycleLimit,
+        isCapped,
+        currentCompletedCyclesBefore: currentCompletedCycles,
         inputGrossAmount: safeGrossInput,
-        currentCreditedBefore: currentCredited,
         allowedThisTransaction,
         excessThisTransaction,
-        handlingType,
-        newGrossTotal: newGross,
-        newCreditedTotal: newCredited,
-        remainingCapAfter,
-        qualifiedBuilderCount: qualification.builderCount,
-        completedCycleCount: qualification.completedCycles,
       };
 
-      // 10. Upsert `daily_earnings` record
-      if (dailyEarning) {
-        dailyEarning = await tx.dailyEarning.update({
-          where: { id: dailyEarning.id },
-          data: {
-            gross_amount: new Prisma.Decimal(newGross),
-            credited_amount: new Prisma.Decimal(newCredited),
-            capped_amount: { increment: new Prisma.Decimal(addCapped) },
-            held_amount: { increment: new Prisma.Decimal(addHeld) },
-            carried_forward_amount: { increment: new Prisma.Decimal(addCarried) },
-            daily_cap: new Prisma.Decimal(dailyCapLimit),
-            status: remainingCapAfter === 0 ? 'FINALIZED' : 'ACTIVE',
-          },
-        });
-      } else {
-        dailyEarning = await tx.dailyEarning.create({
-          data: {
-            user_id: userId,
-            business_date: businessDate,
-            gross_amount: new Prisma.Decimal(newGross),
-            credited_amount: new Prisma.Decimal(newCredited),
-            capped_amount: new Prisma.Decimal(addCapped),
-            held_amount: new Prisma.Decimal(addHeld),
-            carried_forward_amount: new Prisma.Decimal(addCarried),
-            daily_cap: new Prisma.Decimal(dailyCapLimit),
-            timezone,
-            status: remainingCapAfter === 0 ? 'FINALIZED' : 'ACTIVE',
-          },
-        });
-      }
+      // 9. Update `daily_cappings` record under lock
+      const dailyCapping = await tx.dailyCapping.update({
+        where: { id: lockedRecord.id },
+        data: {
+          gross_earning: new Prisma.Decimal(newGross),
+          allowed_earning: new Prisma.Decimal(newCredited),
+          excess_earning: new Prisma.Decimal(newExcess),
+          completed_cycle_count: newCompletedCycles,
+          capped_cycle_count: newCappedCycles,
+          daily_cycle_limit: dailyCycleLimit,
+          qualified_builder_count: qualification.builderCount,
+          calculation_snapshot: snapshot,
+        },
+      });
+      
+      // Update DailyEarning (Legacy compatibility for accounting history)
+      await tx.$executeRaw`
+        INSERT INTO daily_earnings (
+          id, user_id, business_date,
+          gross_amount, credited_amount, capped_amount, held_amount, carried_forward_amount,
+          daily_cap, timezone, status, created_at, updated_at
+        ) VALUES (
+          gen_random_uuid(), ${userId}, ${businessDate}::date,
+          0, 0, 0, 0, 0,
+          0, ${FinancialDateService.getTimezone()}, 'ACTIVE'::"DailyEarningStatus", NOW(), NOW()
+        )
+        ON CONFLICT (user_id, business_date) DO NOTHING;
+      `;
 
-      // 11. Upsert `daily_cappings` record
-      const currentCappingExcess = dailyCapping
-        ? parseFloat(dailyCapping.excess_earning.toString())
-        : 0;
-      const totalCappingExcess = Math.max(0, currentCappingExcess + excessThisTransaction);
-
-      if (dailyCapping) {
-        dailyCapping = await tx.dailyCapping.update({
-          where: { id: dailyCapping.id },
-          data: {
-            level_configuration_id: levelConfigId,
-            gross_earning: new Prisma.Decimal(newGross),
-            allowed_earning: new Prisma.Decimal(newCredited),
-            excess_earning: new Prisma.Decimal(totalCappingExcess),
-            handling_type: handlingType,
-            qualified_builder_count: qualification.builderCount,
-            completed_cycle_count: qualification.completedCycles,
-            calculation_snapshot: snapshot,
-            finalized_at: remainingCapAfter === 0 ? new Date() : null,
-          },
-        });
-      } else {
-        dailyCapping = await tx.dailyCapping.create({
-          data: {
-            user_id: userId,
-            level_configuration_id: levelConfigId,
-            business_date: businessDate,
-            gross_earning: new Prisma.Decimal(newGross),
-            allowed_earning: new Prisma.Decimal(newCredited),
-            excess_earning: new Prisma.Decimal(totalCappingExcess),
-            handling_type: handlingType,
-            qualified_builder_count: qualification.builderCount,
-            completed_cycle_count: qualification.completedCycles,
-            calculation_snapshot: snapshot,
-            finalized_at: remainingCapAfter === 0 ? new Date() : null,
-          },
-        });
-      }
+      await tx.dailyEarning.updateMany({
+        where: {
+          user_id: userId,
+          business_date: businessDate,
+        },
+        data: {
+          gross_amount: { increment: new Prisma.Decimal(safeGrossInput) },
+          credited_amount: { increment: new Prisma.Decimal(allowedThisTransaction) },
+          held_amount: { increment: new Prisma.Decimal(excessThisTransaction) },
+        },
+      });
 
       logger.info(
         {
           userId,
           businessDate: businessDateStr,
+          isCapped,
           allowedThisTransaction,
-          excessThisTransaction,
-          remainingCapAfter,
         },
-        '[DailyCappingService] Evaluated and applied daily capping'
+        '[DailyCappingService] Evaluated cycle capping'
       );
 
       return {
         businessDate: businessDateStr,
+        isCapped,
+        dailyCycleLimit,
+        completedCycleCount: newCompletedCycles,
+        cappedCycleCount: newCappedCycles,
         grossEarnings: newGross,
         creditedEarnings: newCredited,
-        dailyCap: dailyCapLimit,
-        remainingCap: remainingCapAfter,
-        cappedAmount: parseFloat(dailyEarning.capped_amount.toString()),
-        heldAmount: parseFloat(dailyEarning.held_amount.toString()),
-        carriedForwardAmount: parseFloat(dailyEarning.carried_forward_amount.toString()),
-        qualifiedBuilderCount: qualification.builderCount,
-        completedCycleCount: qualification.completedCycles,
-        allowedThisTransaction,
         excessThisTransaction,
+        allowedThisTransaction,
         dailyCappingRecord: dailyCapping,
-        dailyEarningRecord: dailyEarning,
       };
     };
 
@@ -262,160 +218,75 @@ export class DailyCappingService {
   }
 
   /**
-   * Safely handles earning reversals without permitting negative numbers.
+   * GET /api/capping/status
+   * Returns an array of pool statuses
    */
-  static async handleReversal(
-    userId: string,
-    reversalAmount: number,
-    customDate?: Date,
-    db: any = prisma
-  ) {
-    const businessDate = FinancialDateService.getBusinessDate(customDate);
-    const safeAmount = Math.max(0, reversalAmount);
-
-    const dailyEarning = await db.dailyEarning.findUnique({
-      where: {
-        user_id_business_date: {
-          user_id: userId,
-          business_date: businessDate,
-        },
-      },
+  static async getStatus(userId: string, db: any = prisma) {
+    const user = await db.user.findUnique({
+      where: { id: userId },
     });
 
-    if (!dailyEarning) return;
+    if (!user || !user.current_level_id) {
+      return { pools: [], active: false };
+    }
 
-    const currentGross = parseFloat(dailyEarning.gross_amount.toString());
-    const currentCredited = parseFloat(dailyEarning.credited_amount.toString());
+    const businessDate = FinancialDateService.getBusinessDate();
+    const qualification = await QualifiedBuilderService.getQualificationData(userId, db);
 
-    const newGross = Math.max(0, currentGross - safeAmount);
-    const newCredited = Math.max(0, currentCredited - safeAmount);
-
-    await db.dailyEarning.update({
-      where: { id: dailyEarning.id },
-      data: {
-        gross_amount: new Prisma.Decimal(newGross),
-        credited_amount: new Prisma.Decimal(newCredited),
-        status: 'ACTIVE',
-      },
+    const activeConfigs = await db.levelConfiguration.findMany({
+      where: { status: 'ACTIVE' },
+      orderBy: { level_order: 'asc' },
     });
 
-    const dailyCapping = await db.dailyCapping.findUnique({
-      where: {
-        user_id_business_date: {
-          user_id: userId,
-          business_date: businessDate,
-        },
-      },
-    });
+    const pools = [];
+    for (const config of activeConfigs) {
+      const tierConfig = BoosterConfigService.getTierConfig(config.slug);
+      if (!tierConfig) continue;
 
-    if (dailyCapping) {
-      await db.dailyCapping.update({
-        where: { id: dailyCapping.id },
-        data: {
-          gross_earning: new Prisma.Decimal(newGross),
-          allowed_earning: new Prisma.Decimal(newCredited),
+      const dailyCycleLimit = BoosterConfigService.calculateBoosterDailyCapping(tierConfig.code, {
+        qualifiedBuilders: qualification.builderCount,
+        qualifiedLeaders: qualification.leaderCount,
+        qualifiedChampions: qualification.championCount,
+        leaderDailyCapping: Math.max(5, qualification.championCount),
+      });
+
+      const cappingRecord = await db.dailyCapping.findUnique({
+        where: {
+          user_id_level_configuration_id_business_date: {
+            user_id: userId,
+            level_configuration_id: config.id,
+            business_date: businessDate,
+          },
         },
+      });
+
+      const completed = cappingRecord ? cappingRecord.completed_cycle_count : 0;
+      const capped = cappingRecord ? cappingRecord.capped_cycle_count : 0;
+      const remaining = Math.max(0, dailyCycleLimit - completed);
+
+      pools.push({
+        poolName: config.name,
+        tierCode: tierConfig.code,
+        dailyCycleLimit,
+        completedCycleCount: completed,
+        remainingCycles: remaining,
+        cappedCycleCount: capped,
+        isCapped: completed >= dailyCycleLimit,
+        grossEarnings: cappingRecord ? parseFloat(cappingRecord.gross_earning.toString()) : 0,
+        creditedEarnings: cappingRecord ? parseFloat(cappingRecord.allowed_earning.toString()) : 0,
       });
     }
 
-    logger.info({ userId, reversalAmount: safeAmount, newCredited }, '[DailyCappingService] Processed safe earning reversal');
-  }
-
-  /**
-   * GET /api/capping/status
-   */
-  static async getStatus(userId: string, db: any = prisma) {
-    const metrics: DailyEarningMetrics = await DailyEarningService.getDailyEarnings(userId, undefined, db);
-    const user = await db.user.findUnique({
-      where: { id: userId },
-      include: { current_level: true },
-    });
-
-    const usagePercentage = metrics.dailyCap > 0
-      ? Math.min(100, (metrics.creditedEarnings / metrics.dailyCap) * 100)
-      : 0;
-
     return {
-      businessDate: metrics.businessDate,
-      grossEarnings: metrics.grossEarnings,
-      creditedEarnings: metrics.creditedEarnings,
-      dailyCap: metrics.dailyCap,
-      remainingCap: metrics.remainingCap,
-      cappedAmount: metrics.cappedAmount,
-      heldAmount: metrics.heldAmount,
-      carriedForwardAmount: metrics.carriedForwardAmount,
-      qualifiedBuilderCount: metrics.qualifiedBuilderCount,
-      completedCycleCount: metrics.completedCycleCount,
-      usagePercentage: parseFloat(usagePercentage.toFixed(2)),
-      status: metrics.remainingCap === 0 ? 'CAPPED' : 'ACTIVE',
-      currentLevel: user?.current_level?.name || 'Starter Booster',
+      active: true,
+      businessDate: FinancialDateService.getBusinessDateString(),
+      qualification,
+      pools,
     };
   }
 
-  /**
-   * GET /api/capping/history
-   */
-  static async getHistory(userId: string, page: number = 1, limit: number = 10, db: any = prisma) {
-    const skip = (Math.max(1, page) - 1) * Math.max(1, limit);
-
-    const [total, records] = await Promise.all([
-      db.dailyCapping.count({ where: { user_id: userId } }),
-      db.dailyCapping.findMany({
-        where: { user_id: userId },
-        include: {
-          level_configuration: true,
-        },
-        orderBy: { business_date: 'desc' },
-        skip,
-        take: Math.max(1, limit),
-      }),
-    ]);
-
-    const formattedHistory = records.map((rec: any) => ({
-      id: rec.id,
-      businessDate: rec.business_date.toISOString().split('T')[0],
-      levelName: rec.level_configuration?.name || 'Starter Booster',
-      grossEarning: parseFloat(rec.gross_earning.toString()),
-      allowedEarning: parseFloat(rec.allowed_earning.toString()),
-      excessEarning: parseFloat(rec.excess_earning.toString()),
-      handlingType: rec.handling_type,
-      qualifiedBuilderCount: rec.qualified_builder_count,
-      completedCycleCount: rec.completed_cycle_count,
-      calculationSnapshot: rec.calculation_snapshot,
-      finalizedAt: rec.finalized_at,
-    }));
-
-    return {
-      total,
-      page,
-      limit,
-      totalPages: Math.ceil(total / limit),
-      history: formattedHistory,
-    };
-  }
-
-  /**
-   * GET /api/capping/summary
-   */
   static async getSummary(userId: string, db: any = prisma) {
     const status = await this.getStatus(userId, db);
-
-    const recentRecords = await db.dailyCapping.findMany({
-      where: { user_id: userId },
-      orderBy: { business_date: 'desc' },
-      take: 7,
-    });
-
-    const historicalSummary = recentRecords.map((rec: any) => ({
-      businessDate: rec.business_date.toISOString().split('T')[0],
-      gross: parseFloat(rec.gross_earning.toString()),
-      allowed: parseFloat(rec.allowed_earning.toString()),
-      excess: parseFloat(rec.excess_earning.toString()),
-    }));
-
-    return {
-      currentStatus: status,
-      recent7Days: historicalSummary,
-    };
+    return { currentStatus: status };
   }
 }

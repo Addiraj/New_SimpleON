@@ -69,25 +69,24 @@ describe('Booster verified configuration and capping', () => {
   it('keeps verified tier distributions mathematically correct', () => {
     const [starter, builder, leader, champion] = BOOSTER_TIER_CONFIGS;
 
-    expect(starter.slotsPerCycle * starter.subscriptionAmount).toBe(5);
-    expect(starter.collectionAmount - starter.resubscribeAmount).toBe(starter.upgradeAmount);
+    expect(starter.collectionAmount - starter.resubscribeAmount).toBe(starter.upgradeAmount! + (starter.reserveAmount || 0));
 
-    expect(builder.slotsPerCycle * builder.subscriptionAmount).toBe(20);
-    expect(builder.collectionAmount - builder.resubscribeAmount).toBe(builder.upgradeAmount);
+    expect(builder.slotsPerCycle * builder.subscriptionAmount).toBe(200);
+    expect(builder.collectionAmount - builder.resubscribeAmount).toBe(builder.upgradeAmount! + (builder.reserveAmount || 0));
 
-    expect(leader.slotsPerCycle * leader.subscriptionAmount).toBe(80);
-    expect(leader.collectionAmount - leader.resubscribeAmount).toBe(leader.upgradeAmount);
+    expect(leader.slotsPerCycle * leader.subscriptionAmount).toBe(400);
+    expect(leader.collectionAmount - leader.resubscribeAmount).toBe(leader.upgradeAmount! + (leader.reserveAmount || 0));
 
-    expect(champion.slotsPerCycle * champion.subscriptionAmount).toBe(320);
-    expect(champion.collectionAmount - champion.resubscribeAmount - (champion.mainPlanAmount || 0)).toBe(champion.netIncome);
+    expect(champion.slotsPerCycle * champion.subscriptionAmount).toBe(1600);
+    expect(champion.collectionAmount - champion.resubscribeAmount - (champion.reserveAmount || 0) - (champion.mainPlanAmount || 0)).toBe(champion.netIncome);
   });
 
   it('calculates X5 generated and pending slots from active Booster tier slot values', () => {
     expect(X5MatrixService.calculateCurrentCycleGeneratedAmount('starter', 0)).toBe(0);
-    expect(X5MatrixService.calculateCurrentCycleGeneratedAmount('starter', 3)).toBe(3);
-    expect(X5MatrixService.calculateCurrentCycleGeneratedAmount('builder', 3)).toBe(12);
-    expect(X5MatrixService.calculateCurrentCycleGeneratedAmount('leader', 3)).toBe(48);
-    expect(X5MatrixService.calculateCurrentCycleGeneratedAmount('champion', 3)).toBe(192);
+    expect(X5MatrixService.calculateCurrentCycleGeneratedAmount('starter', 3)).toBe(30);
+    expect(X5MatrixService.calculateCurrentCycleGeneratedAmount('builder', 3)).toBe(120);
+    expect(X5MatrixService.calculateCurrentCycleGeneratedAmount('leader', 3)).toBe(240);
+    expect(X5MatrixService.calculateCurrentCycleGeneratedAmount('champion', 3)).toBe(960);
 
     expect(X5MatrixService.calculatePendingSlots(0)).toBe(5);
     expect(X5MatrixService.calculatePendingSlots(3)).toBe(2);

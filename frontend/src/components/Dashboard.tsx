@@ -615,7 +615,7 @@ export default function Dashboard() {
                       {dashboardData?.currentPlan || 'Starter ($10)'}
                     </div>
                     <p className="text-[11px] text-sub mt-1">
-                      Daily Cap: ${dashboardData?.dailyCap ?? 1000}/day
+                      Daily Cap: ${dashboardData?.dailyCap ?? 50}/day
                     </p>
                   </motion.div>
 

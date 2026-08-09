@@ -78,6 +78,7 @@ export class PaymentRepository {
     const now = new Date();
 
     try {
+      if (!(await isDatabaseAvailable())) throw new Error('Database offline');
       const whereCondition: any = {
         user_id: userId,
         payment_type: paymentType,
@@ -212,6 +213,7 @@ export class PaymentRepository {
     const now = new Date();
 
     try {
+      if (!(await isDatabaseAvailable())) throw new Error('Database offline');
       const dbIntent = await prisma.paymentIntent.create({
         data: {
           id,

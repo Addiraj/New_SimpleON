@@ -10,6 +10,7 @@ export interface BoosterTierConfig {
   resubscribeAmount: number;
   upgradeAmount: number | null;
   upgradeTarget: string | null;
+  reserveAmount: number | null;
   mainPlanAmount: number | null;
   netIncome: number | null;
   defaultDailyCapping: number;
@@ -38,6 +39,7 @@ export const BOOSTER_TIER_CONFIGS: BoosterTierConfig[] = [
     resubscribeAmount: 10,
     upgradeAmount: 40,
     upgradeTarget: 'builder',
+    reserveAmount: null,
     mainPlanAmount: null,
     netIncome: null,
     defaultDailyCapping: 5,
@@ -51,8 +53,9 @@ export const BOOSTER_TIER_CONFIGS: BoosterTierConfig[] = [
     slotsPerCycle: 5,
     collectionAmount: 200,
     resubscribeAmount: 40,
-    upgradeAmount: 160,
+    upgradeAmount: 80,
     upgradeTarget: 'leader',
+    reserveAmount: 80,
     mainPlanAmount: null,
     netIncome: null,
     defaultDailyCapping: 5,
@@ -68,6 +71,7 @@ export const BOOSTER_TIER_CONFIGS: BoosterTierConfig[] = [
     resubscribeAmount: 80,
     upgradeAmount: 320,
     upgradeTarget: 'champion',
+    reserveAmount: null,
     mainPlanAmount: null,
     netIncome: null,
     defaultDailyCapping: 5,
@@ -83,6 +87,7 @@ export const BOOSTER_TIER_CONFIGS: BoosterTierConfig[] = [
     resubscribeAmount: 320,
     upgradeAmount: null,
     upgradeTarget: null,
+    reserveAmount: null,
     mainPlanAmount: 500,
     netIncome: 780,
     defaultDailyCapping: 5,

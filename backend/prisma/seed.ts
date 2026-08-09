@@ -17,14 +17,14 @@ async function main() {
       name: 'Starter',
       slug: 'starter',
       level_order: 1,
-      // PLACEHOLDER VALUES - REPLACE BEFORE PRODUCTION
-      joining_amount: '1.00000000', // 1 USDT starter level joining
-      upgrade_amount: '4.00000000', // 4 USDT required to upgrade to Builder
-      matrix_size: 5,               // X5 Matrix (5 members per cycle)
-      income_per_position: '0.20000000', // Income per position filled
-      cycle_reward: '0.80000000',   // Total reward per completed cycle
-      retopup_amount: '0.20000000',  // Auto retopup fee
-      daily_cap: '50.00000000',     // 50 USDT daily capping limit for Starter level
+      joining_amount: '10.00000000',
+      upgrade_amount: '40.00000000',
+      matrix_size: 5,
+      income_per_position: '2.00000000',
+      cycle_reward: '10.00000000',
+      retopup_amount: '10.00000000',
+      daily_cap: '0.00000000',
+      daily_cycle_limit: 5,
       required_direct_referrals: 0,
       required_qualified_builders: 0,
       auto_upgrade_enabled: true,
@@ -36,15 +36,15 @@ async function main() {
       name: 'Builder',
       slug: 'builder',
       level_order: 2,
-      // PLACEHOLDER VALUES - REPLACE BEFORE PRODUCTION
-      joining_amount: '4.00000000', // 4 USDT builder level joining
-      upgrade_amount: '16.00000000',// 16 USDT required to upgrade to Leader
-      matrix_size: 5,               // X5 Matrix
-      income_per_position: '0.80000000',
-      cycle_reward: '3.20000000',
-      retopup_amount: '0.80000000',
-      daily_cap: '200.00000000',    // 200 USDT daily capping limit
-      required_direct_referrals: 2,
+      joining_amount: '40.00000000',
+      upgrade_amount: '80.00000000',
+      matrix_size: 5,
+      income_per_position: '8.00000000',
+      cycle_reward: '40.00000000',
+      retopup_amount: '40.00000000',
+      daily_cap: '0.00000000',
+      daily_cycle_limit: 5,
+      required_direct_referrals: 1,
       required_qualified_builders: 0,
       auto_upgrade_enabled: true,
       retopup_enabled: true,
@@ -55,16 +55,16 @@ async function main() {
       name: 'Leader',
       slug: 'leader',
       level_order: 3,
-      // PLACEHOLDER VALUES - REPLACE BEFORE PRODUCTION
-      joining_amount: '16.00000000',// 16 USDT leader level joining
-      upgrade_amount: '64.00000000',// 64 USDT required to upgrade to Champion
-      matrix_size: 5,               // X5 Matrix
-      income_per_position: '3.20000000',
-      cycle_reward: '12.80000000',
-      retopup_amount: '3.20000000',
-      daily_cap: '500.00000000',    // 500 USDT daily capping limit
-      required_direct_referrals: 4,
-      required_qualified_builders: 2,
+      joining_amount: '80.00000000',
+      upgrade_amount: '320.00000000',
+      matrix_size: 5,
+      income_per_position: '16.00000000',
+      cycle_reward: '80.00000000',
+      retopup_amount: '80.00000000',
+      daily_cap: '0.00000000',
+      daily_cycle_limit: 5,
+      required_direct_referrals: 2,
+      required_qualified_builders: 1,
       auto_upgrade_enabled: true,
       retopup_enabled: true,
       status: LevelStatus.ACTIVE,
@@ -74,17 +74,17 @@ async function main() {
       name: 'Champion',
       slug: 'champion',
       level_order: 4,
-      // PLACEHOLDER VALUES - REPLACE BEFORE PRODUCTION
-      joining_amount: '64.00000000',// 64 USDT champion level joining
-      upgrade_amount: '0.00000000', // Max level, no further upgrade cost
-      matrix_size: 5,               // X5 Matrix
-      income_per_position: '12.80000000',
-      cycle_reward: '51.20000000',
-      retopup_amount: '12.80000000',
-      daily_cap: '2000.00000000',   // 2,000 USDT daily capping limit
-      required_direct_referrals: 5,
-      required_qualified_builders: 5,
-      auto_upgrade_enabled: false,  // Highest tier reached
+      joining_amount: '320.00000000',
+      upgrade_amount: '0.00000000',
+      matrix_size: 5,
+      income_per_position: '64.00000000',
+      cycle_reward: '320.00000000',
+      retopup_amount: '320.00000000',
+      daily_cap: '0.00000000',
+      daily_cycle_limit: 5,
+      required_direct_referrals: 3,
+      required_qualified_builders: 2,
+      auto_upgrade_enabled: false,
       retopup_enabled: true,
       status: LevelStatus.ACTIVE,
       version: 1,
