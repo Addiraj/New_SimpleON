@@ -199,12 +199,20 @@ export class UpgradeEligibilityService {
       );
     }
 
-    // Rule D: Qualified Builders Requirement
+    // Rule D: Qualified Builders / Leaders Requirement
     const reqBuilders = targetLevel.requiredQualifiedBuilders;
-    const hasBuilders = qualifications.builderCount >= reqBuilders;
+    let currentQualified = qualifications.builderCount;
+    let qualifiedTypeName = 'builder(s)';
+
+    if (targetLevelOrder === 4) {
+      currentQualified = qualifications.leaderCount;
+      qualifiedTypeName = 'leader(s)';
+    }
+
+    const hasBuilders = currentQualified >= reqBuilders;
     if (!hasBuilders) {
       reasons.push(
-        `Requires at least ${reqBuilders} qualified builder(s). Current: ${qualifications.builderCount}`
+        `Requires at least ${reqBuilders} qualified ${qualifiedTypeName}. Current: ${currentQualified}`
       );
     }
 
@@ -238,7 +246,7 @@ export class UpgradeEligibilityService {
       targetLevelSlug: targetLevel.slug,
       directCount: qualifications.directCount,
       requiredDirects: reqDirect,
-      builderCount: qualifications.builderCount,
+      builderCount: currentQualified,
       requiredBuilders: reqBuilders,
       teamSize: qualifications.teamSize,
       totalEarnings: qualifications.totalEarnings,
