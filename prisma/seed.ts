@@ -44,7 +44,7 @@ async function main() {
       cycle_reward: '3.20000000',
       retopup_amount: '0.80000000',
       daily_cap: '200.00000000',    // 200 USDT daily capping limit
-      required_direct_referrals: 2,
+      required_direct_referrals: 5,
       required_qualified_builders: 0,
       auto_upgrade_enabled: true,
       retopup_enabled: true,
@@ -63,8 +63,8 @@ async function main() {
       cycle_reward: '12.80000000',
       retopup_amount: '3.20000000',
       daily_cap: '500.00000000',    // 500 USDT daily capping limit
-      required_direct_referrals: 4,
-      required_qualified_builders: 2,
+      required_direct_referrals: 5,
+      required_qualified_builders: 5,
       auto_upgrade_enabled: true,
       retopup_enabled: true,
       status: LevelStatus.ACTIVE,

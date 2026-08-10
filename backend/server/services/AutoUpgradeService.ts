@@ -187,7 +187,7 @@ export class AutoUpgradeService {
           toLevelName: targetLevel.name,
           matrixCycleId: newMatrixCycle.id,
         },
-        '[AutoUpgradeService] Successfully executed auto-upgrade'
+        `[AutoUpgradeService] UPGRADE MODS: Auto-upgraded user ${userId} from ${user.current_level?.name || 'Unknown'} to ${targetLevel.name} (Level ${targetLevel.levelOrder})`
       );
 
       return {
