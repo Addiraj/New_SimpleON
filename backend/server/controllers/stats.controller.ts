@@ -14,9 +14,9 @@ export class StatsController {
       // Valid Earning Transaction Types
       const earningTypes = [
         TransactionType.MATRIX_REWARD,
-        TransactionType.BOOSTER_REWARD,
+        (TransactionType as any).BOOSTER_REWARD,
         TransactionType.REFERRAL_REWARD
-      ];
+      ].filter(Boolean) as TransactionType[];
 
       // 2. Total Distributed
       const totalDistributedResult = await prisma.transaction.aggregate({

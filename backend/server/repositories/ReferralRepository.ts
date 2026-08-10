@@ -665,6 +665,9 @@ export class ReferralRepository {
                 status: true,
                 created_at: true,
                 joined_at: true,
+                current_level: {
+                  select: { name: true, level_order: true }
+                },
               },
             },
           },
@@ -690,7 +693,7 @@ export class ReferralRepository {
             shortWalletAddress: `${childAddr.slice(0, 6)}...${childAddr.slice(-4)}`,
             referralCode: r.referred.referral_code,
             displayName: r.referred.display_name || null,
-            level: currentDepth === 1 ? 'Leader' : currentDepth === 2 ? 'Builder' : 'Starter',
+            level: r.referred.current_level?.name || 'Starter',
             status: r.referred.status || 'ACTIVE',
             joiningDate: (r.referred.joined_at || r.referred.created_at || new Date()).toISOString(),
             depth: currentDepth,
@@ -741,13 +744,19 @@ export class ReferralRepository {
           
           const grandChildren = await buildMemorySubtree(childId, currentDepth + 1);
           
+          const levelName = (() => {
+            const fullUser = u as any;
+            if (fullUser.current_level?.name) return fullUser.current_level.name;
+            return 'Starter';
+          })();
+
           childrenList.push({
             id: u.id,
             walletAddress: childAddr,
             shortWalletAddress: `${childAddr.slice(0, 6)}...${childAddr.slice(-4)}`,
             referralCode: u.referral_code,
             displayName: u.display_name || null,
-            level: currentDepth === 1 ? 'Leader' : currentDepth === 2 ? 'Builder' : 'Starter',
+            level: levelName,
             status: u.status || 'ACTIVE',
             joiningDate: (u.joined_at || u.created_at || new Date()).toISOString(),
             depth: currentDepth,
