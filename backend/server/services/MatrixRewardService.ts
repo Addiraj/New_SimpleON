@@ -34,11 +34,54 @@ export class MatrixRewardService {
     const cycleNumber = cycle.cycle_number;
     const levelConfigId = cycle.level_configuration_id;
 
-    // 1. Determine verified Booster distribution
+    // 1. Determine verified Booster distribution — PURE MATH, no hardcoded values.
+    //
+    // Business Rules (must match image spec exactly):
+    //   Cycle 1, all plans except Champion:
+    //     → Net income = $0. The entire collection is consumed:
+    //       resubscribeAmount funds the next Cycle 1 re-entry.
+    //       upgradeAmount funds the next-level plan activation.
+    //       reserveAmount (Builder only) stays in B-Titan reserve.
+    //       Nothing reaches the user's income wallet.
+    //
+    //   Cycle 1, Champion only:
+    //     → Net income = collectionAmount - resubscribeAmount - mainPlanAmount
+    //       (Champion has no upgrade target, so only resub + main plan are deducted)
+    //       Math: 1600 - 320 - 500 = 780 USDT
+    //
+    //   Cycle 2+, ALL plans:
+    //     → Net income = collectionAmount - resubscribeAmount
+    //       (only resubscription is deducted automatically; everything else goes to wallet)
+    //       Starter:  50 - 10 = 40 USDT
+    //       Builder: 200 - 40 = 160 USDT
+    //       Leader:  400 - 80 = 320 USDT
+    //       Champion: 1600 - 320 = 1280 USDT
+    //
+    // All numbers come dynamically from the database snapshot — if plan amounts ever change, this auto-adjusts.
     const tierConfig = BoosterConfigService.getTierConfig(configSnapshot?.slug) || BoosterConfigService.assertTierConfig('starter');
-    const grossReward = configSnapshot?.cycle_reward 
-      ? parseFloat(configSnapshot.cycle_reward.toString()) 
-      : (tierConfig.netIncome ?? tierConfig.subscriptionAmount ?? 10);
+    const isFirstCycle = cycle.cycle_number === 1;
+    const isChampion = tierConfig.code === 'champion';
+
+    // Extract raw financial values directly from the DB snapshot
+    const joiningAmount = configSnapshot?.joining_amount ? parseFloat(configSnapshot.joining_amount.toString()) : tierConfig.subscriptionAmount;
+    const matrixSize = configSnapshot?.matrix_size ? parseInt(configSnapshot.matrix_size.toString(), 10) : tierConfig.slotsPerCycle;
+    const retopupAmount = configSnapshot?.retopup_amount ? parseFloat(configSnapshot.retopup_amount.toString()) : tierConfig.resubscribeAmount;
+    
+    // Core Mathematical Formula: Collection = Joining Amount * Matrix Size (5 slots)
+    const collectionAmount = joiningAmount * matrixSize;
+
+    let grossReward: number;
+    if (isFirstCycle && !isChampion) {
+      // Cycle 1: Starter / Builder / Leader → zero income, all funds go to upgrade + resubscription + reserves
+      grossReward = 0;
+    } else if (isFirstCycle && isChampion) {
+      // Cycle 1: Champion → collection minus resubscription minus main plan reserve
+      // (Main plan reserve is fixed in config as it's a cross-system transfer)
+      grossReward = collectionAmount - retopupAmount - (tierConfig.mainPlanAmount ?? 0);
+    } else {
+      // Cycle 2+: ALL plans → collection minus resubscription only, rest goes to wallet
+      grossReward = collectionAmount - retopupAmount;
+    }
 
     // 2. Check and apply Daily Capping via DailyCappingService
     // Only process if there's actually a gross reward to distribute

@@ -21,6 +21,11 @@ export async function startServer() {
     }
   });
 
+  // Start Blockchain Listener
+  import('./services/BlockchainListenerService.js').then(({ blockchainListenerService }) => {
+    blockchainListenerService.start();
+  });
+
   // Vite Middleware in Development mode
   if (env.NODE_ENV !== 'production') {
     logger.info('Starting Vite Dev Middleware...');
