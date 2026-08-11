@@ -239,7 +239,8 @@ export class AuthService {
       throw AppError.notFound('Authenticated user profile not found');
     }
 
-    return this.formatUser(user);
+    const { UserService } = await import('./UserService.js');
+    return await UserService.getProfile(user.id);
   }
 
   /**
