@@ -165,7 +165,7 @@ export class AutoUpgradeService {
       await tx.notification.create({
         data: {
           user_id: userId,
-          type: 'BOOSTER_AUTO_UPGRADED',
+          type: 'LEVEL_UPGRADED',
           title: `Booster Auto-Upgraded to ${targetLevel.name}!`,
           message: `Congratulations! You have been automatically upgraded to ${targetLevel.name} Booster (Level ${targetLevel.levelOrder}). Your new Cycle #1 matrix is active!`,
           data: {
