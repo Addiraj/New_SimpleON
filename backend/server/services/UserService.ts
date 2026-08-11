@@ -20,6 +20,25 @@ export class UserService {
       throw AppError.notFound('User profile not found');
     }
 
+    // Fetch current level name from DB for accurate tier display
+    let currentLevelName: string | null = null;
+    let currentLevelSlug: string | null = null;
+    let currentLevelOrder: number = 0;
+    if (user.current_level_id) {
+      try {
+        const { prisma } = await import('../config/database.js');
+        const level = await prisma.levelConfiguration.findUnique({
+          where: { id: user.current_level_id },
+          select: { name: true, slug: true, level_order: true },
+        });
+        if (level) {
+          currentLevelName = level.name;
+          currentLevelSlug = level.slug;
+          currentLevelOrder = level.level_order;
+        }
+      } catch (_) {}
+    }
+
     const host = hostHeader || 'simpleon.io';
     const configuredBaseUrl = env.APP_PUBLIC_URL || env.FRONTEND_URL;
     const base = configuredBaseUrl && !configuredBaseUrl.includes('localhost')
@@ -42,7 +61,11 @@ export class UserService {
       referralLink: referralLink,
       displayName: user.display_name || '',
       email: user.email || '',
-      currentLevel: user.current_level_id || 'Level 1',
+      currentLevel: currentLevelName || user.current_level_id || 'Level 1',
+      currentLevelId: user.current_level_id || null,
+      currentLevelSlug: currentLevelSlug || 'starter',
+      currentLevelOrder: currentLevelOrder,
+      tier: currentLevelName ? currentLevelName.toUpperCase() : 'STARTER',
       accountStatus: user.status,
       status: user.status,
       joiningDate: user.joined_at || user.created_at,
