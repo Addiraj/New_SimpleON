@@ -41,7 +41,7 @@ export const BOOSTER_TIER_CONFIGS: BoosterTierConfig[] = [
     upgradeTarget: 'builder',
     reserveAmount: null,
     mainPlanAmount: null,
-    netIncome: null,
+    netIncome: null, // Derived dynamically: collectionAmount - resubscribeAmount
     defaultDailyCapping: 5,
     cappingType: 'qualified_builders',
   },
@@ -57,7 +57,7 @@ export const BOOSTER_TIER_CONFIGS: BoosterTierConfig[] = [
     upgradeTarget: 'leader',
     reserveAmount: 80,
     mainPlanAmount: null,
-    netIncome: null,
+    netIncome: null, // Derived dynamically: collectionAmount - resubscribeAmount
     defaultDailyCapping: 5,
     cappingType: 'qualified_leaders',
   },
@@ -73,7 +73,7 @@ export const BOOSTER_TIER_CONFIGS: BoosterTierConfig[] = [
     upgradeTarget: 'champion',
     reserveAmount: null,
     mainPlanAmount: null,
-    netIncome: null,
+    netIncome: null, // Derived dynamically: collectionAmount - resubscribeAmount
     defaultDailyCapping: 5,
     cappingType: 'qualified_champions',
   },
@@ -89,7 +89,7 @@ export const BOOSTER_TIER_CONFIGS: BoosterTierConfig[] = [
     upgradeTarget: null,
     reserveAmount: null,
     mainPlanAmount: 500,
-    netIncome: 780,
+    netIncome: null, // Derived dynamically: collectionAmount - resubscribeAmount - mainPlanAmount
     defaultDailyCapping: 5,
     cappingType: 'leader_pool_capping',
   },

@@ -245,6 +245,10 @@ export class BoosterService {
                     b_titan_reserve_fund: { increment: 16 }
                 }
             });
+            // Log all fund movements for audit trail (no income_wallet credit in Cycle 1)
+            await this.logTransaction(tx, receiverId, TransactionType.BOOSTER_REWARD, 8, `Builder Cycle 1 Resubscribe Fund from ${fromUserId}`);
+            await this.logTransaction(tx, receiverId, TransactionType.BOOSTER_REWARD, 16, `Builder Cycle 1 Leader Activation Fund from ${fromUserId}`);
+            await this.logTransaction(tx, receiverId, TransactionType.BOOSTER_REWARD, 16, `Builder Cycle 1 B-Titan Reserve Fund from ${fromUserId}`);
 
             if (newCount === 5) {
                 await tx.boosterWallet.update({
@@ -273,6 +277,8 @@ export class BoosterService {
                     income_wallet: { increment: 32 }
                 }
             });
+            await this.logTransaction(tx, receiverId, TransactionType.BOOSTER_REWARD, 8, `Builder Cycle ${wallet.builder_cycle} Resubscribe Fund from ${fromUserId}`);
+            await this.logTransaction(tx, receiverId, TransactionType.BOOSTER_REWARD, 32, `Builder Cycle ${wallet.builder_cycle} Income from ${fromUserId}`);
 
             if (newCount === 5) {
                 await tx.boosterWallet.update({
@@ -299,6 +305,9 @@ export class BoosterService {
                     champion_activation_fund: { increment: 64 }
                 }
             });
+            // Log all fund movements for audit trail (no income_wallet credit in Cycle 1)
+            await this.logTransaction(tx, receiverId, TransactionType.BOOSTER_REWARD, 16, `Leader Cycle 1 Resubscribe Fund from ${fromUserId}`);
+            await this.logTransaction(tx, receiverId, TransactionType.BOOSTER_REWARD, 64, `Leader Cycle 1 Champion Activation Fund from ${fromUserId}`);
 
             if (newCount === 5) {
                 await tx.boosterWallet.update({
@@ -326,6 +335,8 @@ export class BoosterService {
                     income_wallet: { increment: 64 }
                 }
             });
+            await this.logTransaction(tx, receiverId, TransactionType.BOOSTER_REWARD, 16, `Leader Cycle ${wallet.leader_cycle} Resubscribe Fund from ${fromUserId}`);
+            await this.logTransaction(tx, receiverId, TransactionType.BOOSTER_REWARD, 64, `Leader Cycle ${wallet.leader_cycle} Income from ${fromUserId}`);
 
             if (newCount === 5) {
                 await tx.boosterWallet.update({

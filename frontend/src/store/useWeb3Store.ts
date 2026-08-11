@@ -58,6 +58,8 @@ interface Web3State {
   fetchProfile: () => Promise<void>;
   fetchUnreadCount: () => Promise<void>;
   upgradeTier: (targetTier: string) => Promise<void>;
+  registerAndActivate: (referrer?: string) => Promise<void>;
+  activateMainPlan: () => Promise<void>;
   switchChain: (targetChainId: number) => Promise<void>;
   claimDemoCoins: () => Promise<void>;
 }
@@ -343,11 +345,123 @@ export const useWeb3Store = create<Web3State>((set, get) => ({
 
   upgradeTier: async (targetTier: string) => {
     try {
-      const res: any = await api.post('/booster/upgrade', { targetTier });
-      set({ userProfile: res.data?.user || res.user || res });
+      const { provider, basePlan } = get();
+      if (!provider) throw new Error('Wallet not connected or provider unavailable');
+
+      const signer = await provider.getSigner();
+      
+      const usdtAddress = import.meta.env.VITE_USDT_ADDRESS;
+      const boosterAddress = import.meta.env.VITE_CONTRACT_ADDRESS;
+
+      if (!usdtAddress || !boosterAddress) {
+         throw new Error('Contract addresses not configured in environment');
+      }
+
+      const usdtAbi = ["function approve(address spender, uint256 amount) external returns (bool)"];
+      const boosterAbi = ["function upgradeTier(uint8 targetTier) external"];
+
+      const usdtContract = new ethers.Contract(usdtAddress, usdtAbi, signer);
+      const boosterContract = new ethers.Contract(boosterAddress, boosterAbi, signer);
+
+      let costStr = '0';
+      let tierEnum = 0;
+      if (targetTier === 'BUILDER') { costStr = '4'; tierEnum = 2; }
+      else if (targetTier === 'LEADER') { costStr = '16'; tierEnum = 3; }
+      else if (targetTier === 'CHAMPION') { costStr = '64'; tierEnum = 4; }
+      else throw new Error('Invalid upgrade target');
+
+      const amountToApprove = ethers.parseUnits((basePlan * parseFloat(costStr)).toString(), 18);
+
+      console.log('Requesting USDT approval...');
+      const approveTx = await usdtContract.approve(boosterAddress, amountToApprove);
+      await approveTx.wait();
+
+      console.log('Requesting tier upgrade...');
+      const upgradeTx = await boosterContract.upgradeTier(tierEnum);
+      await upgradeTx.wait();
+
+      console.log('Upgrade transaction confirmed on blockchain');
+      // The backend blockchain listener will pick this up and update MySQL.
       await get().fetchCalculations(get().basePlan);
     } catch (err: any) {
       console.error('Upgrade tier error:', err.message);
+      throw err;
+    }
+  },
+
+  registerAndActivate: async (referrer?: string) => {
+    try {
+      const { provider, basePlan } = get();
+      if (!provider) throw new Error('Wallet not connected or provider unavailable');
+
+      const signer = await provider.getSigner();
+      const usdtAddress = import.meta.env.VITE_USDT_ADDRESS;
+      const boosterAddress = import.meta.env.VITE_CONTRACT_ADDRESS;
+
+      if (!usdtAddress || !boosterAddress) {
+         throw new Error('Contract addresses not configured in environment');
+      }
+
+      const usdtAbi = ["function approve(address spender, uint256 amount) external returns (bool)"];
+      const boosterAbi = ["function registerAndActivate(address referrer) external"];
+
+      const usdtContract = new ethers.Contract(usdtAddress, usdtAbi, signer);
+      const boosterContract = new ethers.Contract(boosterAddress, boosterAbi, signer);
+
+      const amountToApprove = ethers.parseUnits(basePlan.toString(), 18); // Starter is 1x basePlan
+
+      console.log('Requesting USDT approval...');
+      const approveTx = await usdtContract.approve(boosterAddress, amountToApprove);
+      await approveTx.wait();
+
+      console.log('Requesting register and activate...');
+      // Use zero address if no referrer
+      const referrerAddress = referrer || ethers.ZeroAddress; 
+      const joinTx = await boosterContract.registerAndActivate(referrerAddress);
+      await joinTx.wait();
+
+      console.log('Join transaction confirmed on blockchain');
+      await get().fetchCalculations(get().basePlan);
+    } catch (err: any) {
+      console.error('Join error:', err.message);
+      throw err;
+    }
+  },
+
+  activateMainPlan: async () => {
+    try {
+      const { provider, basePlan } = get();
+      if (!provider) throw new Error('Wallet not connected or provider unavailable');
+
+      const signer = await provider.getSigner();
+      const usdtAddress = import.meta.env.VITE_USDT_ADDRESS;
+      const boosterAddress = import.meta.env.VITE_CONTRACT_ADDRESS;
+
+      if (!usdtAddress || !boosterAddress) {
+         throw new Error('Contract addresses not configured in environment');
+      }
+
+      const usdtAbi = ["function approve(address spender, uint256 amount) external returns (bool)"];
+      const boosterAbi = ["function activateMainPlan() external"];
+
+      const usdtContract = new ethers.Contract(usdtAddress, usdtAbi, signer);
+      const boosterContract = new ethers.Contract(boosterAddress, boosterAbi, signer);
+
+      const amountToApprove = ethers.parseUnits((basePlan * 100).toString(), 18); // Main Plan is 100x basePlan
+
+      console.log('Requesting USDT approval...');
+      const approveTx = await usdtContract.approve(boosterAddress, amountToApprove);
+      await approveTx.wait();
+
+      console.log('Requesting activate Main Plan...');
+      const tx = await boosterContract.activateMainPlan();
+      await tx.wait();
+
+      console.log('Main plan activated on blockchain');
+      await get().fetchCalculations(get().basePlan);
+    } catch (err: any) {
+      console.error('Activate Main Plan error:', err.message);
+      throw err;
     }
   },
 

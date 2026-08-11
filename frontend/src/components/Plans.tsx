@@ -577,15 +577,14 @@ export default function Plans({ basePlan = 1 }: { basePlan?: number } = {}) {
                               if (isEligibleForUpgrade && tier.slug === 'starter') {
                                 setActionLoadingSlug(tier.slug);
                                 try {
-                                  // @ts-ignore
-                                  const { walletApi } = await import('../services/api');
-                                  await walletApi.demoActivate();
-                                  alert('Demo Join Successful!');
+                                  const store = useWeb3Store.getState();
+                                  await store.registerAndActivate();
+                                  alert('Transaction submitted to blockchain! Waiting for confirmation...');
                                   window.dispatchEvent(new Event('dashboard_refresh'));
                                   await fetchProfile(); // Instantly update user status in the UI
                                   loadPlanData();
                                 } catch (err: any) {
-                                  alert(err?.response?.data?.message || err.message || 'Demo Join failed');
+                                  alert(err?.reason || err?.message || 'Join failed');
                                 } finally {
                                   setActionLoadingSlug(null);
                                 }

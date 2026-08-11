@@ -91,7 +91,7 @@ const DEFAULT_LEVEL_CONFIGS: LevelConfigRecord[] = [
     upgrade_amount: '40.00000000',
     matrix_size: 5,
     income_per_position: '2.00000000',
-    cycle_reward: '10.00000000',
+    cycle_reward: '40.00000000',   // Cycle 2+ net income
     retopup_amount: '10.00000000',
     daily_cap: '0.00000000',
     daily_cycle_limit: 5,
@@ -115,7 +115,7 @@ const DEFAULT_LEVEL_CONFIGS: LevelConfigRecord[] = [
     upgrade_amount: '80.00000000',
     matrix_size: 5,
     income_per_position: '8.00000000',
-    cycle_reward: '40.00000000',
+    cycle_reward: '160.00000000',  // Cycle 2+ net income
     retopup_amount: '40.00000000',
     daily_cap: '0.00000000',
     daily_cycle_limit: 5,
@@ -139,7 +139,7 @@ const DEFAULT_LEVEL_CONFIGS: LevelConfigRecord[] = [
     upgrade_amount: '320.00000000',
     matrix_size: 5,
     income_per_position: '16.00000000',
-    cycle_reward: '80.00000000',
+    cycle_reward: '320.00000000',  // Cycle 2+ net income
     retopup_amount: '80.00000000',
     daily_cap: '0.00000000',
     daily_cycle_limit: 5,
@@ -160,10 +160,10 @@ const DEFAULT_LEVEL_CONFIGS: LevelConfigRecord[] = [
     slug: 'champion',
     level_order: 4,
     joining_amount: '320.00000000',
-    upgrade_amount: '0.00000000',
+    upgrade_amount: '500.00000000', // Main Plan activation cost per spec
     matrix_size: 5,
     income_per_position: '64.00000000',
-    cycle_reward: '320.00000000',
+    cycle_reward: '780.00000000',   // Cycle 1 net income $780
     retopup_amount: '320.00000000',
     daily_cap: '0.00000000',
     daily_cycle_limit: 5,
