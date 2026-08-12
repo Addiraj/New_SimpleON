@@ -335,6 +335,7 @@ model UserLevel {
 
   @@index([user_id])
   @@index([level_configuration_id])
+  @@unique([user_id, level_configuration_id])
   @@map("user_levels")
 }
 

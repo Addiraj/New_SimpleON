@@ -11,7 +11,6 @@ export interface LevelConfigRecord {
   matrix_size: number;
   income_per_position: string;
   cycle_reward: string;
-  cycle_reward: string;
   retopup_amount: string;
   daily_cap: string;
   daily_cycle_limit: number;

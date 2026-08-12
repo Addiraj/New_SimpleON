@@ -477,7 +477,7 @@ export class BoosterService {
       const retopupAmtNum = parseFloat(plan.retopupAmount) * safeBasePlan;
       const collectionAmtNum = joiningAmtNum * plan.matrixSize;
       
-      const netIncome = plan.slug === 'champion' ? safeBasePlan * 156.0 : 0.0;
+      const netIncome = plan.slug === 'champion' ? safeBasePlan * 780.0 : 0.0;
       const theme = uiThemes[plan.slug] || uiThemes.starter;
 
       let desc = `Out of ${collectionAmtNum.toFixed(2)} USDT collected from ${plan.matrixSize} partners, ${retopupAmtNum.toFixed(2)} USDT recycles ${plan.name} and ${upgradeAmtNum.toFixed(2)} USDT upgrades position.`;
@@ -506,7 +506,7 @@ export class BoosterService {
       };
     });
 
-    const mainPlanTotal = safeBasePlan * 100.0;
+    const mainPlanTotal = safeBasePlan * 500.0;
     const x5MatrixSplit = mainPlanTotal * 0.15;
     const forcedLevelPool = mainPlanTotal * 0.65;
     const perLevelIncome = forcedLevelPool / 13;
@@ -522,7 +522,7 @@ export class BoosterService {
         perLevelIncome,
         x4MatrixAllocation,
       },
-      totalInvestedToMain: safeBasePlan * 85.0,
+      totalInvestedToMain: mainPlanTotal,
     };
   }
 }

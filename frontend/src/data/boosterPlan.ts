@@ -62,7 +62,7 @@ export const BOOSTER_TIER_CONFIGS: BoosterTierConfig[] = [
     slotsPerCycle: 5,
     collectionAmount: 200,
     resubscribeAmount: 40,
-    upgradeAmount: 160,
+    upgradeAmount: 80,
     upgradeTarget: 'leader',
     mainPlanAmount: null,
     netIncome: null,

@@ -365,9 +365,9 @@ export const useWeb3Store = create<Web3State>((set, get) => ({
 
       let costStr = '0';
       let tierEnum = 0;
-      if (targetTier === 'BUILDER') { costStr = '4'; tierEnum = 2; }
-      else if (targetTier === 'LEADER') { costStr = '16'; tierEnum = 3; }
-      else if (targetTier === 'CHAMPION') { costStr = '64'; tierEnum = 4; }
+      if (targetTier === 'BUILDER') { costStr = '40'; tierEnum = 2; }
+      else if (targetTier === 'LEADER') { costStr = '80'; tierEnum = 3; }
+      else if (targetTier === 'CHAMPION') { costStr = '320'; tierEnum = 4; }
       else throw new Error('Invalid upgrade target');
 
       const amountToApprove = ethers.parseUnits((basePlan * parseFloat(costStr)).toString(), 18);
@@ -408,7 +408,7 @@ export const useWeb3Store = create<Web3State>((set, get) => ({
       const usdtContract = new ethers.Contract(usdtAddress, usdtAbi, signer);
       const boosterContract = new ethers.Contract(boosterAddress, boosterAbi, signer);
 
-      const amountToApprove = ethers.parseUnits(basePlan.toString(), 18); // Starter is 1x basePlan
+      const amountToApprove = ethers.parseUnits((basePlan * 10).toString(), 18); // Starter is 10 USDT at basePlan=1
 
       console.log('Requesting USDT approval...');
       const approveTx = await usdtContract.approve(boosterAddress, amountToApprove);

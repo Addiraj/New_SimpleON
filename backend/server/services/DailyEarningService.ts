@@ -64,8 +64,9 @@ export class DailyEarningService {
       }),
       db.dailyCapping.findUnique({
         where: {
-          user_id_business_date: {
+          user_id_level_configuration_id_business_date: {
             user_id: userId,
+            level_configuration_id: levelConfig.id,
             business_date: businessDate,
           },
         },

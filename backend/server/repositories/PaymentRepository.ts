@@ -449,10 +449,10 @@ export class PaymentRepository {
         // 3. Create Transaction Record
         const txType =
           params.intent.payment_type === 'JOIN'
-            ? 'JOIN_FEE'
+            ? 'PLAN_JOIN'
             : params.intent.payment_type === 'UPGRADE'
-            ? 'UPGRADE_FEE'
-            : 'RE_TOPUP';
+            ? 'UPGRADE'
+            : 'RETOPUP';
 
         transactionRecord = await tx.transaction.create({
           data: {

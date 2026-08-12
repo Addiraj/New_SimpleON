@@ -289,4 +289,51 @@ export class DailyCappingService {
     const status = await this.getStatus(userId, db);
     return { currentStatus: status };
   }
+
+  static async getHistory(userId: string, page = 1, limit = 20, db: any = prisma) {
+    const safePage = Math.max(1, Number(page) || 1);
+    const safeLimit = Math.min(100, Math.max(1, Number(limit) || 20));
+    const skip = (safePage - 1) * safeLimit;
+
+    const [records, total] = await Promise.all([
+      db.dailyCapping.findMany({
+        where: { user_id: userId },
+        orderBy: { business_date: 'desc' },
+        skip,
+        take: safeLimit,
+        include: {
+          level_configuration: {
+            select: { id: true, name: true, slug: true, level_order: true },
+          },
+        },
+      }),
+      db.dailyCapping.count({
+        where: { user_id: userId },
+      }),
+    ]);
+
+    return {
+      records: records.map((record: any) => ({
+        id: record.id,
+        businessDate: record.business_date,
+        level: record.level_configuration,
+        grossEarning: parseFloat(record.gross_earning.toString()),
+        allowedEarning: parseFloat(record.allowed_earning.toString()),
+        excessEarning: parseFloat(record.excess_earning.toString()),
+        completedCycleCount: record.completed_cycle_count,
+        cappedCycleCount: record.capped_cycle_count,
+        dailyCycleLimit: record.daily_cycle_limit,
+        handlingType: record.handling_type,
+        calculationSnapshot: record.calculation_snapshot,
+        createdAt: record.created_at,
+        updatedAt: record.updated_at,
+      })),
+      pagination: {
+        page: safePage,
+        limit: safeLimit,
+        total,
+        totalPages: Math.ceil(total / safeLimit) || 1,
+      },
+    };
+  }
 }

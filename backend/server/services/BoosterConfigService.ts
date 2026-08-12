@@ -89,7 +89,7 @@ export const BOOSTER_TIER_CONFIGS: BoosterTierConfig[] = [
     upgradeTarget: null,
     reserveAmount: null,
     mainPlanAmount: 500,
-    netIncome: null, // Derived dynamically: collectionAmount - resubscribeAmount - mainPlanAmount
+    netIncome: 780,
     defaultDailyCapping: 5,
     cappingType: 'leader_pool_capping',
   },

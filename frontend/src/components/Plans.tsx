@@ -20,6 +20,7 @@ export interface FormattedPlanApi {
   cycleReward: string;
   retopupAmount: string;
   dailyCap: string;
+  dailyCycleLimit?: number;
   requiredDirectReferrals: number;
   requiredQualifiedBuilders: number;
   autoUpgradeEnabled: boolean;
@@ -150,7 +151,7 @@ export default function Plans({ basePlan = 1 }: { basePlan?: number } = {}) {
           && Number.parseFloat(plan.joiningAmount) === verified.subscriptionAmount
           && Number(plan.matrixSize) === verified.slotsPerCycle
           && Number.parseFloat(plan.retopupAmount) === verified.resubscribeAmount
-          && Number.parseFloat(plan.dailyCap) === verified.defaultDailyCapping;
+          && Number(plan.dailyCycleLimit ?? 5) === verified.defaultDailyCapping;
       });
 
       if (!validPlans) {
@@ -618,7 +619,7 @@ export default function Plans({ basePlan = 1 }: { basePlan?: number } = {}) {
                             ) : isEligibleForUpgrade ? (
                               <>
                                 <Rocket size={14} />
-                                <span>Demo Join (10 USDT)</span>
+                                <span>Join (10 USDT)</span>
                               </>
                             ) : (
                               <>
