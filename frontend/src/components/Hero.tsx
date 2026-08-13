@@ -5,6 +5,7 @@ import {
   ShieldCheck, Zap, RefreshCw, Layers, ArrowRight, Play, Calculator, 
   Wallet, Sparkles, CheckCircle2, TrendingUp, Users, Network, ArrowUpRight 
 } from 'lucide-react';
+import { useWeb3Store } from '../store/useWeb3Store';
 
 interface HeroProps {
   onCtaClick: (tabId: string) => void;
@@ -13,6 +14,7 @@ interface HeroProps {
 
 export default function Hero({ onCtaClick, onConnectWallet }: HeroProps) {
   const [stats, setStats] = useState<any>(null);
+  const { isConnected, isConnecting } = useWeb3Store();
 
   useEffect(() => {
     let mounted = true;
@@ -93,11 +95,11 @@ export default function Hero({ onCtaClick, onConnectWallet }: HeroProps) {
           >
             <button
               id="hero-primary-cta"
-              onClick={onConnectWallet || (() => onCtaClick('dashboard'))}
+              onClick={isConnected ? () => onCtaClick('dashboard') : (onConnectWallet || (() => onCtaClick('dashboard')))}
               className="w-full sm:w-auto inline-flex items-center justify-center space-x-2.5 rounded-full bg-accent-red px-8 py-4 text-sm font-extrabold text-white shadow-xl shadow-accent-red/30 hover:bg-accent-red/90 transition-all duration-200 transform hover:-translate-y-0.5"
             >
               <Wallet size={18} />
-              <span>Connect Wallet & Start</span>
+              <span>{isConnecting ? 'Connecting...' : isConnected ? 'Enter Dashboard' : 'Connect Wallet & Start'}</span>
               <ArrowUpRight size={18} />
             </button>
             

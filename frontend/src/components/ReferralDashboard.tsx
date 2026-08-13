@@ -33,7 +33,7 @@ const defaultMembersList: ReferralMember[] = [];
 
 const defaultReferralTreeData: ReferralMember = {
   id: 'root',
-  address: 'Connect Wallet',
+  address: '',
   level: 0,
   tier: 'STARTER',
   tierAmount: 0,
@@ -47,7 +47,7 @@ const defaultReferralTreeData: ReferralMember = {
 };
 
 export default function ReferralDashboard() {
-  const { address, isAuthenticated, userProfile, openWalletModal, fetchProfile } = useWeb3Store();
+  const { address, isConnected, isAuthenticated, userProfile, openWalletModal, fetchProfile } = useWeb3Store();
 
   const [copiedLink, setCopiedLink] = useState(false);
   const [copiedCode, setCopiedCode] = useState(false);
@@ -586,7 +586,7 @@ export default function ReferralDashboard() {
                 className="px-6 py-3.5 rounded-2xl bg-accent-red text-white shadow-xl shadow-accent-red/20 font-mono text-xs font-extrabold flex items-center space-x-2 border-2 border-white/20 hover:scale-105 transition-all"
               >
                 <Zap size={16} />
-                <span>{treeData.address !== 'Connect Wallet' ? `ROOT: ${userAddress.slice(0, 6)}...${userAddress.slice(-4)} (${treeData.tier})` : 'Connect Wallet to View'}</span>
+                <span>{treeData.address ? `ROOT: ${userAddress.slice(0, 6)}...${userAddress.slice(-4)} (${treeData.tier})` : (isConnected ? 'Loading Tree...' : 'Connect Wallet to View')}</span>
               </button>
               <div className="w-0.5 h-8 bg-accent-red/40" />
             </div>

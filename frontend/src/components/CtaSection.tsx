@@ -1,13 +1,16 @@
 import React from 'react';
 import { motion } from 'motion/react';
 import { Wallet, ArrowUpRight, Calculator, Sparkles, ShieldCheck } from 'lucide-react';
+import { useWeb3Store } from '../store/useWeb3Store';
 
 interface CtaSectionProps {
   onConnectWallet?: () => void;
   onOpenSimulator?: () => void;
+  onEnterDashboard?: () => void;
 }
 
-export default function CtaSection({ onConnectWallet, onOpenSimulator }: CtaSectionProps) {
+export default function CtaSection({ onConnectWallet, onOpenSimulator, onEnterDashboard }: CtaSectionProps) {
+  const { isConnected, isConnecting } = useWeb3Store();
   return (
     <section id="cta-banner-section" className="py-20 relative overflow-hidden">
       
@@ -32,11 +35,11 @@ export default function CtaSection({ onConnectWallet, onOpenSimulator }: CtaSect
 
           <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
             <button
-              onClick={onConnectWallet}
+              onClick={isConnected ? onEnterDashboard : onConnectWallet}
               className="w-full sm:w-auto inline-flex items-center justify-center space-x-2.5 rounded-full bg-accent-red px-8 py-4 text-sm font-extrabold text-white shadow-xl shadow-accent-red/30 hover:bg-accent-red/90 transition-all duration-200 transform hover:-translate-y-0.5"
             >
               <Wallet size={18} />
-              <span>Connect Web3 Wallet</span>
+              <span>{isConnecting ? 'Connecting...' : isConnected ? 'Enter Dashboard' : 'Connect Web3 Wallet'}</span>
               <ArrowUpRight size={18} />
             </button>
 
