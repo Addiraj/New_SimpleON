@@ -10,12 +10,11 @@ export class MatrixController {
   static async getSummary(req: Request, res: Response, next: NextFunction) {
     try {
       const authReq = req as AuthRequest;
-      const userId = authReq.userId || (req.query.userId as string);
-      const address = authReq.userAddress || (req.query.address as string);
+      const userId = authReq.userId!;
       const levelConfigId = req.query.levelConfigId as string;
       const tierCode = (req.query.tierCode || req.query.tier) as string;
 
-      const summary = await MatrixQueryService.getSummary(userId, address, levelConfigId, tierCode);
+      const summary = await MatrixQueryService.getSummary(userId, levelConfigId, tierCode);
       res.json({ success: true, data: summary });
     } catch (err) {
       next(err);
@@ -28,12 +27,11 @@ export class MatrixController {
   static async getCurrentCycle(req: Request, res: Response, next: NextFunction) {
     try {
       const authReq = req as AuthRequest;
-      const userId = authReq.userId || (req.query.userId as string);
-      const address = authReq.userAddress || (req.query.address as string);
+      const userId = authReq.userId!;
       const levelConfigId = req.query.levelConfigId as string;
       const tierCode = (req.query.tierCode || req.query.tier) as string;
 
-      const currentCycle = await MatrixQueryService.getCurrentCycle(userId, address, levelConfigId, tierCode);
+      const currentCycle = await MatrixQueryService.getCurrentCycle(userId, levelConfigId, tierCode);
       res.json({ success: true, data: currentCycle });
     } catch (err) {
       next(err);
@@ -46,14 +44,13 @@ export class MatrixController {
   static async getCycles(req: Request, res: Response, next: NextFunction) {
     try {
       const authReq = req as AuthRequest;
-      const userId = authReq.userId || (req.query.userId as string);
-      const address = authReq.userAddress || (req.query.address as string);
+      const userId = authReq.userId!;
       const levelConfigId = req.query.levelConfigId as string;
       const tierCode = (req.query.tierCode || req.query.tier) as string;
       const page = parseInt((req.query.page as string) || '1', 10);
       const limit = parseInt((req.query.limit as string) || '10', 10);
 
-      const cycles = await MatrixQueryService.getCycles(userId, address, levelConfigId, tierCode, page, limit);
+      const cycles = await MatrixQueryService.getCycles(userId, levelConfigId, tierCode, page, limit);
       res.json({ success: true, data: cycles });
     } catch (err) {
       next(err);
@@ -66,7 +63,8 @@ export class MatrixController {
   static async getCycleById(req: Request, res: Response, next: NextFunction) {
     try {
       const cycleId = req.params.id;
-      const cycle = await MatrixQueryService.getCycleById(cycleId);
+      const authReq = req as AuthRequest;
+      const cycle = await MatrixQueryService.getCycleById(authReq.userId!, cycleId);
       res.json({ success: true, data: cycle });
     } catch (err) {
       next(err);
@@ -79,7 +77,8 @@ export class MatrixController {
   static async getCyclePositions(req: Request, res: Response, next: NextFunction) {
     try {
       const cycleId = req.params.id;
-      const positions = await MatrixQueryService.getCyclePositions(cycleId);
+      const authReq = req as AuthRequest;
+      const positions = await MatrixQueryService.getCyclePositions(authReq.userId!, cycleId);
       res.json({ success: true, data: positions });
     } catch (err) {
       next(err);
@@ -92,12 +91,12 @@ export class MatrixController {
   static async getMatrixTree(req: Request, res: Response, next: NextFunction) {
     try {
       const authReq = req as AuthRequest;
-      const userId = authReq.userId || (req.query.userId as string);
-      const address = authReq.userAddress || (req.query.address as string);
+      const userId = authReq.userId!;
       const levelConfigId = req.query.levelConfigId as string;
+      const tierCode = (req.query.tierCode || req.query.tier) as string;
       const depth = parseInt((req.query.depth as string) || '3', 10);
 
-      const tree = await MatrixQueryService.getMatrixTree(userId, address, levelConfigId, depth);
+      const tree = await MatrixQueryService.getMatrixTree(userId, levelConfigId, tierCode, depth);
       res.json({ success: true, data: tree });
     } catch (err) {
       next(err);

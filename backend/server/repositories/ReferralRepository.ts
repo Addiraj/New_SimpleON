@@ -1,6 +1,8 @@
 import { prisma, isDatabaseAvailable } from '../config/database.js';
 import { AuthRepository, UserRecord } from './AuthRepository.js';
 import { logger } from '../config/logger.js';
+import { BoosterConfigService } from '../services/BoosterConfigService.js';
+import { QualifiedBuilderService } from '../services/QualifiedBuilderService.js';
 
 export interface ReferralRelationRecord {
   id: string;
@@ -50,6 +52,31 @@ const memoryReferralRelations: ReferralRelationRecord[] = [
 import { AppError } from '../utils/AppError.js';
 
 export class ReferralRepository {
+  private static getMinimumLevelOrder(tierCode?: string): number {
+    const normalized = tierCode?.toLowerCase().trim();
+    const config = BoosterConfigService.getTierConfig(normalized);
+    const orderByTier: Record<string, number> = {
+      starter: 1,
+      builder: 2,
+      leader: 3,
+      champion: 4,
+    };
+    return config ? orderByTier[config.code] : 1;
+  }
+
+  private static buildTierScopedReferredFilter(tierCode?: string): any {
+    const minLevelOrder = this.getMinimumLevelOrder(tierCode);
+    if (minLevelOrder <= 1) {
+      return { status: 'ACTIVE' };
+    }
+    return {
+      status: 'ACTIVE',
+      current_level: {
+        level_order: { gte: minLevelOrder },
+      },
+    };
+  }
+
   /**
    * Helper to manually add memory referral relation synchronously
    */
@@ -377,7 +404,7 @@ export class ReferralRepository {
   /**
    * Get Referral Summary metrics for a user
    */
-  static async getSummary(userId: string, reqHost = 'simpleon.io', reqProtocol = 'https') {
+  static async getSummary(userId: string, reqHost = 'simpleon.io', reqProtocol = 'https', tierCode?: string) {
     const user = await AuthRepository.findUserById(userId);
     if (!user) throw new Error('User not found');
 
@@ -388,30 +415,30 @@ export class ReferralRepository {
     let indirectCount = 0;
     let totalCount = 0;
     let qualifiedBuilders = 0;
+    let qualifiedLeaders = 0;
+    let qualifiedChampions = 0;
     let recentMembers: TeamMemberInfo[] = [];
+    const referredFilter = this.buildTierScopedReferredFilter(tierCode);
 
     try {
       directCount = await prisma.referralRelation.count({
-        where: { sponsor_user_id: userId, depth: 1 },
+        where: { sponsor_user_id: userId, depth: 1, status: 'ACTIVE', referred: referredFilter },
       });
 
       indirectCount = await prisma.referralRelation.count({
-        where: { sponsor_user_id: userId, depth: { gt: 1 } },
+        where: { sponsor_user_id: userId, depth: { gt: 1 }, status: 'ACTIVE', referred: referredFilter },
       });
 
       totalCount = directCount + indirectCount;
 
-      // Qualified builders: members with status = ACTIVE or who have direct referrals
-      qualifiedBuilders = await prisma.referralRelation.count({
-        where: {
-          sponsor_user_id: userId,
-          referred: { status: 'ACTIVE' },
-        },
-      });
+      const qualification = await QualifiedBuilderService.getQualificationData(userId);
+      qualifiedBuilders = qualification.builderCount;
+      qualifiedLeaders = qualification.leaderCount;
+      qualifiedChampions = qualification.championCount;
 
       // Recent members
-      const recentRels = await prisma.referralRelation.findMany({
-        where: { sponsor_user_id: userId },
+      const recentRels: any[] = await prisma.referralRelation.findMany({
+        where: { sponsor_user_id: userId, status: 'ACTIVE', referred: referredFilter },
         take: 5,
         orderBy: { created_at: 'desc' },
         include: {
@@ -448,8 +475,8 @@ export class ReferralRepository {
     } catch (err: any) {
       logger.warn({ error: err.message }, 'Prisma unavailable, calculating summary from memory relations');
       const userRels = memoryReferralRelations.filter((r) => r.sponsor_user_id === userId);
-      directCount = userRels.filter((r) => r.depth === 1).length;
-      indirectCount = userRels.filter((r) => r.depth > 1).length;
+      directCount = userRels.filter((r) => r.depth === 1 && r.status === 'ACTIVE').length;
+      indirectCount = userRels.filter((r) => r.depth > 1 && r.status === 'ACTIVE').length;
       totalCount = userRels.length;
       qualifiedBuilders = userRels.filter((r) => r.status === 'ACTIVE').length;
       
@@ -495,6 +522,9 @@ export class ReferralRepository {
       indirectReferralCount: indirectCount,
       totalTeamCount: totalCount,
       qualifiedBuilders,
+      qualifiedLeaders,
+      qualifiedChampions,
+      selectedTier: BoosterConfigService.getTierConfig(tierCode?.toLowerCase().trim()) || BoosterConfigService.assertTierConfig('starter'),
       recentlyJoinedMembers: recentMembers,
     };
   }
@@ -504,12 +534,13 @@ export class ReferralRepository {
    */
   static async getDirectReferrals(
     userId: string,
-    options: { page: number; limit: number; search?: string }
+    options: { page: number; limit: number; search?: string; tierCode?: string }
   ) {
     const page = Math.max(1, options.page || 1);
     const limit = Math.min(100, Math.max(1, options.limit || 10));
     const skip = (page - 1) * limit;
     const search = options.search?.trim();
+    const referredFilter = this.buildTierScopedReferredFilter(options.tierCode);
 
     let members: TeamMemberInfo[] = [];
     let total = 0;
@@ -519,10 +550,13 @@ export class ReferralRepository {
       const whereCondition: any = {
         sponsor_user_id: userId,
         depth: 1,
+        status: 'ACTIVE',
+        referred: referredFilter,
       };
 
       if (search) {
         whereCondition.referred = {
+          ...referredFilter,
           OR: [
             { wallet_address: { contains: search } },
             { display_name: { contains: search } },
@@ -625,7 +659,7 @@ export class ReferralRepository {
   /**
    * Get Referral Tree down to maxDepth
    */
-  static async getReferralTree(userId: string, maxDepth = 5, search?: string) {
+  static async getReferralTree(userId: string, maxDepth = 5, search?: string, tierCode?: string) {
     const user = await AuthRepository.findUserById(userId);
     if (!user) throw new Error('User not found');
 
@@ -643,6 +677,7 @@ export class ReferralRepository {
       directsCount: 0,
       children: [],
     };
+    const referredFilter = this.buildTierScopedReferredFilter(tierCode);
 
     try {
       // Helper function to build children tree
@@ -650,10 +685,12 @@ export class ReferralRepository {
         if (currentDepth > maxDepth) return [];
         if (!(await isDatabaseAvailable())) throw new Error('Database offline');
 
-        const rels = await prisma.referralRelation.findMany({
+        const rels: any[] = await prisma.referralRelation.findMany({
           where: {
             sponsor_user_id: parentUserId,
             depth: 1, // Get direct children for this node
+            status: 'ACTIVE',
+            referred: referredFilter,
           },
           include: {
             referred: {

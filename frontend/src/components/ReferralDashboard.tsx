@@ -10,13 +10,14 @@ import QRCode from 'qrcode';
 import { useWeb3Store } from '../store/useWeb3Store';
 import { referralApi } from '../services/api';
 import { buildReferralUrl } from '../utils/referral';
+import { BOOSTER_TIER_CONFIGS, BoosterTierCode, getBoosterTierConfig } from '../data/boosterPlan';
 
 // Mock Referral Member Interface
 interface ReferralMember {
   id: string;
   address: string;
   level: number; // 1 = Direct, 2+ = Indirect
-  tier: 'STARTER' | 'BUILDER' | 'LEADER' | 'VIP';
+  tier: 'STARTER' | 'BUILDER' | 'LEADER' | 'CHAMPION';
   tierAmount: number;
   status: 'ACTIVE' | 'INACTIVE' | 'SPILLOVER';
   joinedDate: string;
@@ -56,9 +57,10 @@ export default function ReferralDashboard() {
   const [showInviteModal, setShowInviteModal] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [levelFilter, setLevelFilter] = useState<'ALL' | 'DIRECT' | 'INDIRECT'>('ALL');
-  const [tierFilter, setTierFilter] = useState<'ALL' | 'STARTER' | 'BUILDER' | 'LEADER' | 'VIP'>('ALL');
+  const [tierFilter, setTierFilter] = useState<'ALL' | 'STARTER' | 'BUILDER' | 'LEADER' | 'CHAMPION'>('ALL');
+  const [selectedPlanTier, setSelectedPlanTier] = useState<BoosterTierCode>('starter');
   const [selectedNodeDetails, setSelectedNodeDetails] = useState<ReferralMember | null>(null);
-  const [customInviteMsg, setCustomInviteMsg] = useState('Hey! Join my SimpleOn Web3 Matrix team on BNB Smart Chain and start earning 20% direct referral commissions + 13-Level team spillover!');
+  const [customInviteMsg, setCustomInviteMsg] = useState('Hey! Join my SimpleOn Web3 Matrix team on BNB Smart Chain and track your Booster-qualified team growth.');
 
   // Live Referral Data State
   const [summaryData, setSummaryData] = useState<any>(null);
@@ -81,9 +83,9 @@ export default function ReferralDashboard() {
     const loadReferralData = async () => {
       try {
         const [sumRes, directRes, treeRes] = await Promise.allSettled([
-          referralApi.getSummary(),
-          referralApi.getDirect({ page: 1, limit: 50 }),
-          referralApi.getTree({ maxDepth: 5 }),
+          referralApi.getSummary({ tier: selectedPlanTier }),
+          referralApi.getDirect({ page: 1, limit: 50, tier: selectedPlanTier }),
+          referralApi.getTree({ maxDepth: 5, tier: selectedPlanTier }),
         ]);
 
         if (!isMounted) return;
@@ -99,13 +101,13 @@ export default function ReferralDashboard() {
             id: m.id || `m-${idx}`,
             address: m.walletAddress,
             level: m.depth || 1,
-            tier: 'STARTER',
-            tierAmount: 100,
+            tier: (selectedPlanTier.toUpperCase() as ReferralMember['tier']),
+            tierAmount: getBoosterTierConfig(selectedPlanTier)?.subscriptionAmount || 0,
             status: m.status === 'ACTIVE' ? 'ACTIVE' : 'INACTIVE',
             joinedDate: m.joiningDate ? m.joiningDate.substring(0, 10) : '-',
             directsCount: m.directsCount || 0,
             volumeGenerated: m.volumeGenerated || 0,
-            commissionEarned: (m.volumeGenerated || 0) * 0.2,
+            commissionEarned: m.commissionEarned || 0,
             matrixPosition: `Node #${m.depth || 1}.${idx + 1}`,
           }));
           if (apiMembers.length > 0) {
@@ -120,8 +122,8 @@ export default function ReferralDashboard() {
             id: node.id,
             address: node.walletAddress,
             level: node.depth || 0,
-            tier: node.level === 'VIP' ? 'VIP' : node.level === 'Leader' ? 'LEADER' : node.level === 'Builder' ? 'BUILDER' : 'STARTER',
-            tierAmount: node.level === 'VIP' ? 1000 : node.level === 'Leader' ? 500 : node.level === 'Builder' ? 250 : 100,
+            tier: (selectedPlanTier.toUpperCase() as ReferralMember['tier']),
+            tierAmount: getBoosterTierConfig(selectedPlanTier)?.subscriptionAmount || 0,
             status: node.status === 'ACTIVE' ? 'ACTIVE' : 'INACTIVE',
             joinedDate: node.joiningDate ? node.joiningDate.substring(0, 10) : '-',
             directsCount: node.directsCount || 0,
@@ -149,7 +151,7 @@ export default function ReferralDashboard() {
       window.removeEventListener('referral_assigned', loadReferralData);
       window.removeEventListener('dashboard_refresh', loadReferralData);
     };
-  }, [isAuthenticated]);
+  }, [isAuthenticated, selectedPlanTier]);
 
   const userAddress = address || '';
   const referralCode = summaryData?.referralCode || (address ? address.slice(-8).toUpperCase() : 'F6D8976F');
@@ -331,7 +333,7 @@ export default function ReferralDashboard() {
               Referral <span className="text-accent-red">Dashboard</span> & Network Tree
             </h1>
             <p className="text-xs sm:text-sm text-sub max-w-2xl leading-relaxed">
-              Earn <strong className="text-prime">20% direct sponsor rewards</strong> + <strong className="text-prime">65% 13-Level matrix spillover commissions</strong>. Share your unique link and track team depth in real time.
+              Share your unique link and track plan-qualified direct and indirect team depth in real time.
             </p>
           </div>
 
@@ -459,6 +461,29 @@ export default function ReferralDashboard() {
           </div>
 
         </div>
+      </div>
+
+      <div className="p-4 rounded-3xl bg-surface border border-border-theme shadow-md flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div>
+          <span className="text-[10px] font-mono font-bold uppercase text-sub">Team Plan Scope</span>
+          <div className="text-sm font-black text-prime">
+            {getBoosterTierConfig(selectedPlanTier)?.name || 'Starter Pool'}
+          </div>
+        </div>
+        <select
+          value={selectedPlanTier}
+          onChange={(e) => {
+            setSelectedPlanTier(e.target.value as BoosterTierCode);
+            setTierFilter(e.target.value.toUpperCase() as any);
+          }}
+          className="px-3 py-2 rounded-xl bg-surface-elevated border border-border-theme text-xs font-mono font-bold text-prime focus:outline-none"
+        >
+          {BOOSTER_TIER_CONFIGS.map((tier) => (
+            <option key={tier.code} value={tier.code}>
+              {tier.name.replace('Pool', 'Booster')} ({tier.subscriptionAmount} USDT)
+            </option>
+          ))}
+        </select>
       </div>
 
       {/* 2. REFERRAL STATISTICS CARDS (4 KPIs) */}
@@ -715,10 +740,10 @@ export default function ReferralDashboard() {
               className="px-3 py-2 rounded-xl bg-surface-elevated border border-border-theme text-xs font-mono font-bold text-prime focus:outline-none"
             >
               <option value="ALL">All Tiers</option>
-              <option value="STARTER">Starter ($100)</option>
-              <option value="BUILDER">Builder ($250)</option>
-              <option value="LEADER">Leader ($500)</option>
-              <option value="VIP">VIP ($1000)</option>
+              <option value="STARTER">Starter (10 USDT)</option>
+              <option value="BUILDER">Builder (40 USDT)</option>
+              <option value="LEADER">Leader (80 USDT)</option>
+              <option value="CHAMPION">Champion (320 USDT)</option>
             </select>
           </div>
         </div>

@@ -5,8 +5,8 @@ import {
   Sparkles, ExternalLink, ChevronLeft, ChevronRight, Filter, Info, Zap, AlertCircle, Loader2
 } from 'lucide-react';
 import { useWeb3Store } from '../store/useWeb3Store';
-import { boosterApi, matrixApi } from '../services/api';
-import { BOOSTER_TIER_CONFIGS, BoosterTierCode, BoosterTierConfig, formatUsdtPlain, getBoosterTierConfig } from '../data/boosterPlan';
+import { matrixApi } from '../services/api';
+import { BOOSTER_TIER_CONFIGS, BoosterTierCode, BoosterTierConfig, formatUsdtPlain } from '../data/boosterPlan';
 
 interface MatrixNode {
   slotNumber: number;
@@ -33,6 +33,7 @@ interface CycleHistoryItem {
   filledSlots: number;
   totalSlots: number;
   earnings: number;
+  levelSlug?: string;
   dateStarted: string;
   dateCompleted?: string | null;
 }
@@ -48,6 +49,7 @@ export default function X5MatrixUI() {
   const [hoveredNode, setHoveredNode] = useState<MatrixNode | null>(null);
   const [historyFilter, setHistoryFilter] = useState<'ALL' | 'COMPLETED' | 'IN_PROGRESS' | BoosterTierCode>('ALL');
   const [activeTierConfig, setActiveTierConfig] = useState<BoosterTierConfig | null>(null);
+  const [availableTiers, setAvailableTiers] = useState<Array<BoosterTierConfig & { levelConfigId?: string; levelOrder?: number }>>([]);
 
   const [currentNodes, setCurrentNodes] = useState<MatrixNode[]>([]);
   const [matrixCyclesHistory, setMatrixCyclesHistory] = useState<CycleHistoryItem[]>([]);
@@ -65,15 +67,25 @@ export default function X5MatrixUI() {
 
   const urlTier = typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('tier') : null;
   const tierTabs = [
-    { slug: 'starter', name: 'Starter Booster', badge: '$1.00 USDT', icon: '🚀', amount: basePlan * 1.0 },
-    { slug: 'builder', name: 'Builder Booster', badge: '$4.00 USDT', icon: '📈', amount: basePlan * 4.0 },
-    { slug: 'leader', name: 'Leader Booster', badge: '$16.00 USDT', icon: '👥', amount: basePlan * 16.0 },
-    { slug: 'champion', name: 'Champion Booster', badge: '$64.00 USDT', icon: '🏆', amount: basePlan * 64.0 },
-    { slug: 'main', name: 'Main Plan', badge: '$15.00 Pool', icon: '💎', amount: basePlan * 15.0 },
+    { slug: 'starter', name: 'Starter Booster', icon: 'S' },
+    { slug: 'builder', name: 'Builder Booster', icon: 'B' },
+    { slug: 'leader', name: 'Leader Booster', icon: 'L' },
+    { slug: 'champion', name: 'Champion Booster', icon: 'C' },
   ];
 
-  const currentTierObj = tierTabs.find((t) => t.slug === selectedTierSlug) || tierTabs[0];
-  const x5PoolAmount = activeTierConfig ? activeTierConfig.subscriptionAmount * basePlan : currentTierObj.amount;
+  const unlockedTierCodes = new Set(availableTiers.map((tier) => tier.code));
+  const visibleTierTabs = tierTabs
+    .filter((tier) => unlockedTierCodes.has(tier.slug as BoosterTierCode))
+    .map((tier) => {
+      const config = availableTiers.find((available) => available.code === tier.slug);
+      return {
+        ...tier,
+        badge: config ? `${formatUsdtPlain(config.subscriptionAmount * basePlan)} USDT` : '0 USDT',
+        amount: config ? config.subscriptionAmount * basePlan : 0,
+      };
+    });
+  const currentTierObj = visibleTierTabs.find((t) => t.slug === selectedTierSlug) || visibleTierTabs[0];
+  const x5PoolAmount = activeTierConfig ? activeTierConfig.subscriptionAmount * basePlan : currentTierObj?.amount || 0;
   const slotValueLabel = x5PoolAmount === null ? '--' : formatUsdtPlain(x5PoolAmount);
 
   // Load Matrix Data from Backend API
@@ -81,12 +93,9 @@ export default function X5MatrixUI() {
     setLoading(true);
     setError(null);
     try {
-      const currentPlan = await boosterApi.getCurrentPlan().catch(() => null);
-      const currentTierCode = (urlTier || currentPlan?.currentLevel?.slug || currentPlan?.data?.currentLevel?.slug || 'starter') as BoosterTierCode;
-      const selectedTier = getBoosterTierConfig(currentTierCode) || BOOSTER_TIER_CONFIGS[0];
-      setActiveTierConfig(selectedTier);
-
       if (!isConnected && !address) {
+        setAvailableTiers([]);
+        setActiveTierConfig(null);
         setCurrentNodes([]);
         setMatrixCyclesHistory([]);
         setSummaryData({
@@ -98,9 +107,9 @@ export default function X5MatrixUI() {
         return;
       }
 
+      const requestedTier = (slugToFetch || urlTier || selectedTierSlug || 'starter').toLowerCase();
       const queryParams = {
-        tier: selectedTier.code,
-        address: address || undefined,
+        tier: requestedTier,
       };
 
       const [summaryRes, currentRes, cyclesRes] = await Promise.allSettled([
@@ -111,6 +120,13 @@ export default function X5MatrixUI() {
 
       if (summaryRes.status === 'fulfilled' && summaryRes.value) {
         const s = summaryRes.value.data || summaryRes.value;
+        const unlocked = Array.isArray(s.availableTiers) ? s.availableTiers : [];
+        setAvailableTiers(unlocked);
+        const selectedTier = s.selectedTier || unlocked.find((tier: any) => tier.code === requestedTier) || unlocked[0];
+        if (selectedTier) {
+          setActiveTierConfig(selectedTier);
+          setSelectedTierSlug(selectedTier.code);
+        }
         setSummaryData({
           totalCompletedCycles: s.totalCompletedCycles || 0,
           totalFilledNodes: s.totalFilledNodes || 0,
@@ -122,6 +138,10 @@ export default function X5MatrixUI() {
 
       if (currentRes.status === 'fulfilled' && currentRes.value) {
         const c = currentRes.value.data || currentRes.value;
+        if (c.selectedTier) {
+          setActiveTierConfig(c.selectedTier);
+          setSelectedTierSlug(c.selectedTier.code);
+        }
         if (c.currentNodes && Array.isArray(c.currentNodes)) {
           setCurrentNodes(c.currentNodes);
         }
@@ -264,7 +284,7 @@ export default function X5MatrixUI() {
 
       {/* Tier Selection Bar */}
       <div className="flex items-center space-x-2 overflow-x-auto pb-2 scrollbar-none">
-        {tierTabs.map((tier) => (
+        {visibleTierTabs.map((tier) => (
           <button
             key={tier.slug}
             onClick={() => {
@@ -288,10 +308,10 @@ export default function X5MatrixUI() {
         ))}
       </div>
 
-      {selectedTierSlug === 'main' ? (
-        <div className="py-24 text-center border border-border-theme bg-surface-elevated/40 rounded-3xl">
-           <h4 className="text-2xl font-black text-prime mb-2">Coming Soon</h4>
-           <p className="text-sm text-sub">Main Plan is currently unavailable and will be available soon.</p>
+      {visibleTierTabs.length === 0 && !loading ? (
+        <div className="py-16 text-center border border-border-theme bg-surface-elevated/40 rounded-3xl">
+           <h4 className="text-xl font-black text-prime mb-2">No Unlocked Booster Tier</h4>
+           <p className="text-sm text-sub">Unlock a Booster tier to view its X5 cycles.</p>
         </div>
       ) : (
         <>
@@ -557,10 +577,6 @@ export default function X5MatrixUI() {
               <option value="ALL">All Cycles</option>
               <option value="COMPLETED">Completed Cycles</option>
               <option value="IN_PROGRESS">Active In Progress</option>
-              <option value="starter">Starter Cycles</option>
-              <option value="builder">Builder Cycles</option>
-              <option value="leader">Leader Cycles</option>
-              <option value="champion">Champion Cycles</option>
             </select>
           </div>
         </div>
