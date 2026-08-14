@@ -7,6 +7,8 @@ import {
 } from 'lucide-react';
 import { useWeb3Store } from '../store/useWeb3Store';
 import { transactionApi } from '../services/api';
+import LedgerTransactions from './LedgerTransactions';
+import TransactionHistory from './TransactionHistory';
 
 export default function WalletPage() {
   const { 
@@ -27,6 +29,7 @@ export default function WalletPage() {
   const [copied, setCopied] = useState(false);
 
   const [realActivity, setRealActivity] = useState<any[]>([]);
+  const [activeTab, setActiveTab] = useState<'blockchain' | 'ledger'>('blockchain');
 
   useEffect(() => {
     async function loadRecentTx() {
@@ -397,54 +400,39 @@ export default function WalletPage() {
 
           </div>
 
-          {/* Recent On-Chain Activity Section */}
-          <div className="p-6 sm:p-8 rounded-3xl bg-surface border border-border-theme shadow-xl space-y-6">
-            <div className="flex justify-between items-center pb-4 border-b border-border-theme">
-              <div>
-                <h3 className="text-base font-extrabold text-prime flex items-center space-x-2">
-                  <Activity size={18} className="text-accent-red" />
-                  <span>Recent Web3 On-Chain Activity</span>
-                </h3>
-                <p className="text-xs text-sub">Real-time smart contract events & SIWE authentication history</p>
-              </div>
-              <span className="text-xs font-mono font-bold text-sub bg-surface-elevated px-3 py-1 rounded-full border border-border-theme">
-                BscScan Audited
-              </span>
+          {/* Tabs Section for History */}
+          <div className="rounded-3xl bg-surface border border-border-theme shadow-xl overflow-hidden">
+            <div className="flex border-b border-border-theme bg-surface-elevated/50 p-2 gap-2">
+              <button
+                onClick={() => setActiveTab('blockchain')}
+                className={`flex-1 py-3 px-4 rounded-xl text-xs font-bold transition-all flex items-center justify-center space-x-2 ${
+                  activeTab === 'blockchain' 
+                    ? 'bg-surface text-prime shadow-sm border border-border-theme' 
+                    : 'text-sub hover:text-prime hover:bg-surface-elevated'
+                }`}
+              >
+                <Activity size={16} className={activeTab === 'blockchain' ? 'text-accent-red' : ''} />
+                <span>Blockchain Transactions</span>
+              </button>
+              <button
+                onClick={() => setActiveTab('ledger')}
+                className={`flex-1 py-3 px-4 rounded-xl text-xs font-bold transition-all flex items-center justify-center space-x-2 ${
+                  activeTab === 'ledger' 
+                    ? 'bg-surface text-prime shadow-sm border border-border-theme' 
+                    : 'text-sub hover:text-prime hover:bg-surface-elevated'
+                }`}
+              >
+                <Layers size={16} className={activeTab === 'ledger' ? 'text-accent-blue' : ''} />
+                <span>Internal Ledger</span>
+              </button>
             </div>
 
-            <div className="space-y-3">
-              {(realActivity.length > 0 ? realActivity : recentActivity).map((tx) => (
-                <div
-                  key={tx.id}
-                  className="p-4 rounded-2xl bg-surface-elevated border border-border-theme hover:border-accent-red/30 transition-all flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs"
-                >
-                  <div className="space-y-1">
-                    <div className="flex items-center space-x-2 font-bold text-prime">
-                      <span className="w-2 h-2 rounded-full bg-emerald-500" />
-                      <span>{tx.type || tx.transactionType || 'ON_CHAIN_EVENT'}</span>
-                      <span className="text-[10px] font-mono font-normal text-sub">
-                        ({tx.createdAt ? new Date(tx.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : (tx.timestamp || 'Just now')})
-                      </span>
-                    </div>
-                    <div className="text-[11px] text-sub font-mono">{tx.description || tx.details || 'Smart contract transaction verified on BSC'}</div>
-                  </div>
-
-                  <div className="flex items-center justify-between sm:justify-end w-full sm:w-auto space-x-4">
-                    <span className="font-mono font-extrabold text-emerald-500">
-                      {tx.amount !== undefined ? `+$${parseFloat(tx.amount.toString()).toFixed(2)} USDT` : tx.amountUsdt !== undefined ? `+$${tx.amountUsdt.toFixed(2)} USDT` : tx.amount}
-                    </span>
-                    <a
-                      href={tx.explorerUrl || `https://testnet.bscscan.com/tx/${tx.txHash || tx.hash}`}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="p-2 rounded-xl bg-surface border border-border-theme text-sub hover:text-accent-red transition-colors flex items-center space-x-1 font-mono text-[10px]"
-                    >
-                      <span>{(tx.txHash || tx.hash || tx.id).substring(0, 8)}...</span>
-                      <ExternalLink size={12} />
-                    </a>
-                  </div>
-                </div>
-              ))}
+            <div className="p-6">
+              {activeTab === 'blockchain' ? (
+                <TransactionHistory />
+              ) : (
+                <LedgerTransactions hideHeader={true} />
+              )}
             </div>
           </div>
 

@@ -476,21 +476,7 @@ export class PaymentService {
         ? env.BSC_MAINNET_RPC || 'https://bsc-dataseed.binance.org/'
         : env.BSC_TESTNET_RPC || 'https://data-seed-prebsc-1-s1.binance.org:8545/';
 
-    // If MOCK_PAYMENT_ENABLED or in test mode or txHash starts with '0xmock'
-    const isMockHash = cleanTxHash.startsWith('0xmock') || cleanTxHash.length < 60;
-    if (isMockHash || env.MOCK_PAYMENT_ENABLED === true || env.NODE_ENV === 'test') {
-      fromAddress = expectedSenderAddress;
-      toAddress = expectedReceiverAddress;
-      tokenAddress = expectedTokenAddress;
-      confirmedAmount = expectedAmountStr;
-      blockNumber = 1234567;
-      confirmationCount = 12;
-      rawReceipt = {
-        transactionHash: cleanTxHash,
-        status: 1,
-        mock: true,
-      };
-    } else {
+
       // Real Blockchain Verification via Ethers.js
       try {
         const provider = new ethers.JsonRpcProvider(rpcUrl);
@@ -603,7 +589,6 @@ export class PaymentService {
         logger.error({ error: err.message, txHash: cleanTxHash }, 'RPC Blockchain verification error');
         throw new AppError(`Blockchain RPC verification failed: ${err.message}`, 500);
       }
-    }
 
     // Save verification info, confirm intent, create transaction record, create ledger, trigger plan action atomically
     const result = await PaymentRepository.executeVerifiedPaymentTx({

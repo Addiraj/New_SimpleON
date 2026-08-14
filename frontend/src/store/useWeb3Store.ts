@@ -55,11 +55,10 @@ interface Web3State {
   fetchCalculations: (basePlan?: number) => Promise<void>;
   fetchProfile: () => Promise<void>;
   fetchUnreadCount: () => Promise<void>;
-  upgradeTier: (targetTier: string) => Promise<void>;
-  registerAndActivate: (referrer?: string) => Promise<void>;
-  activateMainPlan: () => Promise<void>;
+  upgradeTier: (targetTier: string) => Promise<string>;
+  registerAndActivate: (referrer?: string) => Promise<string>;
+  activateMainPlan: () => Promise<string>;
   switchChain: (targetChainId: number) => Promise<void>;
-  claimDemoCoins: () => Promise<void>;
 }
 
 export const useWeb3Store = create<Web3State>((set, get) => ({
@@ -353,6 +352,7 @@ export const useWeb3Store = create<Web3State>((set, get) => ({
       console.log('Upgrade transaction confirmed on blockchain');
       // The backend blockchain listener will pick this up and update MySQL.
       await get().fetchCalculations(get().basePlan);
+      return upgradeTx.hash;
     } catch (err: any) {
       console.error('Upgrade tier error:', err.message);
       throw err;
@@ -392,6 +392,7 @@ export const useWeb3Store = create<Web3State>((set, get) => ({
 
       console.log('Join transaction confirmed on blockchain');
       await get().fetchCalculations(get().basePlan);
+      return joinTx.hash;
     } catch (err: any) {
       console.error('Join error:', err.message);
       throw err;
@@ -429,6 +430,7 @@ export const useWeb3Store = create<Web3State>((set, get) => ({
 
       console.log('Main plan activated on blockchain');
       await get().fetchCalculations(get().basePlan);
+      return tx.hash;
     } catch (err: any) {
       console.error('Activate Main Plan error:', err.message);
       throw err;
@@ -452,18 +454,6 @@ export const useWeb3Store = create<Web3State>((set, get) => ({
       }
     } else {
       set({ chainId: targetChainId });
-    }
-  },
-
-  claimDemoCoins: async () => {
-    try {
-      // @ts-ignore
-      const { walletApi } = await import('../services/api');
-      await walletApi.claimDemoCoins();
-      // Dispatch a dashboard refresh event to quickly update numbers everywhere
-      window.dispatchEvent(new Event('dashboard_refresh'));
-    } catch (err: any) {
-      console.error('Failed to claim demo coins:', err);
     }
   },
 }));

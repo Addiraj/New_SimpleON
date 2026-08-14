@@ -1,11 +1,12 @@
 import { useEffect } from 'react';
-import { useAppKitAccount, useAppKitProvider } from '@reown/appkit/react';
+import { useAppKitAccount, useAppKitProvider, useAppKitNetwork } from '@reown/appkit/react';
 import { useWeb3Store } from '../store/useWeb3Store';
 import { ethers } from 'ethers';
 
 export default function AppKitSync() {
   const { address, isConnected } = useAppKitAccount();
   const { walletProvider } = useAppKitProvider('eip155');
+  const { chainId } = useAppKitNetwork();
 
   // Reset the prompt flag if the wallet disconnects
   useEffect(() => {
@@ -34,10 +35,17 @@ export default function AppKitSync() {
         }
       }
 
+      // Parse chainId correctly (it might be a string, hex, or number depending on the adapter)
+      let parsedChainId = null;
+      if (chainId) {
+        parsedChainId = typeof chainId === 'string' && chainId.startsWith('eip155:') ? parseInt(chainId.split(':')[1], 10) : Number(chainId);
+      }
+
       useWeb3Store.setState({ 
         address: connectedAddr, 
         isConnected: !!isConnected,
-        provider: browserProvider
+        provider: browserProvider,
+        ...(parsedChainId ? { chainId: parsedChainId } : {})
       });
 
       // Trigger SIWE login if connected but not authenticated
@@ -59,7 +67,7 @@ export default function AppKitSync() {
     };
     
     syncState();
-  }, [address, isConnected, walletProvider]);
+  }, [address, isConnected, walletProvider, chainId]);
 
   return null;
 }

@@ -64,7 +64,7 @@ const terminalMessages: Record<string, { title: string; message: string }> = {
 };
 
 export default function ReferralLinkProcessor() {
-  const { isAuthenticated, openWalletModal } = useWeb3Store();
+  const { isAuthenticated, isConnecting, openWalletModal } = useWeb3Store();
   const [flowState, setFlowState] = useState<ReferralFlowState>('idle');
   const [referralCode, setReferralCode] = useState<string | null>(null);
   const [sponsor, setSponsor] = useState<SponsorDetails | null>(null);
@@ -298,7 +298,7 @@ export default function ReferralLinkProcessor() {
                 {isBusy && <RefreshCw size={16} className="animate-spin" />}
                 <span>
                   {flowState === 'awaiting_wallet'
-                    ? 'Connect Wallet'
+                    ? (isConnecting ? 'Connecting...' : 'Connect Wallet & Start')
                     : flowState === 'awaiting_confirmation'
                     ? 'Confirm Sponsor'
                     : isBusy
