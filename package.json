@@ -53,7 +53,7 @@
     "zustand": "^5.0.14"
   },
   "devDependencies": {
-    "@nomicfoundation/hardhat-toolbox": "^7.0.0",
+    "@nomicfoundation/hardhat-toolbox": "^5.0.0",
     "@types/cors": "^2.8.19",
     "@types/express": "^4.17.21",
     "@types/jsonwebtoken": "^9.0.10",
@@ -64,6 +64,7 @@
     "autoprefixer": "^10.4.21",
     "dotenv": "^17.4.2",
     "esbuild": "^0.25.0",
+    "hardhat": "^2.29.0",
     "supertest": "^7.2.2",
     "tailwindcss": "^4.1.14",
     "tsx": "^4.21.0",

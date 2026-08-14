@@ -46,56 +46,13 @@ export default function Plans({ basePlan = 1 }: { basePlan?: number } = {}) {
   const [paymentError, setPaymentError] = useState<string | null>(null);
 
   // Verification States
-  const [txHashInput, setTxHashInput] = useState<string>('');
+
   const [verificationStep, setVerificationStep] = useState<
     'idle' | 'wallet_confirm' | 'blockchain_pending' | 'backend_verifying' | 'confirmed' | 'failed'
   >('idle');
   const [verifyStatusMessage, setVerifyStatusMessage] = useState<string | null>(null);
 
-  const handleVerifyPayment = async (txHashToVerify?: string) => {
-    const hash = txHashToVerify || txHashInput;
-    if (!activePaymentIntent?.id || !hash) {
-      setVerifyStatusMessage('Please enter a valid transaction hash starting with 0x');
-      setVerificationStep('failed');
-      return;
-    }
-
-    setVerifyStatusMessage('Awaiting wallet confirmation...');
-    setVerificationStep('wallet_confirm');
-
-    setTimeout(() => {
-      setVerifyStatusMessage('Querying blockchain receipt from RPC node...');
-      setVerificationStep('blockchain_pending');
-
-      setTimeout(() => {
-        setVerifyStatusMessage('Verifying token transfer event, sender, receiver, amount & network...');
-        setVerificationStep('backend_verifying');
-
-        paymentApi
-          .verifyPayment({
-            paymentIntentId: activePaymentIntent.id,
-            txHash: hash,
-          })
-          .then((res: any) => {
-            const verifiedData = res?.data || res;
-            if (verifiedData?.paymentIntent) {
-              setActivePaymentIntent(verifiedData.paymentIntent);
-            } else if (res?.data) {
-              setActivePaymentIntent(res.data);
-            }
-            setVerificationStep('confirmed');
-            setVerifyStatusMessage(res?.message || 'Payment successfully verified on-chain!');
-            loadPlanData();
-          })
-          .catch((err: any) => {
-            setVerificationStep('failed');
-            setVerifyStatusMessage(err?.message || 'Verification failed on blockchain');
-          });
-      }, 500);
-    }, 500);
-  };
-
-  const handleCreateIntent = async (type: 'JOIN' | 'UPGRADE' | 'RETOPUP', levelSlug: string) => {
+  const handlePurchaseFlow = async (type: 'JOIN' | 'UPGRADE' | 'RETOPUP', levelSlug: string) => {
     if (!isConnected || !isAuthenticated) {
       setPaymentError('Please connect your wallet and sign in to activate or upgrade booster plans.');
       openWalletModal();
@@ -106,8 +63,12 @@ export default function Plans({ basePlan = 1 }: { basePlan?: number } = {}) {
     setPaymentError(null);
     setVerificationStep('idle');
     setVerifyStatusMessage(null);
-    setTxHashInput('');
+    setActivePaymentIntent(null);
+    
     try {
+      // 1. Create Intent
+      setVerifyStatusMessage('Initializing secure payment session...');
+      setVerificationStep('backend_verifying');
       let res: any;
       if (type === 'JOIN') {
         res = await paymentApi.createJoinIntent({ levelSlug });
@@ -122,8 +83,43 @@ export default function Plans({ basePlan = 1 }: { basePlan?: number } = {}) {
       }
       const intentData = res?.data || res;
       setActivePaymentIntent(intentData);
+
+      // 2. Trigger Web3 Transaction
+      setVerifyStatusMessage('Please confirm the transaction in your wallet...');
+      setVerificationStep('wallet_confirm');
+      const store = useWeb3Store.getState();
+      
+      let txHash: string;
+      if (type === 'JOIN' || type === 'RETOPUP') {
+        txHash = await store.registerAndActivate();
+      } else {
+        txHash = await store.upgradeTier(levelSlug.toUpperCase());
+      }
+
+      // 3. Verify on Backend
+      setVerifyStatusMessage('Verifying transaction on the blockchain...');
+      setVerificationStep('blockchain_pending');
+      
+      const verifyRes: any = await paymentApi.verifyPayment({
+        paymentIntentId: intentData.id,
+        txHash: txHash,
+      });
+
+      const verifiedData = verifyRes?.data || verifyRes;
+      if (verifiedData?.paymentIntent) {
+        setActivePaymentIntent(verifiedData.paymentIntent);
+      }
+      setVerificationStep('confirmed');
+      setVerifyStatusMessage('Payment successfully verified on-chain!');
+      
+      window.dispatchEvent(new Event('dashboard_refresh'));
+      await store.fetchProfile();
+      await loadPlanData();
+
     } catch (err: any) {
-      setPaymentError(err?.message || 'Failed to create payment intent');
+      setPaymentError(err?.message || 'Payment flow failed');
+      setVerificationStep('failed');
+      setVerifyStatusMessage(err?.reason || err?.message || 'Transaction failed or rejected');
     } finally {
       setActionLoadingSlug(null);
     }
@@ -574,21 +570,9 @@ export default function Plans({ basePlan = 1 }: { basePlan?: number } = {}) {
                         <div className="mt-6 pt-3 border-t border-border-theme space-y-3">
                           <button
                             disabled={tier.slug !== 'starter' || isLocked || isCurrentOrPassed || actionLoadingSlug === tier.slug}
-                            onClick={async () => {
-                              if (isEligibleForUpgrade && tier.slug === 'starter') {
-                                setActionLoadingSlug(tier.slug);
-                                try {
-                                  const store = useWeb3Store.getState();
-                                  await store.registerAndActivate();
-                                  alert('Transaction submitted to blockchain! Waiting for confirmation...');
-                                  window.dispatchEvent(new Event('dashboard_refresh'));
-                                  await fetchProfile(); // Instantly update user status in the UI
-                                  loadPlanData();
-                                } catch (err: any) {
-                                  alert(err?.reason || err?.message || 'Join failed');
-                                } finally {
-                                  setActionLoadingSlug(null);
-                                }
+                            onClick={() => {
+                              if (isEligibleForUpgrade) {
+                                handlePurchaseFlow(tier.slug === 'starter' ? 'JOIN' : 'UPGRADE', tier.slug);
                               }
                             }}
                             className={`w-full py-2.5 px-3 rounded-xl text-xs font-black flex items-center justify-center space-x-2 transition-all ${
@@ -658,55 +642,24 @@ export default function Plans({ basePlan = 1 }: { basePlan?: number } = {}) {
                                 <span className="font-bold text-prime truncate max-w-[120px]">{activePaymentIntent.receiverAddress}</span>
                               </div>
 
-                              {activePaymentIntent.status !== 'CONFIRMED' && (
-                                <div className="pt-2 border-t border-border-theme/50 space-y-2 font-sans">
-                                  <label className="block text-[10px] text-sub font-bold">
-                                    Blockchain Transaction Hash (0x...):
-                                  </label>
-                                  <div className="flex space-x-1.5 font-mono">
-                                    <input
-                                      type="text"
-                                      value={txHashInput}
-                                      onChange={(e) => setTxHashInput(e.target.value)}
-                                      placeholder="0x..."
-                                      className="flex-1 bg-surface border border-border-theme rounded-lg px-2 py-1 text-[10px] text-prime focus:outline-none focus:border-amber-500"
-                                    />
-                                    <button
-                                      type="button"
-                                      onClick={() => handleVerifyPayment()}
-                                      disabled={verificationStep === 'wallet_confirm' || verificationStep === 'blockchain_pending' || verificationStep === 'backend_verifying'}
-                                      className="px-2.5 py-1 rounded-lg bg-amber-500 hover:bg-amber-600 text-black font-extrabold text-[10px] flex items-center space-x-1 disabled:opacity-50 transition-colors"
-                                    >
-                                      {verificationStep === 'wallet_confirm' || verificationStep === 'blockchain_pending' || verificationStep === 'backend_verifying' ? (
-                                        <RefreshCw size={11} className="animate-spin" />
-                                      ) : (
-                                        <CheckCircle2 size={11} />
-                                      )}
-                                      <span>Verify</span>
-                                    </button>
+                              {/* Verification Stepper */}
+                              {verificationStep !== 'idle' && (
+                                <div className={`p-2 rounded-lg text-[10px] border space-y-1 mt-2 ${
+                                  verificationStep === 'confirmed'
+                                    ? 'bg-green-500/10 border-green-500/30 text-green-500'
+                                    : verificationStep === 'failed'
+                                    ? 'bg-red-500/10 border-red-500/30 text-red-500'
+                                    : 'bg-amber-500/10 border-amber-500/30 text-amber-500'
+                                }`}>
+                                  <div className="flex items-center space-x-1.5 font-bold">
+                                    {(verificationStep === 'wallet_confirm' || verificationStep === 'blockchain_pending' || verificationStep === 'backend_verifying') && (
+                                      <RefreshCw size={12} className="animate-spin shrink-0" />
+                                    )}
+                                    {verificationStep === 'confirmed' && <CheckCircle2 size={12} className="shrink-0" />}
+                                    {verificationStep === 'failed' && <AlertCircle size={12} className="shrink-0" />}
+                                    <span className="uppercase font-mono text-[9px]">{verificationStep.replace('_', ' ')}</span>
                                   </div>
-
-
-                                  {/* Verification Stepper */}
-                                  {verificationStep !== 'idle' && (
-                                    <div className={`p-2 rounded-lg text-[10px] border space-y-1 ${
-                                      verificationStep === 'confirmed'
-                                        ? 'bg-green-500/10 border-green-500/30 text-green-500'
-                                        : verificationStep === 'failed'
-                                        ? 'bg-red-500/10 border-red-500/30 text-red-500'
-                                        : 'bg-amber-500/10 border-amber-500/30 text-amber-500'
-                                    }`}>
-                                      <div className="flex items-center space-x-1.5 font-bold">
-                                        {(verificationStep === 'wallet_confirm' || verificationStep === 'blockchain_pending' || verificationStep === 'backend_verifying') && (
-                                          <RefreshCw size={12} className="animate-spin shrink-0" />
-                                        )}
-                                        {verificationStep === 'confirmed' && <CheckCircle2 size={12} className="shrink-0" />}
-                                        {verificationStep === 'failed' && <AlertCircle size={12} className="shrink-0" />}
-                                        <span className="uppercase font-mono text-[9px]">{verificationStep.replace('_', ' ')}</span>
-                                      </div>
-                                      <div className="text-[10px] leading-tight">{verifyStatusMessage}</div>
-                                    </div>
-                                  )}
+                                  <div className="text-[10px] leading-tight">{verifyStatusMessage}</div>
                                 </div>
                               )}
                             </div>

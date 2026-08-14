@@ -326,15 +326,6 @@ export const walletApi = {
     return res.data || res;
   },
 
-  claimDemoCoins: async () => {
-    const res: any = await api.post('/wallet/faucet');
-    return res.data || res;
-  },
-
-  demoActivate: async (referralCode?: string) => {
-    const res: any = await api.post('/wallet/demo-activate', { referralCode });
-    return res.data || res;
-  },
 };
 
 // Transaction API
@@ -433,6 +424,24 @@ export const notificationApi = {
 export const statsApi = {
   getGlobalStats: async () => {
     const res: any = await api.get('/stats/global');
+    return res.data || res;
+  }
+};
+
+// Admin API
+export const adminApi = {
+  getDashboardStats: async () => {
+    const res: any = await api.get('/admin/dashboard/stats');
+    return res.data || res;
+  },
+
+  getUsers: async (params?: { page?: number; limit?: number }) => {
+    const res: any = await api.get('/admin/users', { params });
+    return res.data || res;
+  },
+
+  getTransactions: async (params?: { page?: number; limit?: number }) => {
+    const res: any = await api.get('/admin/transactions', { params });
     return res.data || res;
   }
 };
