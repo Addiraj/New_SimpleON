@@ -44,8 +44,7 @@ The repository follows clean MVC (Model-View-Controller) architecture, SOLID sof
 │   │   ├── Dashboard.tsx            # Live Web3 User Dashboard
 │   │   ├── MatrixVisualizer.tsx     # 13-Level matrix & X5/X4 visualizer
 │   │   ├── Navbar.tsx               # Web3 Wallet button & Navigation
-│   │   ├── Plans.tsx                # Booster tiers mathematical calculator
-│   │   ├── Simulator.tsx            # Interactive Base Plan slider
+│   │   ├── Plans.tsx                # Booster tiers and plan activation UI
 │   │   └── WalletModal.tsx          # MetaMask, WalletConnect, Trust Wallet modal
 │   ├── services/
 │   │   └── api.ts                   # Centralized Axios client with JWT interceptor

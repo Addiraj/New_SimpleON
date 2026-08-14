@@ -21,14 +21,10 @@ export default function WalletPage() {
     openWalletModal, 
     disconnectWallet,
     connectWallet,
-    switchChain,
-    simulateState
+    switchChain
   } = useWeb3Store();
 
   const [copied, setCopied] = useState(false);
-  const [selectedSimState, setSelectedSimState] = useState<'success' | 'loading' | 'disconnected' | 'error'>(
-    isConnected ? 'success' : 'disconnected'
-  );
 
   const [realActivity, setRealActivity] = useState<any[]>([]);
 
@@ -54,11 +50,6 @@ export default function WalletPage() {
     }
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
-  };
-
-  const handleSimTrigger = (st: 'success' | 'loading' | 'disconnected' | 'error') => {
-    setSelectedSimState(st);
-    simulateState(st);
   };
 
   const walletCards = [
@@ -130,55 +121,6 @@ export default function WalletPage() {
           </div>
         </div>
 
-        {/* State Interactive Switcher bar for UI Testing */}
-        <div className="mt-8 pt-6 border-t border-border-theme flex flex-wrap items-center justify-between gap-4">
-          <div className="text-xs font-mono font-bold text-sub flex items-center space-x-2">
-            <Activity size={14} className="text-accent-red" />
-            <span>Interactive State Simulator:</span>
-          </div>
-
-          <div className="flex items-center space-x-2 bg-surface-elevated p-1 rounded-xl border border-border-theme text-xs font-mono">
-            <button
-              onClick={() => handleSimTrigger('success')}
-              className={`px-3 py-1.5 rounded-lg font-bold transition-all flex items-center space-x-1.5 ${
-                selectedSimState === 'success' ? 'bg-emerald-500 text-white shadow-sm' : 'text-sub hover:text-prime'
-              }`}
-            >
-              <span className="w-2 h-2 rounded-full bg-emerald-300" />
-              <span>Connected State</span>
-            </button>
-
-            <button
-              onClick={() => handleSimTrigger('loading')}
-              className={`px-3 py-1.5 rounded-lg font-bold transition-all flex items-center space-x-1.5 ${
-                selectedSimState === 'loading' ? 'bg-amber-500 text-white shadow-sm' : 'text-sub hover:text-prime'
-              }`}
-            >
-              <RefreshCw size={12} className="animate-spin" />
-              <span>Loading State</span>
-            </button>
-
-            <button
-              onClick={() => handleSimTrigger('error')}
-              className={`px-3 py-1.5 rounded-lg font-bold transition-all flex items-center space-x-1.5 ${
-                selectedSimState === 'error' ? 'bg-red-500 text-white shadow-sm' : 'text-sub hover:text-prime'
-              }`}
-            >
-              <AlertTriangle size={12} />
-              <span>Error State</span>
-            </button>
-
-            <button
-              onClick={() => handleSimTrigger('disconnected')}
-              className={`px-3 py-1.5 rounded-lg font-bold transition-all flex items-center space-x-1.5 ${
-                selectedSimState === 'disconnected' ? 'bg-border-theme text-prime shadow-sm' : 'text-sub hover:text-prime'
-              }`}
-            >
-              <LogOut size={12} />
-              <span>Disconnected State</span>
-            </button>
-          </div>
-        </div>
       </div>
 
       {/* 1. Wallet Provider Cards Section */}
@@ -362,12 +304,6 @@ export default function WalletPage() {
                       className="px-5 py-2.5 rounded-xl bg-red-500 text-white text-xs font-bold hover:bg-red-600 transition-colors shadow-md"
                     >
                       Retry Connection
-                    </button>
-                    <button
-                      onClick={() => handleSimTrigger('success')}
-                      className="px-4 py-2.5 rounded-xl bg-surface border border-border-theme text-xs font-bold text-prime hover:bg-surface-elevated"
-                    >
-                      Simulate Success
                     </button>
                   </div>
                 </div>

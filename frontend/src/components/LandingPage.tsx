@@ -8,13 +8,11 @@ import Plans from './Plans';
 import MatrixVisualizer from './MatrixVisualizer';
 import WalletPreviewSection from './WalletPreviewSection';
 import ReferralSection from './ReferralSection';
-import Simulator from './Simulator';
 import Roadmap from './Roadmap';
 import FaqSection from './FaqSection';
 import TestimonialsSection from './TestimonialsSection';
 import SecuritySection from './SecuritySection';
 import CtaSection from './CtaSection';
-import { useWeb3Store } from '../store/useWeb3Store';
 import { useAppKit } from '@reown/appkit/react';
 
 interface LandingPageProps {
@@ -61,27 +59,22 @@ export default function LandingPage({ onNavigateTab }: LandingPageProps) {
       {/* 9. Referral Program & Direct Commission Split */}
       <ReferralSection />
 
-      {/* 10. Income Simulation Calculator */}
-      <div id="landing-simulator-wrapper" className="py-8">
-        <Simulator />
-      </div>
-
-      {/* 11. Project Roadmap */}
+      {/* 10. Project Roadmap */}
       <Roadmap />
 
-      {/* 12. FAQ Accordion */}
+      {/* 11. FAQ Accordion */}
       <FaqSection />
 
-      {/* 13. Testimonials & Community Feedback */}
+      {/* 12. Testimonials & Community Feedback */}
       <TestimonialsSection />
 
-      {/* 14. Smart Contract Security & Audit Verification */}
+      {/* 13. Smart Contract Security & Audit Verification */}
       <SecuritySection />
 
-      {/* 15. Final Conversion CTA Section */}
+      {/* 14. Final Conversion CTA Section */}
       <CtaSection 
         onConnectWallet={() => open()}
-        onOpenSimulator={() => onNavigateTab('calculator')}
+        onOpenMatrix={() => onNavigateTab('matrix')}
       />
 
     </div>

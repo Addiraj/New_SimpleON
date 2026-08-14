@@ -3,7 +3,6 @@ import { motion, AnimatePresence } from 'motion/react';
 import Navbar from './components/Navbar';
 import LandingPage from './components/LandingPage';
 import Plans from './components/Plans';
-import Simulator from './components/Simulator';
 import Footer from './components/Footer';
 
 import WalletModal from './components/WalletModal';
@@ -26,7 +25,7 @@ import AppKitSync from './components/AppKitSync';
 export default function App() {
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
   const [activeTab, setActiveTab] = useState<string>('home');
-  const { basePlan, setBasePlan, activeView, setActiveView, fetchCalculations, initAuth } = useWeb3Store();
+  const { basePlan, activeView, setActiveView, initAuth } = useWeb3Store();
 
   // Sync store activeView with local activeTab
   const currentTab = activeView !== 'landing' ? activeView : activeTab;
@@ -42,7 +41,6 @@ export default function App() {
 
   useEffect(() => {
     initAuth();
-    fetchCalculations(1.0);
     if (window.location.pathname === '/admin') {
       setActiveTab('admin');
       setActiveView('admin' as any);
@@ -102,19 +100,6 @@ export default function App() {
             id="tab-content-plans"
           >
             <Plans basePlan={basePlan} />
-          </motion.div>
-        );
-      case 'calculator':
-        return (
-          <motion.div
-            key="calculator"
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            transition={{ duration: 0.25 }}
-            id="tab-content-calculator"
-          >
-            <Simulator basePlan={basePlan} setBasePlan={setBasePlan} />
           </motion.div>
         );
       case 'dashboard':

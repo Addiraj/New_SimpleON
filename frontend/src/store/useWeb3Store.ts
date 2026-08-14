@@ -51,8 +51,6 @@ interface Web3State {
   disconnectWallet: () => Promise<void>;
   setConnectionError: (errorMsg: string | null) => void;
   setHasPromptedSiwe: (status: boolean) => void;
-  simulateState: (state: 'loading' | 'success' | 'disconnected' | 'error') => void;
-
   setBasePlan: (amount: number) => Promise<void>;
   fetchCalculations: (basePlan?: number) => Promise<void>;
   fetchProfile: () => Promise<void>;
@@ -178,34 +176,6 @@ export const useWeb3Store = create<Web3State>((set, get) => ({
         localStorage.removeItem('simpleon_web3_jwt');
         set({ isAuthenticated: false, jwtToken: null, userProfile: null, isConnected: false, address: null });
       }
-    }
-  },
-
-  simulateState: (state) => {
-    if (state === 'loading') {
-      set({ isConnecting: true, isConnected: false, connectionError: null });
-    } else if (state === 'success') {
-      const simAddress = '0x71C7656EC7ab88b098defB751B7401B5f6d8976F'.toLowerCase();
-      set({
-        isConnecting: false,
-        isConnected: true,
-        address: simAddress,
-        chainId: 97,
-        walletType: get().walletType || 'metamask',
-        connectionError: null,
-        isAuthenticated: true,
-        bnbBalance: '0.00',
-        usdtBalance: '0.00'
-      });
-      get().fetchCalculations(1.0);
-    } else if (state === 'disconnected') {
-      get().disconnectWallet();
-    } else if (state === 'error') {
-      set({
-        isConnecting: false,
-        isConnected: false,
-        connectionError: 'User rejected SIWE authentication signature request (Error Code: 4001). Please try connecting again and approve the EIP-712 prompt in your Web3 wallet.'
-      });
     }
   },
 

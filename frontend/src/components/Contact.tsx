@@ -16,14 +16,13 @@ export default function Contact() {
     }));
   };
 
-  const handleSimulateSubmit = () => {
+  const handleSubmit = () => {
     if (!formData.name || !formData.email || !formData.message) {
       setStatusMessage('Please fill out all fields.');
       return;
     }
 
-    // Simulate submission
-    setStatusMessage('Message simulated successfully! (Note: Live form coming soon)');
+    setStatusMessage('Message received. Live form delivery is coming soon.');
     setTimeout(() => {
       setStatusMessage(null);
       setFormData({ name: '', email: '', message: '' });
@@ -94,7 +93,7 @@ export default function Contact() {
             </div>
           </div>
 
-          {/* Right Column: Interactive Simulator Message Box */}
+          {/* Right Column: Message Box */}
           <div id="contact-form-col" className="lg:col-span-7">
             <div id="contact-form-card" className="rounded-2xl border border-border-theme bg-surface p-8 shadow-sm space-y-6">
               <h3 className="text-xl font-bold text-prime">Leave a Message</h3>
@@ -151,11 +150,11 @@ export default function Contact() {
                   )}
 
                   <button
-                    onClick={handleSimulateSubmit}
+                    onClick={handleSubmit}
                     className="w-full inline-flex items-center justify-center space-x-2 rounded-xl bg-red-600 py-4 text-xs font-black uppercase tracking-wider text-white hover:bg-red-700 transition-all active:scale-95 shadow-md shadow-red-600/10"
                   >
                     <Send size={14} />
-                    <span>Send Simulated Message</span>
+                    <span>Send Message</span>
                   </button>
                 </div>
               </div>

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
 import { statsApi } from '../services/api';
 import { 
-  ShieldCheck, Zap, RefreshCw, Layers, ArrowRight, Play, Calculator, 
+  ShieldCheck, Zap, RefreshCw, Layers, 
   Wallet, Sparkles, CheckCircle2, TrendingUp, Users, Network, ArrowUpRight 
 } from 'lucide-react';
 
@@ -101,15 +101,6 @@ export default function Hero({ onCtaClick, onConnectWallet }: HeroProps) {
               <ArrowUpRight size={18} />
             </button>
             
-            <button
-              id="hero-secondary-cta"
-              onClick={() => onCtaClick('calculator')}
-              className="w-full sm:w-auto inline-flex items-center justify-center space-x-2 rounded-full border border-border-theme bg-surface px-8 py-4 text-sm font-extrabold text-prime hover:bg-surface-elevated transition-all duration-200 transform hover:-translate-y-0.5"
-            >
-              <Calculator size={18} className="text-accent-red" />
-              <span>Income Simulator</span>
-            </button>
-
             <button
               id="hero-tertiary-cta"
               onClick={() => onCtaClick('matrix')}

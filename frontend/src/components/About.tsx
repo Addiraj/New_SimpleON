@@ -74,7 +74,7 @@ export default function About() {
             </span>
             <h3 className="text-2xl font-black text-prime">Unalterable Distribution Pillars</h3>
             <p className="text-sm text-sub mt-2">
-              Our simulated matrix runs on highly structured, transparent mathematical principles designed for maximum stability.
+              Our matrix runs on highly structured, transparent mathematical principles designed for maximum stability.
             </p>
           </div>
 
@@ -100,7 +100,7 @@ export default function About() {
                 </div>
                 <h4 className="text-base font-bold text-prime mb-2">Instant Distribution</h4>
                 <p className="text-xs text-sub leading-relaxed">
-                  Funds flow directly to simulated partner wallets without holding periods, mirroring peer-to-peer payout flows perfectly.
+                  Funds flow directly to partner wallets without holding periods, following peer-to-peer payout flows.
                 </p>
               </div>
             </div>
@@ -126,7 +126,7 @@ export default function About() {
                 </div>
                 <h4 className="text-base font-bold text-prime mb-2">No Central Control</h4>
                 <p className="text-xs text-sub leading-relaxed">
-                  The mathematical layout ensures no administrator can modify, freeze, or alter a user's achieved position once simulated.
+                  The mathematical layout ensures no administrator can modify, freeze, or alter a user's achieved position once confirmed.
                 </p>
               </div>
             </div>

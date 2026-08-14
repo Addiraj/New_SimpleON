@@ -1,13 +1,13 @@
 import React from 'react';
 import { motion } from 'motion/react';
-import { Wallet, ArrowUpRight, Calculator, Sparkles, ShieldCheck } from 'lucide-react';
+import { Wallet, ArrowUpRight, Network, Sparkles, ShieldCheck } from 'lucide-react';
 
 interface CtaSectionProps {
   onConnectWallet?: () => void;
-  onOpenSimulator?: () => void;
+  onOpenMatrix?: () => void;
 }
 
-export default function CtaSection({ onConnectWallet, onOpenSimulator }: CtaSectionProps) {
+export default function CtaSection({ onConnectWallet, onOpenMatrix }: CtaSectionProps) {
   return (
     <section id="cta-banner-section" className="py-20 relative overflow-hidden">
       
@@ -41,11 +41,11 @@ export default function CtaSection({ onConnectWallet, onOpenSimulator }: CtaSect
             </button>
 
             <button
-              onClick={onOpenSimulator}
+              onClick={onOpenMatrix}
               className="w-full sm:w-auto inline-flex items-center justify-center space-x-2 rounded-full border border-border-theme bg-surface-elevated px-8 py-4 text-sm font-extrabold text-prime hover:bg-border-theme transition-all duration-200"
             >
-              <Calculator size={18} className="text-accent-red" />
-              <span>Calculate Income Potential</span>
+              <Network size={18} className="text-accent-blue" />
+              <span>Explore Matrix</span>
             </button>
           </div>
 

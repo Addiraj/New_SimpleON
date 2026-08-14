@@ -48,7 +48,7 @@ export default function Footer({ setActiveTab }: FooterProps) {
               <button onClick={() => handleTabClick('plans')} className="text-left hover:text-accent-red transition-colors">Plans</button>
               <button onClick={() => handleTabClick('benefits')} className="text-left hover:text-accent-red transition-colors">Benefits</button>
               <button onClick={() => handleTabClick('roadmap')} className="text-left hover:text-accent-red transition-colors">Roadmap</button>
-              <button onClick={() => handleTabClick('calculator')} className="text-left hover:text-accent-red transition-colors">Calculator</button>
+              <button onClick={() => handleTabClick('matrix')} className="text-left hover:text-accent-red transition-colors">X5 Matrix</button>
             </div>
           </div>
 

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Sun, Moon, Menu, X, ArrowRight, Calculator, Wallet, Network, Code, Terminal, Zap, Bell, User, ShieldCheck } from 'lucide-react';
+import { Sun, Moon, Menu, X, ArrowRight, Wallet, Network, Code, Terminal, Zap, Bell, User, ShieldCheck } from 'lucide-react';
 import { useWeb3Store } from '../store/useWeb3Store';
 
 interface NavbarProps {
