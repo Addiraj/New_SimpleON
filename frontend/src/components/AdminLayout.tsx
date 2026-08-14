@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Lock, Shield, Settings, FileText, Code2, LogOut } from 'lucide-react';
+import { Lock, Shield, Settings, FileText, Code2, LogOut, Users, DollarSign } from 'lucide-react';
 import { useWeb3Store } from '../store/useWeb3Store';
 import { authApi } from '../services/api';
 
@@ -8,13 +8,15 @@ import AdminDashboard from './AdminDashboard';
 import DesignSystemShowcase from './DesignSystemShowcase';
 import ContractDocs from './ContractDocs';
 import ApiDocs from './ApiDocs';
+import AdminUsersList from './AdminUsersList';
+import AdminTransactionsList from './AdminTransactionsList';
 
 export default function AdminLayout() {
   const { isAdminLoggedIn, setAdminLoggedIn } = useWeb3Store();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
-  const [activeAdminTab, setActiveAdminTab] = useState<'dashboard' | 'ui' | 'contracts' | 'api'>('dashboard');
+  const [activeAdminTab, setActiveAdminTab] = useState<'dashboard' | 'ui' | 'contracts' | 'api' | 'users' | 'transactions'>('dashboard');
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -112,16 +114,20 @@ export default function AdminLayout() {
 
   const renderContent = () => {
     switch (activeAdminTab) {
-      case 'dashboard': return <AdminDashboard />;
+      case 'dashboard': return <AdminDashboard setActiveAdminTab={setActiveAdminTab} />;
+      case 'users': return <AdminUsersList setActiveAdminTab={setActiveAdminTab} />;
+      case 'transactions': return <AdminTransactionsList setActiveAdminTab={setActiveAdminTab} />;
       case 'ui': return <DesignSystemShowcase />;
       case 'contracts': return <ContractDocs />;
       case 'api': return <ApiDocs />;
-      default: return <AdminDashboard />;
+      default: return <AdminDashboard setActiveAdminTab={setActiveAdminTab} />;
     }
   };
 
   const tabs = [
     { id: 'dashboard', label: 'Dashboard', icon: <Settings size={16} /> },
+    { id: 'users', label: 'Users', icon: <Users size={16} /> },
+    { id: 'transactions', label: 'Transactions', icon: <DollarSign size={16} /> },
     { id: 'ui', label: 'UI Spec', icon: <Code2 size={16} /> },
     { id: 'contracts', label: 'Contracts', icon: <FileText size={16} /> },
     { id: 'api', label: 'API', icon: <Shield size={16} /> },
@@ -143,7 +149,7 @@ export default function AdminLayout() {
           {tabs.map((tab) => (
             <button
               key={tab.id}
-              onClick={() => setActiveAdminTab(tab.id)}
+              onClick={() => setActiveAdminTab(tab.id as any)}
               className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl transition-all ${
                 activeAdminTab === tab.id
                   ? 'bg-accent-red text-white shadow-lg shadow-red-500/20 font-bold'

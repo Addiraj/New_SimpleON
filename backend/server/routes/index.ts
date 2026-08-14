@@ -16,6 +16,7 @@ import walletRoutes from './wallet.routes.js';
 import transactionRoutes from './transaction.routes.js';
 import dashboardRoutes from './dashboard.routes.js';
 import notificationRoutes from './notification.routes.js';
+import adminRoutes from './adminRoutes.js';
 
 const router = Router();
 
@@ -75,5 +76,8 @@ router.use('/dashboard', dashboardRoutes);
 
 router.use('/notification', notificationRoutes);
 router.use('/notifications', notificationRoutes);
+
+// Admin Routes
+router.use('/admin', adminRoutes);
 
 export default router;

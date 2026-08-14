@@ -59,7 +59,7 @@ export interface RealDashboardData {
 export default function Dashboard() {
   const { 
     userProfile, address, chainId, basePlan, setBasePlan, calculations, 
-    upgradeTier, bnbBalance, usdtBalance, openWalletModal, disconnectWallet, claimDemoCoins
+    upgradeTier, bnbBalance, usdtBalance, openWalletModal, disconnectWallet
   } = useWeb3Store();
 
   const [uiState, setUiState] = useState<'loaded' | 'loading' | 'empty' | 'error' | 'success'>('loaded');
@@ -691,17 +691,6 @@ export default function Dashboard() {
                 </div>
 
                 <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-3">
-                  <button
-                    onClick={() => {
-                      claimDemoCoins();
-                      alert('Claimed 500 Demo USDT. Refreshing balance...');
-                    }}
-                    className="p-3.5 rounded-2xl bg-surface-elevated hover:bg-emerald-500 hover:text-white border border-emerald-500/30 text-xs font-bold transition-all flex flex-col items-center justify-center space-y-2 group shadow-xs"
-                  >
-                    <DollarSign size={20} className="text-emerald-500 group-hover:text-white" />
-                    <span>Demo Coins</span>
-                  </button>
-
                   <button
                     onClick={() => handleUpgrade('BUILDER')}
                     className="p-3.5 rounded-2xl bg-surface-elevated hover:bg-accent-red hover:text-white border border-border-theme text-xs font-bold transition-all flex flex-col items-center justify-center space-y-2 group shadow-xs"

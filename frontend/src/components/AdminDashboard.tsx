@@ -5,17 +5,18 @@ import {
   TrendingUp, Download, AlertOctagon, Lock, RefreshCw, CheckCircle2, ChevronRight, X
 } from 'lucide-react';
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, PieChart, Pie, Cell } from 'recharts';
-import { api } from '../services/api';
+import { api, adminApi } from '../services/api';
 
-export default function AdminDashboard() {
-  const [userSearch, setUserSearch] = useState('');
+export default function AdminDashboard({ setActiveAdminTab }: { setActiveAdminTab: (tab: any) => void }) {
   const [systemPaused, setSystemPaused] = useState(false);
-  
   const [selectedPlanSlug, setSelectedPlanSlug] = useState('starter');
   const [planValue, setPlanValue] = useState(1.0);
   const [showWarningPopup, setShowWarningPopup] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isLoadingPlan, setIsLoadingPlan] = useState(false);
+  
+  const [isLoadingStats, setIsLoadingStats] = useState(true);
+  const [statsData, setStatsData] = useState<any>(null);
 
   useEffect(() => {
     let isMounted = true;
@@ -36,6 +37,25 @@ export default function AdminDashboard() {
     fetchPlanValue();
     return () => { isMounted = false; };
   }, [selectedPlanSlug]);
+
+  useEffect(() => {
+    let isMounted = true;
+    const fetchDashboardStats = async () => {
+      setIsLoadingStats(true);
+      try {
+        const res = await adminApi.getDashboardStats();
+        if (isMounted && res.success) {
+          setStatsData(res.data);
+        }
+      } catch (err) {
+        console.error('Failed to fetch dashboard stats', err);
+      } finally {
+        if (isMounted) setIsLoadingStats(false);
+      }
+    };
+    fetchDashboardStats();
+    return () => { isMounted = false; };
+  }, []);
   
   const handleSavePlan = () => {
     setShowWarningPopup(true);
@@ -47,7 +67,6 @@ export default function AdminDashboard() {
       await new Promise(resolve => setTimeout(resolve, 2000));
       await api.put(`/booster/plans/${selectedPlanSlug}`, { joiningAmount: planValue });
       setShowWarningPopup(false);
-      // Optional success indication
     } catch (err) {
       console.error('Failed to update plan', err);
       alert('Failed to update plan');
@@ -56,36 +75,17 @@ export default function AdminDashboard() {
     }
   };
 
-  const stats = [
-    { title: 'Total Registered Users', value: '1,428', change: '+12% this week', icon: <Users size={18} className="text-accent-red" /> },
-    { title: 'Total Active Plans', value: '3,892 Tiers', change: '84% Booster / 16% Main', icon: <Layers size={18} className="text-accent-blue" /> },
-    { title: 'Total Platform Volume', value: '$845,200 USDT', change: 'On-Chain Smart Contract', icon: <DollarSign size={18} className="text-emerald-500" /> },
-    { title: 'Today\'s Distributions', value: '$12,450 USDT', change: '24-hour payout execution', icon: <TrendingUp size={18} className="text-amber-500" /> },
+  const kpis = [
+    { title: 'Total Registered Users', value: statsData?.stats?.totalUsers || 0, icon: <Users size={18} className="text-accent-red" /> },
+    { title: 'Total Active Plans', value: statsData?.stats?.activePlans || 0, icon: <Layers size={18} className="text-accent-blue" /> },
+    { title: 'Total Admin Volume', value: `$${parseFloat(statsData?.stats?.totalVolume || '0').toFixed(2)} USDT`, icon: <DollarSign size={18} className="text-emerald-500" /> },
+    { title: 'Today\'s Distributions', value: `$${parseFloat(statsData?.stats?.todaysDistributions || '0').toFixed(2)} USDT`, icon: <TrendingUp size={18} className="text-amber-500" /> },
   ];
 
-  const planDistribution = [
-    { name: 'Starter ($10)', value: 45, color: '#DC2626' },
-    { name: 'Builder ($40)', value: 25, color: '#2563EB' },
-    { name: 'Leader ($80)', value: 15, color: '#F59E0B' },
-    { name: 'Champion ($320)', value: 10, color: '#9333EA' },
-    { name: 'Main Plan ($500)', value: 5, color: '#10B981' },
-  ];
-
-  const dailyIncomeData = [
-    { day: 'Mon', volume: 8400 },
-    { day: 'Tue', volume: 10200 },
-    { day: 'Wed', volume: 9500 },
-    { day: 'Thu', volume: 11800 },
-    { day: 'Fri', volume: 14200 },
-    { day: 'Sat', volume: 12450 },
-    { day: 'Sun', volume: 13100 },
-  ];
-
-  const recentUsers = [
-    { id: '1', address: '0x71C7656EC7ab88b098defB751B7401B5f6d8976F', tier: 'CHAMPION ($320)', joined: '2026-07-22', earnings: '$2,450.00', status: 'ACTIVE' },
-    { id: '2', address: '0x8f3C91029381A063b4f8a2910d', tier: 'LEADER ($80)', joined: '2026-07-21', earnings: '$490.00', status: 'ACTIVE' },
-    { id: '3', address: '0x4e5d6c7b8a901234567890ab', tier: 'BUILDER ($40)', joined: '2026-07-20', earnings: '$364.00', status: 'ACTIVE' },
-  ];
+  const planDistribution = statsData?.charts?.planDistribution || [];
+  const dailyIncomeData = statsData?.charts?.dailyIncomeData || [];
+  const recentUsers = statsData?.recentUsers || [];
+  const adminTransactions = statsData?.adminTransactions || [];
 
   return (
     <div className="py-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-10">
@@ -121,18 +121,21 @@ export default function AdminDashboard() {
       </div>
 
       {/* 4 KPI Stats */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        {stats.map((s, idx) => (
-          <div key={idx} className="p-6 rounded-3xl bg-surface border border-border-theme shadow-md space-y-2">
-            <div className="flex justify-between items-center text-sub">
-              <span className="text-[10px] font-mono font-bold uppercase">{s.title}</span>
-              {s.icon}
+      {isLoadingStats ? (
+        <div className="flex justify-center p-10"><RefreshCw className="animate-spin text-accent-red" size={32} /></div>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          {kpis.map((s, idx) => (
+            <div key={idx} className="p-6 rounded-3xl bg-surface border border-border-theme shadow-md space-y-2">
+              <div className="flex justify-between items-center text-sub">
+                <span className="text-[10px] font-mono font-bold uppercase">{s.title}</span>
+                {s.icon}
+              </div>
+              <div className="text-3xl font-black font-mono text-prime">{s.value}</div>
             </div>
-            <div className="text-3xl font-black font-mono text-prime">{s.value}</div>
-            <p className="text-[11px] text-emerald-500 font-bold">{s.change}</p>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
 
       {/* DYNAMIC PLAN CONFIGURATION */}
       <div className="p-6 sm:p-8 rounded-3xl bg-surface border border-border-theme shadow-xl space-y-6">
@@ -241,145 +244,137 @@ export default function AdminDashboard() {
       </AnimatePresence>
 
       {/* CHARTS ROW */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        {/* Daily Income Chart */}
-        <div className="lg:col-span-8 p-6 sm:p-8 rounded-3xl bg-surface border border-border-theme shadow-xl space-y-4">
-          <h2 className="text-base font-black text-prime font-mono uppercase">Daily Income Distributions (USDT)</h2>
-          <div className="h-64 w-full">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={dailyIncomeData}>
-                <XAxis dataKey="day" stroke="#64748B" fontSize={11} />
-                <YAxis stroke="#64748B" fontSize={11} />
-                <Tooltip contentStyle={{ backgroundColor: '#0F172A', borderRadius: '12px', color: '#FFF' }} />
-                <Bar dataKey="volume" fill="#DC2626" radius={[6, 6, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
+      {!isLoadingStats && (
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          {/* Daily Income Chart */}
+          <div className="lg:col-span-8 p-6 sm:p-8 rounded-3xl bg-surface border border-border-theme shadow-xl space-y-4">
+            <h2 className="text-base font-black text-prime font-mono uppercase">Daily Income Distributions (USDT)</h2>
+            <div className="h-64 w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={dailyIncomeData}>
+                  <XAxis dataKey="day" stroke="#64748B" fontSize={11} />
+                  <YAxis stroke="#64748B" fontSize={11} />
+                  <Tooltip contentStyle={{ backgroundColor: '#0F172A', borderRadius: '12px', color: '#FFF' }} />
+                  <Bar dataKey="volume" fill="#DC2626" radius={[6, 6, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+
+          {/* Plan Distribution Pie */}
+          <div className="lg:col-span-4 p-6 sm:p-8 rounded-3xl bg-surface border border-border-theme shadow-xl space-y-4">
+            <h2 className="text-base font-black text-prime font-mono uppercase">Plan Distribution</h2>
+            <div className="h-64 w-full flex items-center justify-center">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie data={planDistribution} dataKey="value" cx="50%" cy="50%" outerRadius={80}>
+                    {planDistribution.map((entry: any, index: number) => (
+                      <Cell key={`cell-${index}`} fill={entry.color} />
+                    ))}
+                  </Pie>
+                  <Tooltip />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
           </div>
         </div>
+      )}
 
-        {/* Plan Distribution Pie */}
-        <div className="lg:col-span-4 p-6 sm:p-8 rounded-3xl bg-surface border border-border-theme shadow-xl space-y-4">
-          <h2 className="text-base font-black text-prime font-mono uppercase">Plan Distribution</h2>
-          <div className="h-64 w-full flex items-center justify-center">
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie data={planDistribution} dataKey="value" cx="50%" cy="50%" outerRadius={80}>
-                  {planDistribution.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.color} />
-                  ))}
-                </Pie>
-                <Tooltip />
-              </PieChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-      </div>
-
-      {/* USER MANAGEMENT DIRECTORY */}
+      {/* USER MANAGEMENT DIRECTORY (RECENT) */}
       <div className="p-6 sm:p-8 rounded-3xl bg-surface border border-border-theme shadow-xl space-y-6">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-4 border-b border-border-theme">
-          <h2 className="text-lg font-black text-prime">Registered Web3 Partners Directory</h2>
-          
-          <div className="relative">
-            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-sub pointer-events-none" />
-            <input
-              type="text"
-              placeholder="Search user address..."
-              value={userSearch}
-              onChange={(e) => setUserSearch(e.target.value)}
-              className="pl-9 pr-3 py-2 rounded-xl bg-surface-elevated border border-border-theme text-xs text-prime focus:outline-none"
-            />
-          </div>
+          <h2 className="text-lg font-black text-prime">Recent Registered Users</h2>
+          <button onClick={() => setActiveAdminTab('users')} className="text-accent-red font-bold text-sm hover:underline flex items-center">
+            View All Users <ChevronRight size={16} />
+          </button>
         </div>
 
-        <div className="overflow-x-auto">
-          <table className="w-full text-left font-mono text-xs border-collapse">
-            <thead>
-              <tr className="border-b border-border-theme text-sub uppercase text-[10px]">
-                <th className="py-3 px-4">User Address</th>
-                <th className="py-3 px-4">Active Plan</th>
-                <th className="py-3 px-4">Joined Date</th>
-                <th className="py-3 px-4">Earned Volume</th>
-                <th className="py-3 px-4 text-right">Status</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-border-theme">
-              {recentUsers.map((u) => (
-                <tr key={u.id} className="hover:bg-surface-elevated/50 transition-colors">
-                  <td className="py-3.5 px-4 font-bold text-prime">{u.address}</td>
-                  <td className="py-3.5 px-4 font-bold text-accent-red">{u.tier}</td>
-                  <td className="py-3.5 px-4 text-sub">{u.joined}</td>
-                  <td className="py-3.5 px-4 font-bold text-emerald-500">{u.earnings}</td>
-                  <td className="py-3.5 px-4 text-right">
-                    <span className="px-2.5 py-1 rounded-lg bg-emerald-500/10 text-emerald-500 font-bold text-[10px]">
-                      {u.status}
-                    </span>
-                  </td>
+        {isLoadingStats ? (
+           <div className="flex justify-center p-4"><RefreshCw className="animate-spin text-accent-red" size={24} /></div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-left font-mono text-xs border-collapse">
+              <thead>
+                <tr className="border-b border-border-theme text-sub uppercase text-[10px]">
+                  <th className="py-3 px-4">User Address</th>
+                  <th className="py-3 px-4">Role</th>
+                  <th className="py-3 px-4">Joined Date</th>
+                  <th className="py-3 px-4 text-right">Status</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody className="divide-y divide-border-theme">
+                {recentUsers.map((u: any) => (
+                  <tr key={u.id} className="hover:bg-surface-elevated/50 transition-colors">
+                    <td className="py-3.5 px-4 font-bold text-prime">{u.wallet_address}</td>
+                    <td className="py-3.5 px-4 font-bold text-accent-blue">{u.role}</td>
+                    <td className="py-3.5 px-4 text-sub">{new Date(u.created_at).toLocaleDateString()}</td>
+                    <td className="py-3.5 px-4 text-right">
+                      <span className={`px-2.5 py-1 rounded-lg font-bold text-[10px] ${u.status === 'ACTIVE' ? 'bg-emerald-500/10 text-emerald-500' : 'bg-amber-500/10 text-amber-500'}`}>
+                        {u.status}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+                {recentUsers.length === 0 && (
+                  <tr>
+                    <td colSpan={4} className="py-4 text-center text-sub">No recent users found.</td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
 
       {/* ADMIN WALLET & TRANSACTION HISTORY */}
       <div className="p-6 sm:p-8 rounded-3xl bg-surface border border-border-theme shadow-xl space-y-6">
-        <div className="flex items-center space-x-2 pb-4 border-b border-border-theme">
-          <DollarSign size={20} className="text-emerald-500" />
-          <h2 className="text-lg font-black text-prime uppercase">Admin Wallet & Transactions</h2>
+        <div className="flex items-center justify-between pb-4 border-b border-border-theme">
+          <div className="flex items-center space-x-2">
+            <DollarSign size={20} className="text-emerald-500" />
+            <h2 className="text-lg font-black text-prime uppercase">Recent Admin Transactions</h2>
+          </div>
+          <button onClick={() => setActiveAdminTab('transactions')} className="text-emerald-500 font-bold text-sm hover:underline flex items-center">
+            View All Transactions <ChevronRight size={16} />
+          </button>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-          <div className="p-4 rounded-2xl bg-surface-elevated border border-border-theme space-y-1">
-            <p className="text-[10px] text-sub font-mono uppercase font-bold">Total Admin Balance</p>
-            <p className="text-2xl font-black text-emerald-500">$45,200.00 USDT</p>
+        {isLoadingStats ? (
+          <div className="flex justify-center p-4"><RefreshCw className="animate-spin text-emerald-500" size={24} /></div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-left font-mono text-xs border-collapse">
+              <thead>
+                <tr className="border-b border-border-theme text-sub uppercase text-[10px]">
+                  <th className="py-3 px-4">Tx Hash / ID</th>
+                  <th className="py-3 px-4">Type</th>
+                  <th className="py-3 px-4">Amount</th>
+                  <th className="py-3 px-4">From User</th>
+                  <th className="py-3 px-4 text-right">Date</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border-theme">
+                {adminTransactions.map((tx: any) => (
+                  <tr key={tx.id} className="hover:bg-surface-elevated/50 transition-colors">
+                    <td className="py-3.5 px-4 font-bold text-prime max-w-[120px] truncate" title={tx.blockchain_transaction_hash || tx.id}>
+                      {tx.blockchain_transaction_hash || tx.id}
+                    </td>
+                    <td className="py-3.5 px-4"><span className="px-2 py-1 rounded bg-accent-blue/10 text-accent-blue font-bold text-[10px]">{tx.transaction_type}</span></td>
+                    <td className="py-3.5 px-4 font-bold text-emerald-500">
+                      +${parseFloat(tx.amount).toFixed(2)} {tx.currency}
+                    </td>
+                    <td className="py-3.5 px-4 text-sub truncate max-w-[120px]">{tx.user?.wallet_address || 'System'}</td>
+                    <td className="py-3.5 px-4 text-right text-sub">{new Date(tx.created_at).toLocaleString()}</td>
+                  </tr>
+                ))}
+                {adminTransactions.length === 0 && (
+                  <tr>
+                    <td colSpan={5} className="py-4 text-center text-sub">No recent transactions found.</td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
           </div>
-          <div className="p-4 rounded-2xl bg-surface-elevated border border-border-theme space-y-1">
-            <p className="text-[10px] text-sub font-mono uppercase font-bold">Independent Buys</p>
-            <p className="text-2xl font-black text-prime">$12,400.00 USDT</p>
-          </div>
-          <div className="p-4 rounded-2xl bg-surface-elevated border border-border-theme space-y-1">
-            <p className="text-[10px] text-sub font-mono uppercase font-bold">Roll-up / Compression</p>
-            <p className="text-2xl font-black text-accent-blue">$32,800.00 USDT</p>
-          </div>
-        </div>
-
-        <div className="overflow-x-auto">
-          <table className="w-full text-left font-mono text-xs border-collapse">
-            <thead>
-              <tr className="border-b border-border-theme text-sub uppercase text-[10px]">
-                <th className="py-3 px-4">Tx Hash / ID</th>
-                <th className="py-3 px-4">Type</th>
-                <th className="py-3 px-4">Amount</th>
-                <th className="py-3 px-4">From User</th>
-                <th className="py-3 px-4 text-right">Date</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-border-theme">
-              <tr className="hover:bg-surface-elevated/50 transition-colors">
-                <td className="py-3.5 px-4 font-bold text-prime">TX-99281A</td>
-                <td className="py-3.5 px-4"><span className="px-2 py-1 rounded bg-accent-blue/10 text-accent-blue font-bold text-[10px]">ROLL_UP</span></td>
-                <td className="py-3.5 px-4 font-bold text-emerald-500">+$40.00</td>
-                <td className="py-3.5 px-4 text-sub">0x4e5d...90ab</td>
-                <td className="py-3.5 px-4 text-right text-sub">Just now</td>
-              </tr>
-              <tr className="hover:bg-surface-elevated/50 transition-colors">
-                <td className="py-3.5 px-4 font-bold text-prime">TX-992819</td>
-                <td className="py-3.5 px-4"><span className="px-2 py-1 rounded bg-amber-500/10 text-amber-500 font-bold text-[10px]">INDEPENDENT_BUY</span></td>
-                <td className="py-3.5 px-4 font-bold text-emerald-500">+$10.00</td>
-                <td className="py-3.5 px-4 text-sub">0x8f3C...10d</td>
-                <td className="py-3.5 px-4 text-right text-sub">2 mins ago</td>
-              </tr>
-              <tr className="hover:bg-surface-elevated/50 transition-colors">
-                <td className="py-3.5 px-4 font-bold text-prime">TX-992818</td>
-                <td className="py-3.5 px-4"><span className="px-2 py-1 rounded bg-accent-blue/10 text-accent-blue font-bold text-[10px]">ROLL_UP</span></td>
-                <td className="py-3.5 px-4 font-bold text-emerald-500">+$80.00</td>
-                <td className="py-3.5 px-4 text-sub">0x71C7...76F</td>
-                <td className="py-3.5 px-4 text-right text-sub">15 mins ago</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
+        )}
       </div>
 
     </div>

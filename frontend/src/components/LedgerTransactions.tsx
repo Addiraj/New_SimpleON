@@ -35,7 +35,11 @@ interface TransactionItem {
   description?: string;
 }
 
-export default function LedgerTransactions() {
+interface LedgerTransactionsProps {
+  hideHeader?: boolean;
+}
+
+export default function LedgerTransactions({ hideHeader = false }: LedgerTransactionsProps) {
   const { address, isConnected } = useWeb3Store();
   const [uiState, setUiState] = useState<'loaded' | 'loading' | 'empty' | 'error' | 'success'>('loaded');
   
@@ -179,7 +183,8 @@ export default function LedgerTransactions() {
     <div id="ledger-wrapper" className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
       
       {/* Title & Header */}
-      <div id="ledger-header" className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6 border-b border-border-theme pb-6">
+      {!hideHeader && (
+        <div id="ledger-header" className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6 border-b border-border-theme pb-6">
         <div>
           <div className="flex items-center space-x-2 text-xs font-mono uppercase tracking-wider text-accent-red font-bold mb-1">
             <Wallet size={16} />
@@ -204,6 +209,7 @@ export default function LedgerTransactions() {
           </button>
         </div>
       </div>
+      )}
 
       {/* Quick Summary Metrics Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">

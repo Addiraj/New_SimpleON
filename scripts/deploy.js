@@ -1,5 +1,5 @@
-const hre = require("hardhat");
-require("dotenv").config();
+import hre from "hardhat";
+import "dotenv/config";
 
 async function main() {
   console.log("Starting deployment...");
@@ -16,7 +16,7 @@ async function main() {
   if (hre.network.name !== 'bscMainnet' && !usdtAddress) {
     console.log("Deploying MockUSDT for testing...");
     const MockUSDT = await hre.ethers.getContractFactory("MockUSDT");
-    const mockUSDT = await MockUSDT.deploy();
+    const mockUSDT = await MockUSDT.deploy(1000000);
     await mockUSDT.waitForDeployment();
     usdtAddress = await mockUSDT.getAddress();
     console.log("MockUSDT deployed to:", usdtAddress);

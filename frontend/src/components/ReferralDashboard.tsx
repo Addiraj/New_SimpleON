@@ -246,6 +246,7 @@ export default function ReferralDashboard() {
     try {
       // @ts-ignore
       const { walletApi } = await import('../services/api');
+      // @ts-ignore
       await walletApi.demoActivate(assignInput.trim());
       await fetchProfile();
       setAssignMsg({ type: 'success', text: 'Sponsor Assigned & Demo Tier Activated!' });
