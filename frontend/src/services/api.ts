@@ -199,17 +199,17 @@ export const boosterApi = {
 
 // Referral Backend API
 export const referralApi = {
-  getSummary: async () => {
-    const res: any = await api.get('/referrals/summary');
+  getSummary: async (params?: { tier?: string; tierCode?: string }) => {
+    const res: any = await api.get('/referrals/summary', { params });
     return res.data || res;
   },
 
-  getDirect: async (params?: { page?: number; limit?: number; search?: string }) => {
+  getDirect: async (params?: { page?: number; limit?: number; search?: string; tier?: string; tierCode?: string }) => {
     const res: any = await api.get('/referrals/direct', { params });
     return res.data || res;
   },
 
-  getTree: async (params?: { maxDepth?: number; search?: string }) => {
+  getTree: async (params?: { maxDepth?: number; search?: string; tier?: string; tierCode?: string }) => {
     const res: any = await api.get('/referrals/tree', { params });
     return res.data || res;
   },
@@ -348,17 +348,17 @@ export const transactionApi = {
 
 // Matrix API
 export const matrixApi = {
-  getSummary: async (params?: { levelConfigId?: string; tier?: string; tierCode?: string; address?: string }, signal?: AbortSignal) => {
+  getSummary: async (params?: { levelConfigId?: string; tier?: string; tierCode?: string }, signal?: AbortSignal) => {
     const res: any = await api.get('/matrix/summary', { params, signal });
     return res.data || res;
   },
 
-  getCurrent: async (params?: { levelConfigId?: string; tier?: string; tierCode?: string; address?: string }, signal?: AbortSignal) => {
+  getCurrent: async (params?: { levelConfigId?: string; tier?: string; tierCode?: string }, signal?: AbortSignal) => {
     const res: any = await api.get('/matrix/current', { params, signal });
     return res.data || res;
   },
 
-  getCycles: async (params?: { levelConfigId?: string; tier?: string; tierCode?: string; address?: string; page?: number; limit?: number }, signal?: AbortSignal) => {
+  getCycles: async (params?: { levelConfigId?: string; tier?: string; tierCode?: string; page?: number; limit?: number }, signal?: AbortSignal) => {
     const res: any = await api.get('/matrix/cycles', { params, signal });
     return res.data || res;
   },

@@ -82,6 +82,7 @@ export default function LandingPage({ onNavigateTab }: LandingPageProps) {
       <CtaSection 
         onConnectWallet={() => open()}
         onOpenSimulator={() => onNavigateTab('calculator')}
+        onEnterDashboard={() => onNavigateTab('dashboard')}
       />
 
     </div>

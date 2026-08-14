@@ -1,40 +1,58 @@
 import { prisma } from '../config/database.js';
-import { logger } from '../config/logger.js';
-import { BoosterConfigService } from './BoosterConfigService.js';
+import { AppError } from '../utils/AppError.js';
+import { BoosterConfigService, BoosterTierCode } from './BoosterConfigService.js';
 import { X5MatrixService } from './X5MatrixService.js';
 
 export class MatrixQueryService {
-  /**
-   * Helper to resolve target user ID from request parameters or fallback to default/root user.
-   */
-  private static async resolveUserId(userId?: string, walletAddress?: string): Promise<string> {
-    if (userId) {
-      return userId;
-    }
-
-    if (walletAddress) {
-      const user = await prisma.user.findUnique({
-        where: { wallet_address: walletAddress.toLowerCase() },
-        select: { id: true },
-      });
-      if (user) return user.id;
-    }
-
-    // Fallback: Pick the first available user in DB
-    const firstUser = await prisma.user.findFirst({
-      orderBy: { created_at: 'asc' },
-      select: { id: true },
-    });
-
-    if (firstUser) return firstUser.id;
-
-    throw new Error('User not found');
+  private static normalizeTierCode(tierCode?: string | null): BoosterTierCode | undefined {
+    const normalized = tierCode?.toLowerCase().trim();
+    if (!normalized || normalized === 'main') return undefined;
+    const config = BoosterConfigService.getTierConfig(normalized);
+    return config?.code;
   }
 
-  /**
-   * Helper to resolve Level Configuration ID
-   */
-  private static async resolveLevelConfigId(levelConfigId?: string, tierCode?: string, userId?: string): Promise<string> {
+  static async getAvailableTiers(userId: string) {
+    const userLevels = await prisma.userLevel.findMany({
+      where: {
+        user_id: userId,
+        status: { in: ['ACTIVE', 'COMPLETED'] },
+        level_configuration: {
+          status: 'ACTIVE',
+          slug: { in: BoosterConfigService.getAllTierConfigs().map((tier) => tier.code) },
+        },
+      },
+      include: { level_configuration: true },
+      orderBy: { level_configuration: { level_order: 'asc' } },
+    });
+
+    const uniqueByCode = new Map<BoosterTierCode, any>();
+    for (const userLevel of userLevels) {
+      const code = this.normalizeTierCode(userLevel.level_configuration.slug);
+      if (!code || uniqueByCode.has(code)) continue;
+      const tier = BoosterConfigService.assertTierConfig(code);
+      uniqueByCode.set(code, {
+        ...tier,
+        levelConfigId: userLevel.level_configuration_id,
+        levelOrder: userLevel.level_configuration.level_order,
+        userLevelStatus: userLevel.status,
+      });
+    }
+
+    return Array.from(uniqueByCode.values());
+  }
+
+  private static async resolveAuthorizedContext(userId: string, levelConfigId?: string, tierCode?: string) {
+    if (!userId) {
+      throw AppError.unauthorized('Authentication required for matrix data');
+    }
+
+    const availableTiers = await this.getAvailableTiers(userId);
+    if (availableTiers.length === 0) {
+      throw AppError.forbidden('No unlocked Booster tiers are available for this account');
+    }
+
+    let requestedCode = this.normalizeTierCode(tierCode);
+
     if (levelConfigId) {
       const found = await prisma.levelConfiguration.findFirst({
         where: {
@@ -43,59 +61,45 @@ export class MatrixQueryService {
             { slug: levelConfigId.toLowerCase().trim() },
           ],
         },
-        select: { id: true },
+        select: { slug: true },
       });
-      if (found) return found.id;
+      requestedCode = this.normalizeTierCode(found?.slug) || requestedCode;
     }
 
-    if (tierCode) {
-      const level = await prisma.levelConfiguration.findFirst({
-        where: { status: 'ACTIVE', slug: tierCode.toLowerCase() },
-        orderBy: { version: 'desc' },
-        select: { id: true },
-      });
-      if (level) return level.id;
+    const selectedTier = requestedCode
+      ? availableTiers.find((tier) => tier.code === requestedCode)
+      : availableTiers[0];
+
+    if (!selectedTier) {
+      throw AppError.forbidden(`Booster tier '${requestedCode || tierCode || levelConfigId || 'unknown'}' is not unlocked for this account`);
     }
 
-    if (userId) {
-      const user = await prisma.user.findUnique({
-        where: { id: userId },
-        select: { current_level_id: true },
-      });
-      if (user?.current_level_id) return user.current_level_id;
-    }
-
-    const level = await prisma.levelConfiguration.findFirst({
-      where: { status: 'ACTIVE' },
-      orderBy: { level_order: 'asc' },
-      select: { id: true },
-    });
-
-    if (level) return level.id;
-    return 'default-level-1';
+    return {
+      userId,
+      targetLevelId: selectedTier.levelConfigId as string,
+      selectedTier,
+      availableTiers,
+    };
   }
 
-  private static getTierConfigFromCycle(cycle: any) {
-    const slug = cycle?.level_configuration?.slug || 'starter';
-    return BoosterConfigService.getTierConfig(slug) || BoosterConfigService.assertTierConfig('starter');
+  private static getTierConfigFromCycle(cycle: any, fallbackTierCode: BoosterTierCode = 'starter') {
+    const slug = cycle?.level_configuration?.slug || fallbackTierCode;
+    return BoosterConfigService.getTierConfig(slug) || BoosterConfigService.assertTierConfig(fallbackTierCode);
   }
 
   /**
    * 1. GET /api/matrix/summary
    * Aggregates X5 Matrix statistics for a user.
    */
-  static async getSummary(userId?: string, walletAddress?: string, levelConfigId?: string, tierCode?: string) {
-    const targetUserId = await this.resolveUserId(userId, walletAddress);
-    const targetLevelId = await this.resolveLevelConfigId(levelConfigId, tierCode, targetUserId);
-
-    const whereClause: any = { user_id: targetUserId };
-    if (targetLevelId) {
-      whereClause.level_configuration_id = targetLevelId;
-    }
+  static async getSummary(userId: string, levelConfigId?: string, tierCode?: string) {
+    const context = await this.resolveAuthorizedContext(userId, levelConfigId, tierCode);
 
     // Fetch user cycles
     const cycles = await prisma.matrixCycle.findMany({
-      where: whereClause,
+      where: {
+        user_id: context.userId,
+        level_configuration_id: context.targetLevelId,
+      },
       include: {
         level_configuration: true,
         positions: true,
@@ -118,7 +122,9 @@ export class MatrixQueryService {
     });
 
     return {
-      userId: targetUserId,
+      userId: context.userId,
+      selectedTier: context.selectedTier,
+      availableTiers: context.availableTiers,
       totalCompletedCycles: completedCyclesCount,
       totalActiveCycles: activeCycles.length,
       totalFilledNodes,
@@ -132,7 +138,7 @@ export class MatrixQueryService {
         totalPositions: c.total_positions,
         levelName: c.level_configuration?.name || 'Level 1',
         levelSlug: c.level_configuration?.slug || 'booster-1',
-        joiningAmount: this.getTierConfigFromCycle(c).subscriptionAmount,
+        joiningAmount: this.getTierConfigFromCycle(c, context.selectedTier.code).subscriptionAmount,
         startedAt: c.started_at,
         completedAt: c.completed_at,
       })),
@@ -143,14 +149,13 @@ export class MatrixQueryService {
    * 2. GET /api/matrix/current
    * Returns current active cycle for user with 5 positions formatted for UI.
    */
-  static async getCurrentCycle(userId?: string, walletAddress?: string, levelConfigId?: string, tierCode?: string) {
-    const targetUserId = await this.resolveUserId(userId, walletAddress);
-    const targetLevelId = await this.resolveLevelConfigId(levelConfigId, tierCode, targetUserId);
+  static async getCurrentCycle(userId: string, levelConfigId?: string, tierCode?: string) {
+    const context = await this.resolveAuthorizedContext(userId, levelConfigId, tierCode);
 
     let activeCycle = await prisma.matrixCycle.findFirst({
       where: {
-        user_id: targetUserId,
-        level_configuration_id: targetLevelId,
+        user_id: context.userId,
+        level_configuration_id: context.targetLevelId,
         status: 'ACTIVE',
       },
       include: {
@@ -170,8 +175,8 @@ export class MatrixQueryService {
       // Fallback: Pick latest completed cycle if no active
       activeCycle = await prisma.matrixCycle.findFirst({
         where: {
-          user_id: targetUserId,
-          level_configuration_id: targetLevelId,
+          user_id: context.userId,
+          level_configuration_id: context.targetLevelId,
         },
         include: {
           level_configuration: true,
@@ -187,7 +192,7 @@ export class MatrixQueryService {
       });
     }
 
-    const tierConfig = this.getTierConfigFromCycle(activeCycle);
+    const tierConfig = this.getTierConfigFromCycle(activeCycle, context.selectedTier.code);
     const slotValue = tierConfig.subscriptionAmount;
     const cycleNum = activeCycle?.cycle_number || 1;
 
@@ -249,6 +254,8 @@ export class MatrixQueryService {
       levelName: tierConfig.name,
       levelSlug: tierConfig.code,
       tier: tierConfig,
+      selectedTier: context.selectedTier,
+      availableTiers: context.availableTiers,
       currentNodes,
     };
   }
@@ -258,18 +265,16 @@ export class MatrixQueryService {
    * Paginated list of user's cycles.
    */
   static async getCycles(
-    userId?: string,
-    walletAddress?: string,
+    userId: string,
     levelConfigId?: string,
     tierCode?: string,
     page = 1,
     limit = 10
   ) {
-    const targetUserId = await this.resolveUserId(userId, walletAddress);
-    const targetLevelId = await this.resolveLevelConfigId(levelConfigId, tierCode, targetUserId);
+    const context = await this.resolveAuthorizedContext(userId, levelConfigId, tierCode);
     const skip = (page - 1) * limit;
 
-    const whereCondition: any = { user_id: targetUserId, level_configuration_id: targetLevelId };
+    const whereCondition: any = { user_id: context.userId, level_configuration_id: context.targetLevelId };
 
     const total = await prisma.matrixCycle.count({ where: whereCondition });
 
@@ -285,7 +290,7 @@ export class MatrixQueryService {
 
     return {
       cycles: cycles.map((c) => {
-        const tier = this.getTierConfigFromCycle(c);
+        const tier = this.getTierConfigFromCycle(c, context.selectedTier.code);
         const slotValue = tier.subscriptionAmount;
         const earnings = X5MatrixService.calculateCurrentCycleGeneratedAmount(tier.code, c.filled_positions);
 
@@ -309,6 +314,8 @@ export class MatrixQueryService {
           dateCompleted: c.completed_at ? new Date(c.completed_at).toISOString().slice(0, 10) : null,
         };
       }),
+      selectedTier: context.selectedTier,
+      availableTiers: context.availableTiers,
       pagination: {
         page,
         limit,
@@ -321,7 +328,7 @@ export class MatrixQueryService {
   /**
    * 4. GET /api/matrix/cycles/:id
    */
-  static async getCycleById(cycleId: string) {
+  static async getCycleById(userId: string, cycleId: string) {
     const cycle = await prisma.matrixCycle.findUnique({
       where: { id: cycleId },
       include: {
@@ -337,8 +344,8 @@ export class MatrixQueryService {
       },
     });
 
-    if (!cycle) {
-      throw new Error(`Matrix cycle ${cycleId} not found`);
+    if (!cycle || cycle.user_id !== userId) {
+      throw AppError.notFound(`Matrix cycle ${cycleId} not found`);
     }
 
     return cycle;
@@ -347,7 +354,16 @@ export class MatrixQueryService {
   /**
    * 5. GET /api/matrix/cycles/:id/positions
    */
-  static async getCyclePositions(cycleId: string) {
+  static async getCyclePositions(userId: string, cycleId: string) {
+    const cycle = await prisma.matrixCycle.findUnique({
+      where: { id: cycleId },
+      select: { user_id: true },
+    });
+
+    if (!cycle || cycle.user_id !== userId) {
+      throw AppError.notFound(`Matrix cycle ${cycleId} not found`);
+    }
+
     const positions = await prisma.matrixPosition.findMany({
       where: { matrix_cycle_id: cycleId },
       include: {
@@ -363,14 +379,13 @@ export class MatrixQueryService {
   /**
    * 6. GET /api/matrix/tree
    */
-  static async getMatrixTree(userId?: string, walletAddress?: string, levelConfigId?: string, depth = 3) {
-    const targetUserId = await this.resolveUserId(userId, walletAddress);
-    const targetLevelId = await this.resolveLevelConfigId(levelConfigId);
+  static async getMatrixTree(userId: string, levelConfigId?: string, tierCode?: string, depth = 3) {
+    const context = await this.resolveAuthorizedContext(userId, levelConfigId, tierCode);
 
     const activeCycle = await prisma.matrixCycle.findFirst({
       where: {
-        user_id: targetUserId,
-        level_configuration_id: targetLevelId,
+        user_id: context.userId,
+        level_configuration_id: context.targetLevelId,
         status: 'ACTIVE',
       },
       include: {
@@ -386,8 +401,10 @@ export class MatrixQueryService {
     });
 
     return {
-      rootUserId: targetUserId,
-      levelConfigId: targetLevelId,
+      rootUserId: context.userId,
+      levelConfigId: context.targetLevelId,
+      selectedTier: context.selectedTier,
+      availableTiers: context.availableTiers,
       cycle: activeCycle,
       depth,
     };

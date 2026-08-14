@@ -205,11 +205,11 @@ export class ReferralService {
   /**
    * Get Referral Summary
    */
-  static async getSummary(userId: string, host?: string, protocol?: string) {
+  static async getSummary(userId: string, host?: string, protocol?: string, tierCode?: string) {
     if (!userId) {
       throw AppError.unauthorized('Authentication required');
     }
-    const summary = await ReferralRepository.getSummary(userId, host, protocol);
+    const summary = await ReferralRepository.getSummary(userId, host, protocol, tierCode);
     return {
       ...summary,
       referralUrl: buildPublicReferralUrl(summary.referralCode, host, protocol),
@@ -221,7 +221,7 @@ export class ReferralService {
    */
   static async getDirectReferrals(
     userId: string,
-    options: { page?: number; limit?: number; search?: string }
+    options: { page?: number; limit?: number; search?: string; tierCode?: string }
   ) {
     if (!userId) {
       throw AppError.unauthorized('Authentication required');
@@ -232,18 +232,19 @@ export class ReferralService {
       page,
       limit,
       search: options.search,
+      tierCode: options.tierCode,
     });
   }
 
   /**
    * Get Network Tree
    */
-  static async getReferralTree(userId: string, options: { maxDepth?: number; search?: string }) {
+  static async getReferralTree(userId: string, options: { maxDepth?: number; search?: string; tierCode?: string }) {
     if (!userId) {
       throw AppError.unauthorized('Authentication required');
     }
     const maxDepth = Math.min(13, Math.max(1, Number(options.maxDepth) || 5));
-    return ReferralRepository.getReferralTree(userId, maxDepth, options.search);
+    return ReferralRepository.getReferralTree(userId, maxDepth, options.search, options.tierCode);
   }
 
   /**
