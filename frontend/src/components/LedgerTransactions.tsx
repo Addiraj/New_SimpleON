@@ -5,7 +5,7 @@ import {
   RefreshCw, CheckCircle2, Clock, Sparkles, AlertCircle, Shield, ChevronLeft, ChevronRight, AlertTriangle 
 } from 'lucide-react';
 import { useWeb3Store } from '../store/useWeb3Store';
-import { UiStateSwitcher, LoadingSkeletonTable, EmptyStateView, ErrorStateAlert, SuccessStateBanner } from './StateComponents';
+import { LoadingSkeletonTable, EmptyStateView, ErrorStateAlert, SuccessStateBanner } from './StateComponents';
 import { walletApi, transactionApi } from '../services/api';
 
 interface WalletSummary {

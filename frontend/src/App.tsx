@@ -20,6 +20,7 @@ import MobileBottomNav from './components/MobileBottomNav';
 import ArchitectureDocs from './components/ArchitectureDocs';
 import LedgerTransactions from './components/LedgerTransactions';
 import ReferralLinkProcessor from './components/ReferralLinkProcessor';
+import ErrorBoundary from './components/ErrorBoundary';
 import { useWeb3Store } from './store/useWeb3Store';
 import AppKitSync from './components/AppKitSync';
 
@@ -126,7 +127,9 @@ export default function App() {
             exit={{ opacity: 0, y: -10 }}
             transition={{ duration: 0.25 }}
           >
-            <Dashboard />
+            <ErrorBoundary fallbackTitle="Dashboard Refresh Required">
+              <Dashboard />
+            </ErrorBoundary>
           </motion.div>
         );
       case 'referrals':

@@ -54,7 +54,7 @@ export class DashboardService {
         referralCode: '',
         referralLink: targetAddress ? `${protocol}://${host}/?ref=${targetAddress}` : '',
         currentLevel: 'None',
-        nextLevel: 'Starter ($100)',
+        nextLevel: 'Starter ($10)',
         levelProgress: 0,
         currentPlan: 'None',
         activeMatrixCycle: 0,
@@ -147,7 +147,7 @@ export class DashboardService {
     // Current & Next Level / Plan calculations
     let currentLevelName = 'None';
     let currentPlanName = 'None';
-    let nextLevelName = 'Starter ($100)';
+    let nextLevelName = 'Starter ($10)';
     let levelProgress = 0;
     let dailyCap = 0;
 
