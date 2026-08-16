@@ -3,7 +3,7 @@ pragma solidity ^0.8.20;
 
 /**
  * @title MockUSDT
- * @notice Testnet BEP-20 Tether USD token for SimpleOn Booster testing
+ * @notice Testnet Web-20 Tether USD token for SimpleOn Booster testing
  */
 contract MockUSDT {
     string public name = "Tether USD (Mock)";

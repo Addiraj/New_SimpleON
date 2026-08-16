@@ -70,7 +70,7 @@ export default function WalletPage() {
       badge: 'Mobile First',
       color: 'from-blue-500/20 via-blue-500/5 to-transparent border-blue-500/30 text-blue-500',
       description: 'Self-custody multi-chain wallet optimized for BNB Smart Chain dApps and mobile SIWE.',
-      features: ['Mobile Web3 SDK', 'EVM Native', 'BEP-20 Auto-Detect']
+      features: ['Mobile Web3 SDK', 'EVM Native', 'Web-20 Auto-Detect']
     },
     {
       id: 'walletconnect',
@@ -109,7 +109,7 @@ export default function WalletPage() {
               Wallet <span className="text-accent-red">Connection</span> & Status
             </h1>
             <p className="text-xs sm:text-sm text-sub mt-2 max-w-2xl leading-relaxed">
-              Authenticate via standard EVM providers (SIWE EIP-4361). Monitor connected addresses, live BEP-20 balances, network RPC latency, and recent on-chain transactions.
+              Authenticate via standard EVM providers (SIWE EIP-4361). Monitor connected addresses, live Web-20 balances, network RPC latency, and recent on-chain transactions.
             </p>
           </div>
 
@@ -386,7 +386,7 @@ export default function WalletPage() {
                     </div>
 
                     <div className="p-5 rounded-2xl bg-surface-elevated border border-border-theme space-y-2 relative overflow-hidden">
-                      <div className="text-[10px] font-mono uppercase font-bold text-sub">BEP-20 USDT Balance</div>
+                      <div className="text-[10px] font-mono uppercase font-bold text-sub">Web-20 USDT Balance</div>
                       <div className="text-2xl font-black font-mono text-emerald-500">${usdtBalance} USDT</div>
                       <div className="text-[11px] text-sub font-mono">Available for Matrix Deposits</div>
                     </div>

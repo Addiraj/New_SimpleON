@@ -21,7 +21,7 @@ export default function About() {
     },
     {
       number: '04',
-      title: 'Trigger Main Plan',
+      title: 'Trigger Main Plan (Coming Soon)',
       description: 'Upgrade from Champion into the Main Plan (500 USDT). Unlock the 15% X5 split, 65% 13-Level Pool, and 20% X4 Spillover modules.'
     }
   ];
@@ -29,7 +29,7 @@ export default function About() {
   return (
     <section id="about-section" className="py-16 transition-colors duration-300">
       <div id="about-container" className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        
+
         {/* Header */}
         <div id="about-header" className="text-center max-w-3xl mx-auto mb-16">
           <h2 id="about-heading" className="text-3xl font-extrabold tracking-tight text-prime sm:text-4xl">
@@ -136,7 +136,7 @@ export default function About() {
         {/* Breakdown Card / Detail */}
         <div id="about-matrix-breakdown" className="mt-20 rounded-3xl bg-surface-elevated p-8 md:p-12 border border-border-theme relative overflow-hidden">
           <div id="about-glow" className="absolute -bottom-20 -left-20 h-64 w-64 rounded-full bg-accent-red/5 blur-2xl pointer-events-none" />
-          
+
           <div id="about-flex-container" className="grid gap-8 lg:grid-cols-12 items-center relative z-10">
             <div id="about-left-col" className="lg:col-span-7 space-y-6">
               <span id="about-eyebrow" className="inline-flex items-center space-x-1 text-xs font-bold uppercase tracking-wider text-accent-red">
@@ -181,10 +181,10 @@ export default function About() {
                     Interactive Preview
                   </span>
                 </div>
-                
+
                 {/* 2-Level Interactive Structural Tree with Tooltips */}
                 <div id="about-placement-diagram" className="flex flex-col items-center py-2 space-y-4 relative">
-                  
+
                   {/* Root Level (Row 1) */}
                   <div className="relative group cursor-pointer z-10">
                     <div className="h-10 w-10 rounded-full bg-blue-600 flex items-center justify-center text-xs font-black text-white shadow-lg shadow-blue-600/30 transition-transform hover:scale-110">
@@ -192,7 +192,7 @@ export default function About() {
                     </div>
                     {/* Tooltip */}
                     <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-40 bg-neutral-900 text-white text-[10px] p-2 rounded-lg opacity-0 group-hover:opacity-100 pointer-events-none transition-all duration-200 shadow-md z-30 text-center font-bold">
-                      Your Root Position<br/>
+                      Your Root Position<br />
                       <span className="text-accent-red font-mono">13-Level Forced Matrix</span>
                     </div>
                   </div>
@@ -264,7 +264,7 @@ export default function About() {
                           A1
                         </div>
                         <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 w-28 bg-neutral-900 text-white text-[9px] p-1.5 rounded shadow-lg opacity-0 group-hover:opacity-100 pointer-events-none transition-all duration-200 z-30 text-center">
-                          Direct Referral A1<br/>
+                          Direct Referral A1<br />
                           <span className="font-mono font-bold text-accent-red">Level 2 — 5.00 USDT</span>
                         </div>
                       </div>
@@ -273,7 +273,7 @@ export default function About() {
                           A2
                         </div>
                         <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 w-28 bg-neutral-900 text-white text-[9px] p-1.5 rounded shadow-lg opacity-0 group-hover:opacity-100 pointer-events-none transition-all duration-200 z-30 text-center">
-                          Spillover A2<br/>
+                          Spillover A2<br />
                           <span className="font-mono font-bold">Level 2 — 5.00 USDT</span>
                         </div>
                       </div>
@@ -286,7 +286,7 @@ export default function About() {
                           B1
                         </div>
                         <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 w-28 bg-neutral-900 text-white text-[9px] p-1.5 rounded shadow-lg opacity-0 group-hover:opacity-100 pointer-events-none transition-all duration-200 z-30 text-center">
-                          Direct Referral B1<br/>
+                          Direct Referral B1<br />
                           <span className="font-mono font-bold text-accent-red">Level 2 — 5.00 USDT</span>
                         </div>
                       </div>
@@ -295,7 +295,7 @@ export default function About() {
                           B2
                         </div>
                         <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 w-28 bg-neutral-900 text-white text-[9px] p-1.5 rounded shadow-lg opacity-0 group-hover:opacity-100 pointer-events-none transition-all duration-200 z-30 text-center">
-                          Direct Referral B2<br/>
+                          Direct Referral B2<br />
                           <span className="font-mono font-bold text-accent-red">Level 2 — 5.00 USDT</span>
                         </div>
                       </div>
@@ -308,7 +308,7 @@ export default function About() {
                           C1
                         </div>
                         <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 w-28 bg-neutral-900 text-white text-[9px] p-1.5 rounded shadow-lg opacity-0 group-hover:opacity-100 pointer-events-none transition-all duration-200 z-30 text-center">
-                          Spillover C1<br/>
+                          Spillover C1<br />
                           <span className="font-mono font-bold">Level 2 — 5.00 USDT</span>
                         </div>
                       </div>
@@ -317,7 +317,7 @@ export default function About() {
                           C2
                         </div>
                         <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 w-28 bg-neutral-900 text-white text-[9px] p-1.5 rounded shadow-lg opacity-0 group-hover:opacity-100 pointer-events-none transition-all duration-200 z-30 text-center">
-                          Spillover C2<br/>
+                          Spillover C2<br />
                           <span className="font-mono font-bold">Level 2 — 5.00 USDT</span>
                         </div>
                       </div>

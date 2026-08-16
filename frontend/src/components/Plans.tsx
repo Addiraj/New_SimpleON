@@ -64,7 +64,7 @@ export default function Plans({ basePlan = 1 }: { basePlan?: number } = {}) {
     setVerificationStep('idle');
     setVerifyStatusMessage(null);
     setActivePaymentIntent(null);
-    
+
     try {
       // 1. Create Intent
       setVerifyStatusMessage('Initializing secure payment session...');
@@ -88,7 +88,7 @@ export default function Plans({ basePlan = 1 }: { basePlan?: number } = {}) {
       setVerifyStatusMessage('Please confirm the transaction in your wallet...');
       setVerificationStep('wallet_confirm');
       const store = useWeb3Store.getState();
-      
+
       let txHash: string;
       if (type === 'JOIN' || type === 'RETOPUP') {
         txHash = await store.registerAndActivate();
@@ -99,7 +99,7 @@ export default function Plans({ basePlan = 1 }: { basePlan?: number } = {}) {
       // 3. Verify on Backend
       setVerifyStatusMessage('Verifying transaction on the blockchain...');
       setVerificationStep('blockchain_pending');
-      
+
       const verifyRes: any = await paymentApi.verifyPayment({
         paymentIntentId: intentData.id,
         txHash: txHash,
@@ -111,7 +111,7 @@ export default function Plans({ basePlan = 1 }: { basePlan?: number } = {}) {
       }
       setVerificationStep('confirmed');
       setVerifyStatusMessage('Payment successfully verified on-chain!');
-      
+
       window.dispatchEvent(new Event('dashboard_refresh'));
       await store.fetchProfile();
       await loadPlanData();
@@ -519,9 +519,9 @@ export default function Plans({ basePlan = 1 }: { basePlan?: number } = {}) {
                     const rawOrder = (eligibilityData?.currentLevelOrder !== undefined && eligibilityData?.currentLevelOrder !== null)
                       ? eligibilityData.currentLevelOrder
                       : 0;
-                    
+
                     const isConfirmedIntent = activePaymentIntent?.status === 'CONFIRMED' && (
-                      activePaymentIntent?.level?.slug === tier.slug || 
+                      activePaymentIntent?.level?.slug === tier.slug ||
                       activePaymentIntent?.metadata?.planSlug === tier.slug ||
                       activePaymentIntent?.intent?.level?.slug === tier.slug
                     );
@@ -617,15 +617,14 @@ export default function Plans({ basePlan = 1 }: { basePlan?: number } = {}) {
                                 handlePurchaseFlow(tier.slug === 'starter' ? 'JOIN' : 'UPGRADE', tier.slug);
                               }
                             }}
-                            className={`w-full py-3 px-3 rounded-full text-xs font-black flex items-center justify-center space-x-2 transition-all duration-300 ${
-                              isCurrentOrPassed
+                            className={`w-full py-3 px-3 rounded-full text-xs font-black flex items-center justify-center space-x-2 transition-all duration-300 ${isCurrentOrPassed
                                 ? 'bg-green-500/10 text-green-600 dark:text-green-400 border border-green-500/30 cursor-default'
                                 : tier.slug !== 'starter'
-                                ? 'border border-border-theme text-sub opacity-60 cursor-not-allowed hover:border-accent-red/40'
-                                : isEligibleForUpgrade
-                                ? 'bg-gradient-to-r from-accent-red to-blue-700 text-white shadow-xl shadow-accent-red/30 hover:shadow-2xl hover:brightness-110 cursor-pointer'
-                                : 'border border-border-theme text-sub opacity-60 cursor-not-allowed'
-                            }`}
+                                  ? 'border border-border-theme text-sub opacity-60 cursor-not-allowed hover:border-accent-red/40'
+                                  : isEligibleForUpgrade
+                                    ? 'bg-gradient-to-r from-accent-red to-blue-700 text-white shadow-xl shadow-accent-red/30 hover:shadow-2xl hover:brightness-110 cursor-pointer'
+                                    : 'border border-border-theme text-sub opacity-60 cursor-not-allowed'
+                              }`}
                           >
                             {actionLoadingSlug === tier.slug ? (
                               <>
@@ -664,13 +663,12 @@ export default function Plans({ basePlan = 1 }: { basePlan?: number } = {}) {
                             <div className="p-3.5 rounded-xl bg-surface-elevated border border-amber-500/30 text-[11px] space-y-2 font-mono">
                               <div className="flex justify-between items-center font-bold">
                                 <span className="text-amber-500">Payment Reference</span>
-                                <span className={`px-1.5 py-0.5 rounded text-[9px] uppercase font-bold ${
-                                  activePaymentIntent.status === 'CONFIRMED'
+                                <span className={`px-1.5 py-0.5 rounded text-[9px] uppercase font-bold ${activePaymentIntent.status === 'CONFIRMED'
                                     ? 'bg-green-500/20 text-green-500'
                                     : activePaymentIntent.status === 'FAILED'
-                                    ? 'bg-red-500/20 text-red-500'
-                                    : 'bg-amber-500/20 text-amber-500'
-                                }`}>
+                                      ? 'bg-red-500/20 text-red-500'
+                                      : 'bg-amber-500/20 text-amber-500'
+                                  }`}>
                                   {activePaymentIntent.status}
                                 </span>
                               </div>
@@ -686,13 +684,12 @@ export default function Plans({ basePlan = 1 }: { basePlan?: number } = {}) {
 
                               {/* Verification Stepper */}
                               {verificationStep !== 'idle' && (
-                                <div className={`p-2 rounded-lg text-[10px] border space-y-1 mt-2 ${
-                                  verificationStep === 'confirmed'
+                                <div className={`p-2 rounded-lg text-[10px] border space-y-1 mt-2 ${verificationStep === 'confirmed'
                                     ? 'bg-green-500/10 border-green-500/30 text-green-500'
                                     : verificationStep === 'failed'
-                                    ? 'bg-red-500/10 border-red-500/30 text-red-500'
-                                    : 'bg-amber-500/10 border-amber-500/30 text-amber-500'
-                                }`}>
+                                      ? 'bg-red-500/10 border-red-500/30 text-red-500'
+                                      : 'bg-amber-500/10 border-amber-500/30 text-amber-500'
+                                  }`}>
                                   <div className="flex items-center space-x-1.5 font-bold">
                                     {(verificationStep === 'wallet_confirm' || verificationStep === 'blockchain_pending' || verificationStep === 'backend_verifying') && (
                                       <RefreshCw size={12} className="animate-spin shrink-0" />

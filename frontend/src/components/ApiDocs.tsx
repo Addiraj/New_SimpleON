@@ -78,11 +78,10 @@ export default function ApiDocs() {
             <button
               key={ep.id}
               onClick={() => executeApiCall(ep)}
-              className={`w-full p-4 rounded-2xl border text-left transition-all ${
-                selectedEndpoint === ep.id
+              className={`w-full p-4 rounded-2xl border text-left transition-all ${selectedEndpoint === ep.id
                   ? 'border-accent-red bg-accent-red/5 shadow-sm'
                   : 'border-border-theme bg-surface hover:bg-surface-elevated'
-              }`}
+                }`}
             >
               <div className="flex items-center space-x-2 mb-1">
                 <span className="px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wider bg-green-500/10 text-green-500">

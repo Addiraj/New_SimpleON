@@ -24,11 +24,11 @@ export default function LandingPage({ onNavigateTab }: LandingPageProps) {
 
   return (
     <div id="landing-page-wrapper" className="space-y-12 sm:space-y-16">
-      
+
       {/* 1. Hero Section with Large Illustration */}
-      <Hero 
-        onCtaClick={onNavigateTab} 
-        onConnectWallet={() => open()} 
+      <Hero
+        onCtaClick={onNavigateTab}
+        onConnectWallet={() => open()}
       />
 
       {/* 2. Live Interactive Statistics Ticker */}
@@ -72,7 +72,7 @@ export default function LandingPage({ onNavigateTab }: LandingPageProps) {
       <SecuritySection />
 
       {/* 14. Final Conversion CTA Section */}
-      <CtaSection 
+      <CtaSection
         onConnectWallet={() => open()}
         onOpenMatrix={() => onNavigateTab('matrix')}
         onEnterDashboard={() => onNavigateTab('dashboard')}

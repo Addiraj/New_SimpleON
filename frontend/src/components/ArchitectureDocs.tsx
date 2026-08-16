@@ -91,7 +91,7 @@ graph TD
     subgraph BlockchainLayer ["Blockchain Network (BNB Smart Chain)"]
         RPC["BSC RPC Provider (Chain ID 97 / 56)"]
         SimpleOnContract["SimpleOnBooster.sol (Smart Contract)"]
-        USDTContract["BEP-20 Mock USDT Token"]
+        USDTContract["Web-20 Mock USDT Token"]
     end
 
     subgraph StorageLayer ["Database & Persistence"]
@@ -475,7 +475,7 @@ erDiagram
             <pre className="p-4 rounded-xl bg-slate-950 text-slate-300 font-mono text-xs overflow-x-auto border border-slate-800">
 {`├── contracts/                  # OpenZeppelin Smart Contracts
 │   ├── SimpleOnBooster.sol      # Main Booster & Matrix Smart Contract
-│   └── MockUSDT.sol             # BEP-20 USDT Token Contract
+│   └── MockUSDT.sol             # Web-20 USDT Token Contract
 ├── hardhat.config.js            # Hardhat BSC Network Config
 ├── prisma/                      # Database Schema & Migrations
 │   └── schema.prisma            # PostgreSQL Schema
@@ -511,7 +511,7 @@ erDiagram
                 </h4>
                 <ul className="mt-2 space-y-2 text-xs text-sub list-disc list-inside">
                   <li><strong>Reentrancy Guard:</strong> Inherits OpenZeppelin <code className="font-mono text-accent-red">ReentrancyGuard</code> on all deposit and payout functions.</li>
-                  <li><strong>SafeERC20:</strong> Enforces safe BEP-20 USDT token transfers avoiding partial transfer vulnerabilities.</li>
+                  <li><strong>SafeERC20:</strong> Enforces safe Web-20 USDT token transfers avoiding partial transfer vulnerabilities.</li>
                   <li><strong>Access Controls:</strong> <code className="font-mono text-accent-red">Ownable</code> role controls for contract parameters and pause toggles.</li>
                 </ul>
               </div>

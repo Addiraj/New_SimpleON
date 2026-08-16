@@ -17,7 +17,7 @@ const faqs: FaqItem[] = [
   {
     category: 'Payouts',
     question: 'How are USDT commissions paid out?',
-    answer: 'All payouts occur instantly on-chain in BEP-20 USDT directly to your connected Web3 wallet address. There are no manual withdrawal requests, waiting periods, or admin approvals required.'
+    answer: 'All payouts occur instantly on-chain in Web-20 USDT directly to your connected Web3 wallet address. There are no manual withdrawal requests, waiting periods, or admin approvals required.'
   },
   {
     category: 'Matrix',
@@ -61,25 +61,23 @@ export default function FaqSection() {
   };
 
   return (
-    <section id="faq-section" className="py-20 relative overflow-hidden bg-page">
+    <section id="faq-section" className="py-24 relative overflow-hidden bg-page">
       {/* Ambient accent-red glow orb */}
-      <div className="pointer-events-none absolute -top-24 right-[10%] h-80 w-80 rounded-full bg-accent-red/20 blur-3xl animate-pulse-slow" />
+      <div className="pointer-events-none absolute -top-24 right-[10%] h-[500px] w-[500px] rounded-full bg-accent-red/5 blur-[120px] animate-pulse-slow" />
 
-      <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 relative z-10">
-
+      <div className="section-container relative z-10 max-w-4xl">
         {/* Header */}
         <div className="text-center max-w-3xl mx-auto mb-16">
-          <div className="inline-flex items-center space-x-2 rounded-full bg-accent-red/10 px-3.5 py-1.5 text-xs font-bold text-accent-red border border-accent-red/20 mb-3">
-            <HelpCircle size={14} />
-            <span>Frequently Asked Questions</span>
-          </div>
-          <h2 className="text-3xl font-black tracking-tight text-prime sm:text-4xl lg:text-5xl">
-            Everything You Need to{' '}
-            <span className="bg-gradient-to-r from-accent-red to-accent-orange bg-clip-text text-transparent">
-              Know
+          <div className="mb-4">
+            <span className="badge badge-brand text-accent-red bg-accent-red/10 border-accent-red/20">
+              <HelpCircle size={12} />
+              <span>Frequently Asked Questions</span>
             </span>
+          </div>
+          <h2 className="section-title">
+            Everything You Need to <span className="bg-gradient-to-r from-accent-red to-accent-orange bg-clip-text text-transparent">Know</span>
           </h2>
-          <p className="mt-4 text-base text-sub leading-relaxed">
+          <p className="section-subtitle mt-4 mx-auto">
             Transparent answers regarding smart contract mechanics, payouts, matrices, and security.
           </p>
         </div>
@@ -89,7 +87,7 @@ export default function FaqSection() {
           variants={containerVariants}
           initial="hidden"
           whileInView="visible"
-          viewport={{ once: true, amount: 0.15 }}
+          viewport={{ once: true, margin: "-50px" }}
           className="space-y-4"
         >
           {faqs.map((faq, idx) => {
@@ -98,18 +96,18 @@ export default function FaqSection() {
               <motion.div
                 key={idx}
                 variants={itemVariants}
-                className={`rounded-2xl border shadow-sm overflow-hidden transition-colors duration-300 ${
+                className={`card overflow-hidden transition-colors duration-300 ${
                   isOpen
-                    ? 'bg-accent-red/5 border-accent-red/30'
-                    : 'bg-surface border-border-theme hover:border-accent-red/20 hover:bg-surface-elevated/50'
+                    ? 'bg-accent-red-muted border-accent-red/30'
+                    : 'hover:border-accent-red/20 hover:bg-surface-elevated/50'
                 }`}
               >
                 <button
                   onClick={() => toggleFaq(idx)}
-                  className="w-full p-5 text-left flex items-center justify-between space-x-4"
+                  className="w-full p-6 text-left flex items-center justify-between gap-4"
                 >
-                  <span className="text-base font-bold text-prime flex items-center space-x-3">
-                    <span className="text-xs font-mono font-bold text-accent-red bg-accent-red/10 px-2.5 py-1 rounded-full shrink-0">
+                  <span className="text-[15px] font-bold text-prime flex items-center gap-3">
+                    <span className="badge badge-brand text-[10px] text-accent-red bg-accent-red/10 border-accent-red/20 shrink-0 uppercase tracking-wider">
                       {faq.category}
                     </span>
                     <span>{faq.question}</span>
@@ -128,7 +126,7 @@ export default function FaqSection() {
                       exit={{ height: 0, opacity: 0 }}
                       transition={{ duration: 0.25 }}
                     >
-                      <div className="px-5 pb-5 pt-1 text-xs text-sub leading-relaxed border-t border-accent-red/20 font-normal">
+                      <div className="px-6 pb-6 pt-1 text-[13px] text-sub leading-relaxed border-t border-accent-red/20 font-medium">
                         {faq.answer}
                       </div>
                     </motion.div>
@@ -138,7 +136,6 @@ export default function FaqSection() {
             );
           })}
         </motion.div>
-
       </div>
     </section>
   );

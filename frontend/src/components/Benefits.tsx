@@ -80,38 +80,34 @@ export default function Benefits() {
   };
 
   return (
-    <section id="benefits-section" className="relative overflow-hidden bg-page py-16 transition-colors duration-300">
+    <section id="benefits-section" className="py-20 bg-page relative overflow-hidden">
+      {/* Background glow */}
+      <div className="absolute top-0 left-1/4 h-[500px] w-[500px] rounded-full bg-accent-blue/5 blur-[120px] pointer-events-none" />
 
-      {/* Ambient background glow orbs */}
-      <div id="benefits-bg-glow-1" className="absolute -top-32 -left-32 h-[420px] w-[420px] rounded-full bg-accent-purple/10 blur-[110px] animate-pulse-slow pointer-events-none" />
-      <div id="benefits-bg-glow-2" className="absolute -bottom-32 -right-32 h-[420px] w-[420px] rounded-full bg-accent-orange/10 blur-[110px] animate-pulse-slow pointer-events-none" />
-
-      <div id="benefits-container" className="relative z-10 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-
+      <div className="section-container relative z-10">
         {/* Header */}
-        <div id="benefits-header" className="text-center max-w-3xl mx-auto mb-16">
-          <div id="benefits-eyebrow-wrapper" className="flex justify-center mb-4">
-            <span id="benefits-eyebrow" className="inline-flex items-center gap-2 rounded-full bg-accent-red/10 px-4 py-1.5 text-xs font-bold text-accent-red border border-accent-red/20">
-              <Sparkles size={14} />
-              WHY SIMPLEON
+        <div className="text-center max-w-3xl mx-auto mb-16">
+          <div className="mb-4">
+            <span className="badge badge-brand">
+              <Sparkles size={12} />
+              <span>Why SimpleOn</span>
             </span>
           </div>
-          <h2 id="benefits-heading" className="text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight text-prime">
-            Why Choose <span className="text-gradient-brand">SimpleOn</span>?
+          <h2 className="section-title">
+            Engineered for <span className="text-gradient-brand">Longevity</span>
           </h2>
-          <p id="benefits-subheading" className="mt-4 text-base text-sub">
-            Engineered with a focus on mathematical longevity, security, and immediate liquidity.
+          <p className="section-subtitle mt-4 mx-auto">
+            A decentralized referral platform built with a focus on mathematical sustainability, security, and immediate liquidity.
           </p>
         </div>
 
         {/* Grid layout */}
         <motion.div
-          id="benefits-grid"
-          className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3"
+          className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3"
           variants={containerVariants}
           initial="hidden"
           whileInView="visible"
-          viewport={{ once: true, amount: 0.2 }}
+          viewport={{ once: true, margin: "-50px" }}
         >
           {benefitsList.map((benefit, index) => {
             const accent = accents[index % accents.length];
@@ -119,21 +115,20 @@ export default function Benefits() {
             return (
               <motion.div
                 key={index}
-                id={`benefit-card-${index}`}
                 variants={cardVariants}
-                whileHover={{ y: -6 }}
-                className={`p-6 rounded-2xl bg-surface border border-border-theme shadow-sm hover:shadow-xl transition-all duration-300 ${accent.border}`}
+                className={`card p-8 flex flex-col gap-4 group ${accent.border}`}
               >
-                <div id={`benefit-icon-wrapper-${index}`} className={`p-3 ${accent.iconBg} rounded-xl w-fit mb-4`}>
-                  <Icon className={accent.iconColor} size={24} />
+                <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${accent.iconBg} ${accent.iconColor} group-hover:scale-110 transition-transform duration-300`}>
+                  <Icon size={24} />
                 </div>
-                <h3 id={`benefit-title-${index}`} className="text-lg font-bold text-prime mb-2">{benefit.title}</h3>
-                <p id={`benefit-desc-${index}`} className="text-sm text-sub leading-relaxed">{benefit.description}</p>
+                <div>
+                  <h3 className="text-base font-bold text-prime mb-2">{benefit.title}</h3>
+                  <p className="text-[13px] text-sub leading-relaxed">{benefit.description}</p>
+                </div>
               </motion.div>
             );
           })}
         </motion.div>
-
       </div>
     </section>
   );

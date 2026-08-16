@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
-import { motion } from 'motion/react';
-import { Sun, Moon, Menu, X, ArrowRight, Wallet, Network, Code, Terminal, Zap, Bell, User, ShieldCheck } from 'lucide-react';
+import React, { useState, useRef, useEffect } from 'react';
+import { motion, AnimatePresence } from 'motion/react';
+import { Sun, Moon, Menu, X, Bell, ChevronDown } from 'lucide-react';
 import { useWeb3Store } from '../store/useWeb3Store';
 
 interface NavbarProps {
@@ -13,11 +13,8 @@ interface NavbarProps {
 export default function Navbar({ theme, toggleTheme, activeTab, setActiveTab }: NavbarProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { 
-    isConnected, address, chainId, openWalletModal, disconnectWallet, 
-    toggleNotificationCenter, unreadNotificationCount, userProfile
+    isConnected, toggleNotificationCenter, unreadNotificationCount, userProfile
   } = useWeb3Store();
-
-  const formattedAddress = address ? `${address.slice(0, 6)}...${address.slice(-4)}` : '';
 
   const navItems = [
     { id: 'home', label: 'Home' },
@@ -37,77 +34,103 @@ export default function Navbar({ theme, toggleTheme, activeTab, setActiveTab }: 
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
+  // Close mobile menu on escape
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setMobileMenuOpen(false);
+    };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, []);
+
+  // Lock body scroll when mobile menu is open
+  useEffect(() => {
+    document.body.style.overflow = mobileMenuOpen ? 'hidden' : '';
+    return () => { document.body.style.overflow = ''; };
+  }, [mobileMenuOpen]);
+
   return (
-    <header id="app-header" className="sticky top-0 z-50 w-full border-b border-border-theme bg-surface/85 backdrop-blur-md transition-colors duration-300">
-      <div id="nav-container" className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
-        
-        {/* Logo and Brand Name */}
-        <div 
-          id="brand-logo-group" 
-          className="flex cursor-pointer items-center space-x-3" 
+    <header
+      id="app-header"
+      className="sticky top-0 z-50 w-full border-b border-border-theme bg-surface/90 backdrop-blur-xl transition-colors duration-200"
+    >
+      <div
+        id="nav-container"
+        className="mx-auto flex h-14 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8"
+      >
+        {/* Logo */}
+        <div
+          id="brand-logo-group"
+          className="flex shrink-0 cursor-pointer items-center gap-2.5"
           onClick={() => handleNavClick('home')}
+          role="button"
+          tabIndex={0}
+          aria-label="SimpleOn Home"
+          onKeyDown={(e) => e.key === 'Enter' && handleNavClick('home')}
         >
-          <div id="logo-hexagon" className="relative flex h-10 w-10 items-center justify-center">
-            <span aria-hidden="true" className="absolute inset-0 -z-10 scale-150 rounded-full bg-accent-red/20 blur-lg" />
-            <svg viewBox="0 0 100 100" className="absolute inset-0 h-full w-full text-accent-red fill-current drop-shadow-[0_2px_8px_rgba(220,38,38,0.3)]">
+          <div id="logo-hexagon" className="relative flex h-8 w-8 items-center justify-center">
+            <svg viewBox="0 0 100 100" className="absolute inset-0 h-full w-full text-accent-red fill-current" aria-hidden="true">
               <polygon points="50,5 95,27.5 95,72.5 50,95 5,72.5 5,27.5" />
             </svg>
-            <span id="logo-s" className="relative z-10 text-xl font-black text-white select-none italic tracking-wider">S</span>
+            <span className="relative z-10 text-sm font-black text-white select-none italic">S</span>
           </div>
-          <div id="brand-text" className="flex flex-col">
-            <span id="brand-name" className="text-xl font-extrabold tracking-tight text-prime flex items-center">
-              <span>Simple<span className="text-accent-red">On</span></span>
+          <div className="flex flex-col leading-none">
+            <span className="text-base font-extrabold tracking-tight text-prime flex items-center gap-1.5">
+              Simple<span className="text-accent-red">On</span>
               {userProfile?.status === 'ACTIVE' && (
-                <span className="hidden sm:inline-flex items-center px-2 py-0.5 rounded text-[10px] font-black bg-accent-red text-white uppercase tracking-wider ml-2">
+                <span className="badge badge-brand text-[9px] py-0.5 hidden sm:inline-flex">
                   {userProfile.tier || 'Starter'}
                 </span>
               )}
             </span>
-            <span id="brand-tag" className="text-[9px] uppercase tracking-widest text-sub font-bold -mt-1">
+            <span className="text-[8px] uppercase tracking-[0.12em] text-muted font-bold">
               Web3 Booster
             </span>
           </div>
         </div>
 
         {/* Desktop Navigation */}
-        <nav id="desktop-nav" className="hidden lg:flex items-center space-x-1">
+        <nav id="desktop-nav" className="hidden xl:flex items-center gap-0.5" aria-label="Main navigation">
           {navItems.map((item) => {
             const isActive = activeTab === item.id;
             return (
-              <motion.button
+              <button
                 key={item.id}
                 id={`nav-link-${item.id}`}
                 onClick={() => handleNavClick(item.id)}
-                whileHover={{ y: -1 }}
-                whileTap={{ y: 0 }}
-                className={`relative px-3 py-2 text-xs font-bold transition-colors duration-200 rounded-lg ${
+                aria-current={isActive ? 'page' : undefined}
+                className={`relative px-3 py-1.5 text-[12px] font-semibold rounded-lg transition-all duration-200 ${
                   isActive
-                    ? 'text-accent-red bg-accent-red/10 shadow-sm'
+                    ? 'text-accent-red bg-accent-red-muted'
                     : 'text-sub hover:text-prime hover:bg-surface-elevated'
                 }`}
               >
                 {item.label}
                 {isActive && (
-                  <span className="absolute inset-x-2 -bottom-[1px] h-0.5 rounded-full bg-accent-red" />
+                  <motion.span
+                    layoutId="nav-indicator"
+                    className="absolute inset-x-2 -bottom-[9px] h-[2px] rounded-full bg-accent-red"
+                    transition={{ type: 'spring', stiffness: 500, damping: 35 }}
+                  />
                 )}
-              </motion.button>
+              </button>
             );
           })}
         </nav>
 
-        {/* Header Action Buttons */}
-        <div id="header-actions" className="hidden md:flex items-center space-x-3">
-          {/* Notification Center Trigger */}
+        {/* Action Buttons */}
+        <div className="flex items-center gap-2">
+          {/* Notification */}
           <button
             id="notification-center-btn"
             onClick={toggleNotificationCenter}
-            className="relative rounded-xl border border-border-theme p-2 text-prime bg-surface hover:bg-surface-elevated hover:border-accent-red/30 hover:shadow-sm transition-all duration-200"
-            aria-label="Notification Center"
+            className="relative rounded-lg p-2 text-sub hover:text-prime hover:bg-surface-elevated border border-transparent hover:border-border-theme transition-all duration-200"
+            aria-label={`Notifications${unreadNotificationCount > 0 ? ` (${unreadNotificationCount} unread)` : ''}`}
           >
-            <Bell size={18} />
+            <Bell size={16} />
             {unreadNotificationCount > 0 && (
-              <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-accent-red text-[9px] font-black text-white">
-                {unreadNotificationCount}
+              <span className="absolute -top-0.5 -right-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-accent-red text-[9px] font-bold text-white px-1">
+                {unreadNotificationCount > 9 ? '9+' : unreadNotificationCount}
               </span>
             )}
           </button>
@@ -116,60 +139,89 @@ export default function Navbar({ theme, toggleTheme, activeTab, setActiveTab }: 
           <button
             id="theme-toggle-btn"
             onClick={toggleTheme}
-            className="rounded-xl border border-border-theme p-2 text-prime bg-surface hover:bg-surface-elevated hover:border-accent-red/30 hover:shadow-sm transition-all duration-200"
-            aria-label="Toggle Theme"
-          >
-            {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
-          </button>
-
-          {/* Web3 Wallet Connection Button */}
-          <appkit-button />
-        </div>
-
-        {/* Mobile Controls */}
-        <div id="mobile-controls" className="flex items-center space-x-2 lg:hidden">
-          <button
-            onClick={toggleTheme}
-            className="rounded-xl border border-border-theme p-2 text-prime bg-surface hover:border-accent-red/30 transition-colors duration-200"
+            className="rounded-lg p-2 text-sub hover:text-prime hover:bg-surface-elevated border border-transparent hover:border-border-theme transition-all duration-200 hidden sm:flex"
+            aria-label={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
           >
             {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
           </button>
 
+          {/* Wallet Button */}
+          <div className="hidden md:block">
+            <appkit-button />
+          </div>
+
+          {/* Mobile Menu Toggle */}
           <button
+            id="mobile-menu-toggle"
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="rounded-xl border border-border-theme p-2 text-prime bg-surface hover:border-accent-red/30 transition-colors duration-200"
+            className="xl:hidden rounded-lg p-2 text-sub hover:text-prime hover:bg-surface-elevated border border-transparent hover:border-border-theme transition-all duration-200"
+            aria-label={mobileMenuOpen ? 'Close menu' : 'Open menu'}
+            aria-expanded={mobileMenuOpen}
           >
             {mobileMenuOpen ? <X size={18} /> : <Menu size={18} />}
           </button>
         </div>
-
       </div>
 
-      {/* Mobile Drawer */}
-      {mobileMenuOpen && (
-        <motion.div
-          id="mobile-nav-drawer"
-          initial={{ opacity: 0, height: 0 }}
-          animate={{ opacity: 1, height: 'auto' }}
-          transition={{ duration: 0.2, ease: 'easeOut' }}
-          className="border-b border-border-theme bg-surface px-4 py-4 lg:hidden space-y-1.5 overflow-hidden"
-        >
-          {navItems.map((item) => (
-            <button
-              key={item.id}
-              onClick={() => handleNavClick(item.id)}
-              className={`flex w-full items-center justify-between px-4 py-2.5 text-xs font-bold rounded-xl transition-colors duration-200 ${
-                activeTab === item.id ? 'bg-accent-red/10 text-accent-red shadow-sm' : 'text-sub hover:bg-surface-elevated hover:text-prime'
-              }`}
+      {/* Mobile Menu Overlay */}
+      <AnimatePresence>
+        {mobileMenuOpen && (
+          <>
+            {/* Backdrop */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.15 }}
+              className="fixed inset-0 top-14 z-40 bg-black/40 backdrop-blur-sm xl:hidden"
+              onClick={() => setMobileMenuOpen(false)}
+              aria-hidden="true"
+            />
+
+            {/* Menu Panel */}
+            <motion.nav
+              id="mobile-nav-panel"
+              initial={{ opacity: 0, y: -8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              transition={{ duration: 0.2, ease: 'easeOut' }}
+              className="fixed left-0 right-0 top-14 z-50 bg-surface border-b border-border-theme xl:hidden max-h-[calc(100vh-3.5rem)] overflow-y-auto shadow-xl"
+              aria-label="Mobile navigation"
             >
-              <span>{item.label}</span>
-            </button>
-          ))}
-          <div className="pt-3 mt-2 border-t border-border-theme flex justify-center">
-            <appkit-button />
-          </div>
-        </motion.div>
-      )}
+              <div className="p-4 space-y-1">
+                {navItems.map((item) => {
+                  const isActive = activeTab === item.id;
+                  return (
+                    <button
+                      key={item.id}
+                      onClick={() => handleNavClick(item.id)}
+                      className={`flex w-full items-center px-4 py-3 text-[13px] font-semibold rounded-xl transition-all duration-200 ${
+                        isActive
+                          ? 'bg-accent-red-muted text-accent-red'
+                          : 'text-sub hover:bg-surface-elevated hover:text-prime'
+                      }`}
+                    >
+                      {item.label}
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Mobile wallet + theme */}
+              <div className="p-4 border-t border-border-theme flex items-center justify-between gap-3">
+                <appkit-button />
+                <button
+                  onClick={toggleTheme}
+                  className="rounded-lg p-2.5 text-sub hover:text-prime hover:bg-surface-elevated border border-border-theme transition-all sm:hidden"
+                  aria-label={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
+                >
+                  {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
+                </button>
+              </div>
+            </motion.nav>
+          </>
+        )}
+      </AnimatePresence>
     </header>
   );
 }

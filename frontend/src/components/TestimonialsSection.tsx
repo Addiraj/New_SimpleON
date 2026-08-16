@@ -52,26 +52,23 @@ export default function TestimonialsSection() {
   };
 
   return (
-    <section id="testimonials-section" className="py-20 relative overflow-hidden bg-surface-elevated/30 border-y border-border-theme">
+    <section id="testimonials-section" className="py-24 relative overflow-hidden bg-surface-sunken border-y border-border-subtle">
       {/* Ambient glow orb */}
-      <div className="pointer-events-none absolute -top-24 right-[8%] h-80 w-80 rounded-full bg-accent-blue/20 blur-3xl animate-pulse-slow -z-10" />
+      <div className="pointer-events-none absolute -top-24 right-[8%] h-[500px] w-[500px] rounded-full bg-accent-blue/5 blur-[120px] animate-pulse-slow -z-10" />
 
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 relative">
-
+      <div className="section-container relative z-10">
         {/* Header */}
-        <div className="text-center max-w-3xl mx-auto mb-16">
-          <div className="inline-flex items-center space-x-2 rounded-full bg-accent-blue/10 px-3.5 py-1.5 text-xs font-bold text-accent-blue border border-accent-blue/20 mb-3">
-            <ShieldCheck size={14} />
-            <span>On-Chain Verified Community Feedback</span>
+        <div className="text-center max-w-3xl mx-auto mb-20">
+          <div className="mb-4">
+            <span className="badge badge-brand text-accent-blue bg-accent-blue/10 border-accent-blue/20">
+              <ShieldCheck size={12} />
+              <span>On-Chain Verified Community Feedback</span>
+            </span>
           </div>
-          <h2 className="text-3xl font-black tracking-tight text-prime sm:text-4xl lg:text-5xl">
-            Trusted by{' '}
-            <span className="bg-gradient-to-r from-accent-blue to-accent-purple bg-clip-text text-transparent">
-              Web3 Leaders
-            </span>{' '}
-            Worldwide
+          <h2 className="section-title">
+            Trusted by <span className="bg-gradient-to-r from-accent-blue to-accent-purple bg-clip-text text-transparent">Web3 Leaders</span> Worldwide
           </h2>
-          <p className="mt-4 text-base text-sub leading-relaxed">
+          <p className="section-subtitle mt-4 mx-auto">
             Real feedback from active matrix leaders backed by auditable BNB Smart Chain transactions.
           </p>
         </div>
@@ -81,42 +78,42 @@ export default function TestimonialsSection() {
           variants={containerVariants}
           initial="hidden"
           whileInView="visible"
-          viewport={{ once: true, amount: 0.2 }}
+          viewport={{ once: true, margin: "-50px" }}
           className="grid grid-cols-1 md:grid-cols-3 gap-8"
         >
           {testimonials.map((t, idx) => (
             <motion.div
               key={idx}
               variants={itemVariants}
-              className="group p-6 rounded-2xl bg-surface border border-border-theme shadow-sm flex flex-col justify-between relative overflow-hidden hover:shadow-lg hover:-translate-y-1 hover:border-accent-blue/30 transition-all duration-300"
+              className="card p-8 group flex flex-col justify-between relative overflow-hidden hover:-translate-y-1 hover:border-accent-blue/30"
             >
-              <Quote className="pointer-events-none absolute -top-2 -right-2 text-accent-blue/10 group-hover:text-accent-blue/20 transition-colors duration-300" size={72} strokeWidth={1.5} />
+              <Quote className="pointer-events-none absolute -top-2 -right-2 text-accent-blue/5 group-hover:text-accent-blue/10 transition-colors duration-300" size={80} strokeWidth={1} />
 
-              <div className="relative">
+              <div className="relative z-10">
                 <div className="flex justify-between items-center mb-6">
-                  <div className="flex items-center space-x-1 text-amber-400">
+                  <div className="flex items-center gap-1 text-amber-400">
                     {Array.from({ length: 5 }).map((_, i) => (
-                      <Star key={i} size={16} className="fill-amber-400" />
+                      <Star key={i} size={14} className="fill-amber-400" />
                     ))}
                   </div>
-                  <span className="px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-500 text-[10px] font-mono font-bold">
+                  <span className="px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-500 text-[10px] font-mono font-bold border border-emerald-500/20">
                     {t.earnings} Earned
                   </span>
                 </div>
 
-                <p className="text-xs text-prime italic leading-relaxed mb-6 font-medium">
+                <p className="text-[14px] text-prime italic leading-relaxed mb-8 font-medium">
                   "{t.quote}"
                 </p>
               </div>
 
-              <div className="relative pt-4 border-t border-border-theme/60 flex items-center justify-between text-xs">
-                <div className="flex items-center space-x-3">
-                  <div className="flex items-center justify-center h-9 w-9 rounded-full bg-accent-blue/10 ring-2 ring-accent-blue/30 ring-offset-2 ring-offset-surface shrink-0">
+              <div className="relative z-10 pt-5 border-t border-border-subtle flex items-center justify-between text-[11px]">
+                <div className="flex items-center gap-3">
+                  <div className="flex items-center justify-center h-10 w-10 rounded-full bg-accent-blue/10 ring-2 ring-accent-blue/20 ring-offset-2 ring-offset-surface shrink-0 group-hover:ring-accent-blue/40 transition-all">
                     <Wallet size={16} className="text-accent-blue" />
                   </div>
                   <div>
-                    <div className="font-extrabold text-prime">{t.name}</div>
-                    <div className="text-[10px] text-sub font-mono">{t.role}</div>
+                    <div className="font-extrabold text-prime text-[13px]">{t.name}</div>
+                    <div className="text-[11px] text-sub font-mono tracking-tight">{t.role}</div>
                   </div>
                 </div>
 
@@ -124,7 +121,7 @@ export default function TestimonialsSection() {
                   href={`https://testnet.bscscan.com/tx/${t.txHash}`}
                   target="_blank"
                   rel="noreferrer"
-                  className="p-2 rounded-xl bg-surface-elevated text-sub hover:text-accent-blue transition-colors flex items-center space-x-1 text-[10px] font-mono"
+                  className="p-2.5 rounded-xl bg-surface border border-border-subtle text-sub hover:text-accent-blue hover:border-accent-blue/30 transition-colors flex items-center gap-1.5 font-mono shadow-sm"
                 >
                   <span>{t.address}</span>
                   <ExternalLink size={12} />
@@ -133,7 +130,6 @@ export default function TestimonialsSection() {
             </motion.div>
           ))}
         </motion.div>
-
       </div>
     </section>
   );

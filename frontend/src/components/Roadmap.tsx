@@ -94,11 +94,10 @@ export default function Roadmap() {
                 {/* Timeline node circle */}
                 <div
                   id={`roadmap-node-${idx}`}
-                  className={`absolute -left-[35px] sm:-left-[43px] top-1.5 flex h-8 w-8 items-center justify-center rounded-full border-2 transition-colors ${
-                    isActive
+                  className={`absolute -left-[35px] sm:-left-[43px] top-1.5 flex h-8 w-8 items-center justify-center rounded-full border-2 transition-colors ${isActive
                       ? 'border-accent-purple bg-gradient-to-br from-accent-purple to-accent-blue text-white shadow-md shadow-accent-purple/30'
                       : 'border-border-theme bg-surface text-sub'
-                  }`}
+                    }`}
                 >
                   {isActive && (
                     <span

@@ -8,10 +8,10 @@ interface SkeletonProps {
 }
 
 export const LoadingSkeletonCard: React.FC<SkeletonProps> = ({ lines = 3, className = '' }) => (
-  <div className={`p-6 rounded-2xl bg-surface border border-border-theme space-y-4 ${className}`}>
+  <div className={`card p-6 flex flex-col gap-4 ${className}`}>
     <div className="h-6 w-1/3 rounded-lg skeleton-shimmer"></div>
     <div className="h-10 w-2/3 rounded-xl skeleton-shimmer"></div>
-    <div className="space-y-2 pt-2">
+    <div className="flex flex-col gap-2 pt-2">
       {Array.from({ length: lines }).map((_, i) => (
         <div key={i} className="h-4 w-full rounded skeleton-shimmer" style={{ opacity: 1 - i * 0.2 }}></div>
       ))}
@@ -20,15 +20,15 @@ export const LoadingSkeletonCard: React.FC<SkeletonProps> = ({ lines = 3, classN
 );
 
 export const LoadingSkeletonTable: React.FC = () => (
-  <div className="p-6 rounded-2xl bg-surface border border-border-theme space-y-4">
-    <div className="flex justify-between items-center pb-4 border-b border-border-theme">
+  <div className="card p-6 flex flex-col gap-4">
+    <div className="flex justify-between items-center pb-4 border-b border-border-subtle">
       <div className="h-6 w-48 rounded-lg skeleton-shimmer"></div>
       <div className="h-8 w-28 rounded-xl skeleton-shimmer"></div>
     </div>
     {Array.from({ length: 5 }).map((_, i) => (
-      <div key={i} className="flex items-center space-x-4 py-3 border-b border-border-theme/50">
+      <div key={i} className="flex items-center gap-4 py-3 border-b border-border-subtle/50">
         <div className="h-10 w-10 rounded-full skeleton-shimmer"></div>
-        <div className="flex-1 space-y-2">
+        <div className="flex-1 flex flex-col gap-2">
           <div className="h-4 w-1/4 rounded skeleton-shimmer"></div>
           <div className="h-3 w-1/2 rounded skeleton-shimmer"></div>
         </div>
@@ -53,16 +53,18 @@ export const EmptyStateView: React.FC<EmptyStateProps> = ({
   onAction,
   icon
 }) => (
-  <div className="p-12 rounded-2xl bg-surface border border-dashed border-border-theme flex flex-col items-center justify-center text-center my-6">
-    <div className="p-4 rounded-full bg-surface-elevated text-sub mb-4">
+  <div className="card p-12 border-dashed flex flex-col items-center justify-center text-center my-6 gap-6">
+    <div className="p-4 rounded-2xl bg-surface-sunken text-sub border border-border-subtle shadow-inner">
       {icon || <Inbox size={32} className="text-sub" />}
     </div>
-    <h3 className="text-lg font-bold text-prime mb-1">{title}</h3>
-    <p className="text-xs text-sub max-w-md mb-6 leading-relaxed">{description}</p>
+    <div className="flex flex-col items-center gap-2">
+      <h3 className="text-[15px] font-black text-prime tracking-wider uppercase">{title}</h3>
+      <p className="text-[13px] text-muted max-w-md leading-relaxed">{description}</p>
+    </div>
     {actionText && onAction && (
       <button
         onClick={onAction}
-        className="px-5 py-2.5 rounded-full bg-accent-red text-white text-xs font-bold hover:bg-accent-red/90 transition-all flex items-center space-x-2 shadow-md shadow-accent-red/20"
+        className="btn btn-primary"
       >
         <span>{actionText}</span>
         <ArrowRight size={14} />
@@ -82,18 +84,18 @@ export const ErrorStateAlert: React.FC<ErrorStateProps> = ({
   message,
   onRetry
 }) => (
-  <div className="p-5 rounded-2xl bg-red-500/10 border border-red-500/30 text-prime my-4 flex items-start space-x-4">
-    <div className="p-2 rounded-xl bg-red-500/20 text-red-500 shrink-0">
+  <div className="card p-5 border-color-negative/30 bg-color-negative/5 flex items-start gap-4">
+    <div className="p-2.5 rounded-xl bg-color-negative/10 text-color-negative border border-color-negative/20 shrink-0">
       <AlertTriangle size={20} />
     </div>
-    <div className="flex-1">
-      <h4 className="text-sm font-bold text-red-500 mb-1">{title}</h4>
-      <p className="text-xs text-sub leading-relaxed">{message}</p>
+    <div className="flex-1 flex flex-col gap-1">
+      <h4 className="text-[13px] font-bold text-color-negative">{title}</h4>
+      <p className="text-[12px] text-muted leading-relaxed">{message}</p>
     </div>
     {onRetry && (
       <button
         onClick={onRetry}
-        className="px-3 py-1.5 rounded-xl bg-accent-red/20 hover:bg-accent-red/30 text-accent-red text-xs font-bold transition-all flex items-center space-x-1 shrink-0"
+        className="px-3.5 py-2 rounded-xl bg-color-negative/10 hover:bg-color-negative/20 text-color-negative text-[11px] font-bold transition-colors flex items-center gap-1.5 shrink-0 uppercase tracking-wider"
       >
         <RefreshCw size={12} />
         <span>Retry Sync</span>
@@ -113,18 +115,18 @@ export const SuccessStateBanner: React.FC<SuccessStateProps> = ({
   message,
   onDismiss
 }) => (
-  <div className="p-5 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 text-prime my-4 flex items-start space-x-4">
-    <div className="p-2 rounded-xl bg-emerald-500/20 text-emerald-500 shrink-0">
+  <div className="card p-5 border-accent-green/30 bg-accent-green/5 flex items-start gap-4">
+    <div className="p-2.5 rounded-xl bg-accent-green/10 text-accent-green border border-accent-green/20 shrink-0">
       <CheckCircle2 size={20} />
     </div>
-    <div className="flex-1">
-      <h4 className="text-sm font-bold text-emerald-500 mb-1">{title}</h4>
-      <p className="text-xs text-sub leading-relaxed">{message}</p>
+    <div className="flex-1 flex flex-col gap-1">
+      <h4 className="text-[13px] font-bold text-accent-green">{title}</h4>
+      <p className="text-[12px] text-muted leading-relaxed">{message}</p>
     </div>
     {onDismiss && (
       <button
         onClick={onDismiss}
-        className="text-xs font-bold text-sub hover:text-prime transition-colors"
+        className="text-[11px] font-bold text-muted hover:text-prime transition-colors uppercase tracking-wider"
       >
         Dismiss
       </button>
@@ -139,48 +141,48 @@ interface UiStateSwitcherProps {
 
 export const UiStateSwitcher: React.FC<UiStateSwitcherProps> = ({ currentState, onStateChange }) => {
   return (
-    <div className="flex flex-wrap items-center justify-between gap-2 p-3 mb-6 rounded-2xl bg-surface border border-border-theme text-xs shadow-sm">
-      <div className="flex items-center space-x-2">
-        <span className="w-2 h-2 rounded-full bg-accent-red animate-pulse"></span>
+    <div className="card p-4 mb-6 flex flex-wrap items-center justify-between gap-4">
+      <div className="flex items-center gap-2.5">
+        <span className="w-2.5 h-2.5 rounded-full bg-accent-red animate-pulse shadow-[0_0_8px_rgba(239,68,68,0.5)]"></span>
         <span className="font-mono text-sub font-bold uppercase tracking-wider text-[11px]">Investor UI Inspector:</span>
       </div>
-      <div className="flex flex-wrap items-center gap-1.5">
+      <div className="flex flex-wrap items-center gap-2">
         <button
           onClick={() => onStateChange('loaded')}
-          className={`px-3 py-1 rounded-xl text-xs font-bold transition-all ${
-            currentState === 'loaded' ? 'bg-accent-red text-white shadow-sm' : 'bg-surface-elevated text-sub hover:text-prime'
+          className={`px-3.5 py-1.5 rounded-lg text-[11px] font-bold uppercase tracking-wider transition-all ${
+            currentState === 'loaded' ? 'bg-accent-red text-white shadow-sm' : 'bg-surface-sunken text-sub hover:text-prime border border-transparent hover:border-border-subtle'
           }`}
         >
           Normal Loaded
         </button>
         <button
           onClick={() => onStateChange('loading')}
-          className={`px-3 py-1 rounded-xl text-xs font-bold transition-all ${
-            currentState === 'loading' ? 'bg-accent-blue text-white shadow-sm' : 'bg-surface-elevated text-sub hover:text-prime'
+          className={`px-3.5 py-1.5 rounded-lg text-[11px] font-bold uppercase tracking-wider transition-all ${
+            currentState === 'loading' ? 'bg-accent-blue text-white shadow-sm' : 'bg-surface-sunken text-sub hover:text-prime border border-transparent hover:border-border-subtle'
           }`}
         >
           ⏳ Loading Skeleton
         </button>
         <button
           onClick={() => onStateChange('empty')}
-          className={`px-3 py-1 rounded-xl text-xs font-bold transition-all ${
-            currentState === 'empty' ? 'bg-accent-orange text-white shadow-sm' : 'bg-surface-elevated text-sub hover:text-prime'
+          className={`px-3.5 py-1.5 rounded-lg text-[11px] font-bold uppercase tracking-wider transition-all ${
+            currentState === 'empty' ? 'bg-amber-500 text-slate-950 shadow-sm' : 'bg-surface-sunken text-sub hover:text-prime border border-transparent hover:border-border-subtle'
           }`}
         >
           📭 Empty State
         </button>
         <button
           onClick={() => onStateChange('error')}
-          className={`px-3 py-1 rounded-xl text-xs font-bold transition-all ${
-            currentState === 'error' ? 'bg-red-600 text-white shadow-sm' : 'bg-surface-elevated text-sub hover:text-prime'
+          className={`px-3.5 py-1.5 rounded-lg text-[11px] font-bold uppercase tracking-wider transition-all ${
+            currentState === 'error' ? 'bg-color-negative text-white shadow-sm' : 'bg-surface-sunken text-sub hover:text-prime border border-transparent hover:border-border-subtle'
           }`}
         >
           ⚠️ Error Banner
         </button>
         <button
           onClick={() => onStateChange('success')}
-          className={`px-3 py-1 rounded-xl text-xs font-bold transition-all ${
-            currentState === 'success' ? 'bg-emerald-600 text-white shadow-sm' : 'bg-surface-elevated text-sub hover:text-prime'
+          className={`px-3.5 py-1.5 rounded-lg text-[11px] font-bold uppercase tracking-wider transition-all ${
+            currentState === 'success' ? 'bg-accent-green text-slate-950 shadow-sm' : 'bg-surface-sunken text-sub hover:text-prime border border-transparent hover:border-border-subtle'
           }`}
         >
           ✅ Success Toast

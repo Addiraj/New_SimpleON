@@ -11,7 +11,7 @@ The repository follows clean MVC (Model-View-Controller) architecture, SOLID sof
 ```
 ├── contracts/
 │   ├── SimpleOnBooster.sol          # Production OpenZeppelin Solidity smart contract
-│   └── MockUSDT.sol                 # Testnet BEP-20 Tether USD token contract
+│   └── MockUSDT.sol                 # Testnet Web-20 Tether USD token contract
 ├── hardhat.config.js                # Hardhat network configuration (BNB Testnet 97 / Mainnet 56)
 ├── prisma/
 │   ├── schema.prisma                # Enterprise PostgreSQL Prisma ORM schema
@@ -62,7 +62,7 @@ The repository follows clean MVC (Model-View-Controller) architecture, SOLID sof
 
 ### 1. Smart Contracts
 - **`SimpleOnBooster.sol`**: Implements 4 Booster Tiers (`STARTER`, `BUILDER`, `LEADER`, `CHAMPION`) and 100x `MAIN_PLAN`. Includes OpenZeppelin `ReentrancyGuard`, `Ownable`, and `SafeERC20`.
-- **`MockUSDT.sol`**: BEP-20 testnet stablecoin contract for deposit and payout testing.
+- **`MockUSDT.sol`**: Web-20 testnet stablecoin contract for deposit and payout testing.
 
 ### 2. Web3 Wallet Authentication (SIWE)
 - Cryptographic **Sign-In With Ethereum (EIP-4361 / EIP-191)** nonce-challenge authentication flow using `ethers.verifyMessage`.

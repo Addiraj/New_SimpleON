@@ -210,16 +210,16 @@ export default function App() {
   };
 
   return (
-    <div 
+    <div
       id="app-root-wrapper"
       className="bg-page text-prime min-h-screen font-sans flex flex-col transition-colors duration-300 overflow-x-hidden pb-16 md:pb-0"
     >
       {currentTab !== 'admin' && (
-        <Navbar 
-          theme={theme} 
-          toggleTheme={toggleTheme} 
-          activeTab={currentTab} 
-          setActiveTab={handleTabChange} 
+        <Navbar
+          theme={theme}
+          toggleTheme={toggleTheme}
+          activeTab={currentTab}
+          setActiveTab={handleTabChange}
         />
       )}
 
