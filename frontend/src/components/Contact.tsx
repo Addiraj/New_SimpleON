@@ -151,7 +151,7 @@ export default function Contact() {
 
                   <button
                     onClick={handleSubmit}
-                    className="w-full inline-flex items-center justify-center space-x-2 rounded-xl bg-red-600 py-4 text-xs font-black uppercase tracking-wider text-white hover:bg-red-700 transition-all active:scale-95 shadow-md shadow-red-600/10"
+                    className="w-full inline-flex items-center justify-center space-x-2 rounded-xl bg-accent-red py-4 text-xs font-black uppercase tracking-wider text-white hover:bg-accent-red/90 transition-all active:scale-95 shadow-md shadow-accent-red/10"
                   >
                     <Send size={14} />
                     <span>Send Message</span>

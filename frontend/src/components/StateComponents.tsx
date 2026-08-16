@@ -83,11 +83,11 @@ export const ErrorStateAlert: React.FC<ErrorStateProps> = ({
   onRetry
 }) => (
   <div className="p-5 rounded-2xl bg-red-500/10 border border-red-500/30 text-prime my-4 flex items-start space-x-4">
-    <div className="p-2 rounded-xl bg-red-500/20 text-accent-red shrink-0">
+    <div className="p-2 rounded-xl bg-red-500/20 text-red-500 shrink-0">
       <AlertTriangle size={20} />
     </div>
     <div className="flex-1">
-      <h4 className="text-sm font-bold text-accent-red mb-1">{title}</h4>
+      <h4 className="text-sm font-bold text-red-500 mb-1">{title}</h4>
       <p className="text-xs text-sub leading-relaxed">{message}</p>
     </div>
     {onRetry && (

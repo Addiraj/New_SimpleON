@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { motion } from 'motion/react';
-import { 
-  Rocket, TrendingUp, Users, Trophy, ChevronDown, 
-  ChevronUp, Layers, Target, AlertCircle, RefreshCw, 
-  CheckCircle2, Lock, Zap
+import {
+  Rocket, TrendingUp, Users, Trophy, ChevronDown,
+  ChevronUp, Layers, Target, AlertCircle, RefreshCw,
+  CheckCircle2, Lock, Zap, Check
 } from 'lucide-react';
 import { boosterApi, paymentApi, upgradeApi } from '../services/api';
 import { useWeb3Store } from '../store/useWeb3Store';
@@ -232,9 +232,9 @@ export default function Plans({ basePlan = 1 }: { basePlan?: number } = {}) {
       requiredDirects: starterPlan.requiredDirectReferrals ?? 0,
       requiredBuilders: starterPlan.requiredQualifiedBuilders ?? 0,
       description: `Your entry ticket. Out of ${(starterCost * (starterPlan.matrixSize || 5)).toFixed(2)} USDT collected in Cycle 1, ${starterCost.toFixed(2)} USDT re-subscribes you and ${builderCost.toFixed(2)} USDT automatically upgrades you to Builder. From Cycle 2 onwards, you earn 40.00 USDT Net Profit per cycle!`,
-      accent: 'border-red-500 dark:border-red-600',
-      badgeBg: 'bg-red-50 text-red-600 dark:bg-red-950/25 dark:text-red-500',
-      icon: <Rocket size={20} className="text-red-600 dark:text-red-500" />,
+      accent: 'border-blue-500 dark:border-blue-600',
+      badgeBg: 'bg-blue-50 text-blue-600 dark:bg-blue-950/25 dark:text-blue-500',
+      icon: <Rocket size={20} className="text-blue-600 dark:text-blue-500" />,
     },
     {
       slug: 'builder',
@@ -249,9 +249,9 @@ export default function Plans({ basePlan = 1 }: { basePlan?: number } = {}) {
       requiredDirects: builderPlan.requiredDirectReferrals ?? 1,
       requiredBuilders: builderPlan.requiredQualifiedBuilders ?? 0,
       description: `The second tier. Out of ${(builderCost * (builderPlan.matrixSize || 5)).toFixed(2)} USDT collected in Cycle 1, ${builderCost.toFixed(2)} USDT is recycled for re-subscription, ${leaderCost.toFixed(2)} USDT auto-upgrades you to Leader, and 80.00 USDT goes to the B-Titan Reserve. From Cycle 2 onwards, you earn 160.00 USDT Net Profit per cycle!`,
-      accent: 'border-blue-500 dark:border-blue-600',
-      badgeBg: 'bg-blue-50 text-blue-600 dark:bg-blue-950/25 dark:text-blue-500',
-      icon: <TrendingUp size={20} className="text-blue-600 dark:text-blue-500" />,
+      accent: 'border-cyan-500 dark:border-cyan-600',
+      badgeBg: 'bg-cyan-50 text-cyan-600 dark:bg-cyan-950/25 dark:text-cyan-500',
+      icon: <TrendingUp size={20} className="text-cyan-600 dark:text-cyan-500" />,
     },
     {
       slug: 'leader',
@@ -266,9 +266,9 @@ export default function Plans({ basePlan = 1 }: { basePlan?: number } = {}) {
       requiredDirects: leaderPlan.requiredDirectReferrals ?? 2,
       requiredBuilders: leaderPlan.requiredQualifiedBuilders ?? 1,
       description: `The high tier. Out of ${(leaderCost * (leaderPlan.matrixSize || 5)).toFixed(2)} USDT collected in Cycle 1, ${leaderCost.toFixed(2)} USDT goes to re-subscription and ${championCost.toFixed(2)} USDT automatically upgrades you to Champion. From Cycle 2 onwards, you earn 320.00 USDT Net Profit per cycle!`,
-      accent: 'border-orange-500 dark:border-orange-600',
-      badgeBg: 'bg-orange-50 text-orange-600 dark:bg-orange-950/25 dark:text-orange-500',
-      icon: <Users size={20} className="text-orange-600 dark:text-orange-500" />,
+      accent: 'border-amber-500 dark:border-amber-600',
+      badgeBg: 'bg-amber-50 text-amber-600 dark:bg-amber-950/25 dark:text-amber-500',
+      icon: <Users size={20} className="text-amber-600 dark:text-amber-500" />,
     },
     {
       slug: 'champion',
@@ -351,13 +351,27 @@ export default function Plans({ basePlan = 1 }: { basePlan?: number } = {}) {
   ];
 
   return (
-    <section id="plans-section" className="py-16 transition-colors duration-300">
-      <div id="plans-container" className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        
+    <section id="plans-section" className="relative overflow-hidden bg-surface-elevated py-16 transition-colors duration-300">
+      {/* Decorative ambient glow orbs */}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute -top-24 -left-24 h-80 w-80 rounded-full bg-accent-red/20 blur-3xl animate-pulse-slow"
+      />
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute -bottom-32 -right-16 h-96 w-96 rounded-full bg-accent-orange/15 blur-3xl animate-pulse-slow"
+      />
+
+      <div id="plans-container" className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+
         {/* Header */}
         <div id="plans-header" className="text-center max-w-3xl mx-auto mb-16">
-          <h2 id="plans-heading" className="text-3xl font-extrabold tracking-tight text-prime sm:text-4xl">
-            Dual-Plan Earning Structure
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 mb-4 text-[10px] font-black bg-accent-red/10 text-accent-red rounded-full uppercase tracking-wider">
+            <Zap size={12} />
+            <span>Pricing &amp; Plans</span>
+          </span>
+          <h2 id="plans-heading" className="text-3xl font-extrabold tracking-tight text-prime sm:text-4xl lg:text-5xl">
+            Dual-Plan <span className="text-gradient-brand">Earning</span> Structure
           </h2>
           <p id="plans-subheading" className="mt-4 text-base text-sub">
             A dynamic mathematical system where Booster levels feed directly into the high-yield Main Plan.
@@ -493,7 +507,14 @@ export default function Plans({ basePlan = 1 }: { basePlan?: number } = {}) {
 
             {expandedSection === 'booster' && (
               <div id="plans-accordion-booster-content" className="p-6 md:p-8 border-t border-border-theme bg-surface-elevated/40">
-                <div id="booster-tiers-grid" className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+                <motion.div
+                  id="booster-tiers-grid"
+                  className="grid gap-6 md:grid-cols-2 lg:grid-cols-4"
+                  initial="hidden"
+                  whileInView="visible"
+                  viewport={{ once: true, amount: 0.15 }}
+                  variants={{ hidden: {}, visible: { transition: { staggerChildren: 0.1 } } }}
+                >
                   {boosterTiers.map((tier, idx) => {
                     const rawOrder = (eligibilityData?.currentLevelOrder !== undefined && eligibilityData?.currentLevelOrder !== null)
                       ? eligibilityData.currentLevelOrder
@@ -515,11 +536,14 @@ export default function Plans({ basePlan = 1 }: { basePlan?: number } = {}) {
                     const isEligibleForUpgrade = isTargetLevel && (eligibilityData?.eligible ?? true) && !isCurrentOrPassed;
                     const isLocked = (tier.levelOrder > currentOrder + 1) || (isTargetLevel && !eligibilityData?.eligible);
 
+                    const [costValue, costUnit] = tier.cost.split(' ');
+
                     return (
-                      <div
+                      <motion.div
                         key={idx}
                         id={`booster-tier-card-${idx}`}
-                        className={`flex flex-col rounded-2xl border bg-surface p-6 shadow-sm transition-transform hover:-translate-y-1 ${tier.accent}`}
+                        variants={{ hidden: { opacity: 0, y: 24 }, visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: 'easeOut' } } }}
+                        className={`flex flex-col rounded-2xl border bg-surface shadow-md p-6 sm:p-8 hover:shadow-xl hover:-translate-y-1 transition-all duration-300 ${tier.accent}`}
                       >
                         <div id={`booster-tier-icon-group-${idx}`} className="flex items-center justify-between mb-4">
                           <span id={`booster-tier-badge-${idx}`} className={`inline-flex items-center px-3 py-1 text-xs font-black rounded-lg ${tier.badgeBg}`}>
@@ -530,7 +554,14 @@ export default function Plans({ basePlan = 1 }: { basePlan?: number } = {}) {
                           </div>
                         </div>
 
-                        <h4 id={`booster-tier-name-${idx}`} className="text-lg font-bold text-prime mb-2">{tier.name}</h4>
+                        <h4 id={`booster-tier-name-${idx}`} className="text-lg font-bold text-prime mb-3">{tier.name}</h4>
+
+                        {/* Prominent price display */}
+                        <div id={`booster-tier-price-${idx}`} className="flex items-baseline gap-1.5 mb-4">
+                          <span className="text-4xl sm:text-5xl font-black text-prime tracking-tight">{costValue}</span>
+                          <span className="text-xs sm:text-sm font-bold text-sub uppercase">{costUnit || 'USDT'}</span>
+                        </div>
+
                         <p id={`booster-tier-desc-${idx}`} className="text-xs text-sub mb-4 flex-grow leading-relaxed">{tier.description}</p>
 
                         {/* Requirements Badge */}
@@ -546,21 +577,32 @@ export default function Plans({ basePlan = 1 }: { basePlan?: number } = {}) {
                         </div>
 
                         <div id={`booster-tier-stats-${idx}`} className="space-y-3 pt-4 border-t border-border-theme text-xs font-bold text-prime">
-                          <div id={`booster-tier-stat-cost-${idx}`} className="flex justify-between">
-                            <span className="text-sub font-normal">Subscription</span>
-                            <span className="text-prime">{tier.cost}</span>
-                          </div>
-                          <div id={`booster-tier-stat-coll-${idx}`} className="flex justify-between">
-                            <span className="text-sub font-normal">Collection (5x)</span>
+                          <div id={`booster-tier-stat-coll-${idx}`} className="flex items-center justify-between">
+                            <span className="flex items-center gap-2 text-sub font-normal">
+                              <span className="flex items-center justify-center h-4 w-4 rounded-full bg-accent-green/10 text-accent-green shrink-0">
+                                <Check size={10} strokeWidth={3} />
+                              </span>
+                              Collection (5x)
+                            </span>
                             <span className="text-prime">{tier.collection}</span>
                           </div>
-                          <div id={`booster-tier-stat-up-${idx}`} className="flex justify-between">
-                            <span className="text-sub font-normal">Auto Upgrade</span>
+                          <div id={`booster-tier-stat-up-${idx}`} className="flex items-center justify-between">
+                            <span className="flex items-center gap-2 text-sub font-normal">
+                              <span className="flex items-center justify-center h-4 w-4 rounded-full bg-accent-green/10 text-accent-green shrink-0">
+                                <Check size={10} strokeWidth={3} />
+                              </span>
+                              Auto Upgrade
+                            </span>
                             <span className="text-accent-red">{tier.upgrade}</span>
                           </div>
                           {tier.income && (
-                            <div id={`booster-tier-stat-inc-${idx}`} className="flex justify-between pt-2 border-t border-dashed border-border-theme">
-                              <span className="text-green-600">Net Profit</span>
+                            <div id={`booster-tier-stat-inc-${idx}`} className="flex items-center justify-between pt-2 border-t border-dashed border-border-theme">
+                              <span className="flex items-center gap-2 text-green-600">
+                                <span className="flex items-center justify-center h-4 w-4 rounded-full bg-accent-green/10 text-accent-green shrink-0">
+                                  <Check size={10} strokeWidth={3} />
+                                </span>
+                                Net Profit
+                              </span>
                               <span className="text-green-600 font-black">{tier.income}</span>
                             </div>
                           )}
@@ -575,14 +617,14 @@ export default function Plans({ basePlan = 1 }: { basePlan?: number } = {}) {
                                 handlePurchaseFlow(tier.slug === 'starter' ? 'JOIN' : 'UPGRADE', tier.slug);
                               }
                             }}
-                            className={`w-full py-2.5 px-3 rounded-xl text-xs font-black flex items-center justify-center space-x-2 transition-all ${
+                            className={`w-full py-3 px-3 rounded-full text-xs font-black flex items-center justify-center space-x-2 transition-all duration-300 ${
                               isCurrentOrPassed
                                 ? 'bg-green-500/10 text-green-600 dark:text-green-400 border border-green-500/30 cursor-default'
                                 : tier.slug !== 'starter'
-                                ? 'bg-surface-elevated text-sub border border-border-theme opacity-60 cursor-not-allowed'
+                                ? 'border border-border-theme text-sub opacity-60 cursor-not-allowed hover:border-accent-red/40'
                                 : isEligibleForUpgrade
-                                ? 'bg-accent-red text-white hover:bg-accent-red/90 shadow-sm cursor-pointer'
-                                : 'bg-surface-elevated text-sub border border-border-theme opacity-60 cursor-not-allowed'
+                                ? 'bg-gradient-to-r from-accent-red to-blue-700 text-white shadow-xl shadow-accent-red/30 hover:shadow-2xl hover:brightness-110 cursor-pointer'
+                                : 'border border-border-theme text-sub opacity-60 cursor-not-allowed'
                             }`}
                           >
                             {actionLoadingSlug === tier.slug ? (
@@ -666,10 +708,10 @@ export default function Plans({ basePlan = 1 }: { basePlan?: number } = {}) {
                           )}
                         </div>
 
-                      </div>
+                      </motion.div>
                     );
                   })}
-                </div>
+                </motion.div>
               </div>
             )}
           </div>

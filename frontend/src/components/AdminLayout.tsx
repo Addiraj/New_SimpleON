@@ -90,7 +90,7 @@ export default function AdminLayout() {
 
             <button
               type="submit"
-              className="w-full bg-accent-red hover:bg-red-600 text-white font-bold rounded-xl px-4 py-3 transition-colors flex items-center justify-center space-x-2 shadow-lg shadow-red-500/20"
+              className="w-full bg-accent-red hover:bg-blue-700 text-white font-bold rounded-xl px-4 py-3 transition-colors flex items-center justify-center space-x-2 shadow-lg shadow-accent-red/20"
             >
               <Lock size={18} />
               <span>Authenticate</span>
@@ -152,7 +152,7 @@ export default function AdminLayout() {
               onClick={() => setActiveAdminTab(tab.id as any)}
               className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl transition-all ${
                 activeAdminTab === tab.id
-                  ? 'bg-accent-red text-white shadow-lg shadow-red-500/20 font-bold'
+                  ? 'bg-accent-red text-white shadow-lg shadow-accent-red/20 font-bold'
                   : 'text-sub hover:bg-surface-elevated hover:text-prime font-semibold'
               }`}
             >

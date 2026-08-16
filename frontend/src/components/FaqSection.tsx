@@ -48,18 +48,36 @@ export default function FaqSection() {
     setOpenIdx(openIdx === idx ? null : idx);
   };
 
+  const containerVariants = {
+    hidden: {},
+    visible: {
+      transition: { staggerChildren: 0.12 }
+    }
+  };
+
+  const itemVariants = {
+    hidden: { opacity: 0, y: 24 },
+    visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: 'easeOut' as const } }
+  };
+
   return (
-    <section id="faq-section" className="py-20 relative">
-      <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
-        
+    <section id="faq-section" className="py-20 relative overflow-hidden bg-page">
+      {/* Ambient accent-red glow orb */}
+      <div className="pointer-events-none absolute -top-24 right-[10%] h-80 w-80 rounded-full bg-accent-red/20 blur-3xl animate-pulse-slow" />
+
+      <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 relative z-10">
+
         {/* Header */}
         <div className="text-center max-w-3xl mx-auto mb-16">
-          <div className="inline-flex items-center space-x-2 rounded-full bg-accent-blue/10 px-3.5 py-1.5 text-xs font-bold text-accent-blue border border-accent-blue/20 mb-3">
+          <div className="inline-flex items-center space-x-2 rounded-full bg-accent-red/10 px-3.5 py-1.5 text-xs font-bold text-accent-red border border-accent-red/20 mb-3">
             <HelpCircle size={14} />
             <span>Frequently Asked Questions</span>
           </div>
           <h2 className="text-3xl font-black tracking-tight text-prime sm:text-4xl lg:text-5xl">
-            Everything You Need to <span className="text-accent-red">Know</span>
+            Everything You Need to{' '}
+            <span className="bg-gradient-to-r from-accent-red to-accent-orange bg-clip-text text-transparent">
+              Know
+            </span>
           </h2>
           <p className="mt-4 text-base text-sub leading-relaxed">
             Transparent answers regarding smart contract mechanics, payouts, matrices, and security.
@@ -67,19 +85,30 @@ export default function FaqSection() {
         </div>
 
         {/* Accordion List */}
-        <div className="space-y-4">
+        <motion.div
+          variants={containerVariants}
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, amount: 0.15 }}
+          className="space-y-4"
+        >
           {faqs.map((faq, idx) => {
             const isOpen = openIdx === idx;
             return (
-              <div
+              <motion.div
                 key={idx}
-                className="rounded-2xl bg-surface border border-border-theme overflow-hidden transition-colors"
+                variants={itemVariants}
+                className={`rounded-2xl border shadow-sm overflow-hidden transition-colors duration-300 ${
+                  isOpen
+                    ? 'bg-accent-red/5 border-accent-red/30'
+                    : 'bg-surface border-border-theme hover:border-accent-red/20 hover:bg-surface-elevated/50'
+                }`}
               >
                 <button
                   onClick={() => toggleFaq(idx)}
-                  className="w-full p-6 text-left flex items-center justify-between space-x-4 hover:bg-surface-elevated/50 transition-colors"
+                  className="w-full p-5 text-left flex items-center justify-between space-x-4"
                 >
-                  <span className="text-base font-extrabold text-prime flex items-center space-x-3">
+                  <span className="text-base font-bold text-prime flex items-center space-x-3">
                     <span className="text-xs font-mono font-bold text-accent-red bg-accent-red/10 px-2.5 py-1 rounded-full shrink-0">
                       {faq.category}
                     </span>
@@ -87,7 +116,7 @@ export default function FaqSection() {
                   </span>
                   <ChevronDown
                     size={20}
-                    className={`text-sub shrink-0 transition-transform duration-200 ${isOpen ? 'rotate-180 text-accent-red' : ''}`}
+                    className={`text-sub shrink-0 transition-transform duration-300 ${isOpen ? 'rotate-180 text-accent-red' : ''}`}
                   />
                 </button>
 
@@ -97,18 +126,18 @@ export default function FaqSection() {
                       initial={{ height: 0, opacity: 0 }}
                       animate={{ height: 'auto', opacity: 1 }}
                       exit={{ height: 0, opacity: 0 }}
-                      transition={{ duration: 0.2 }}
+                      transition={{ duration: 0.25 }}
                     >
-                      <div className="px-6 pb-6 pt-2 text-xs text-sub leading-relaxed border-t border-border-theme/40 font-normal">
+                      <div className="px-5 pb-5 pt-1 text-xs text-sub leading-relaxed border-t border-accent-red/20 font-normal">
                         {faq.answer}
                       </div>
                     </motion.div>
                   )}
                 </AnimatePresence>
-              </div>
+              </motion.div>
             );
           })}
-        </div>
+        </motion.div>
 
       </div>
     </section>

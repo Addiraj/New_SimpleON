@@ -39,18 +39,37 @@ const testimonials: Testimonial[] = [
 ];
 
 export default function TestimonialsSection() {
+  const containerVariants = {
+    hidden: {},
+    visible: {
+      transition: { staggerChildren: 0.15 }
+    }
+  };
+
+  const itemVariants = {
+    hidden: { opacity: 0, y: 20 },
+    visible: { opacity: 1, y: 0, transition: { duration: 0.4, ease: 'easeOut' as const } }
+  };
+
   return (
-    <section id="testimonials-section" className="py-20 relative bg-surface-elevated/30 border-y border-border-theme">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        
+    <section id="testimonials-section" className="py-20 relative overflow-hidden bg-surface-elevated/30 border-y border-border-theme">
+      {/* Ambient glow orb */}
+      <div className="pointer-events-none absolute -top-24 right-[8%] h-80 w-80 rounded-full bg-accent-blue/20 blur-3xl animate-pulse-slow -z-10" />
+
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 relative">
+
         {/* Header */}
         <div className="text-center max-w-3xl mx-auto mb-16">
-          <div className="inline-flex items-center space-x-2 rounded-full bg-emerald-500/10 px-3.5 py-1.5 text-xs font-bold text-emerald-500 border border-emerald-500/20 mb-3">
+          <div className="inline-flex items-center space-x-2 rounded-full bg-accent-blue/10 px-3.5 py-1.5 text-xs font-bold text-accent-blue border border-accent-blue/20 mb-3">
             <ShieldCheck size={14} />
             <span>On-Chain Verified Community Feedback</span>
           </div>
           <h2 className="text-3xl font-black tracking-tight text-prime sm:text-4xl lg:text-5xl">
-            Trusted by <span className="text-accent-red">Web3 Leaders</span> Worldwide
+            Trusted by{' '}
+            <span className="bg-gradient-to-r from-accent-blue to-accent-purple bg-clip-text text-transparent">
+              Web3 Leaders
+            </span>{' '}
+            Worldwide
           </h2>
           <p className="mt-4 text-base text-sub leading-relaxed">
             Real feedback from active matrix leaders backed by auditable BNB Smart Chain transactions.
@@ -58,21 +77,26 @@ export default function TestimonialsSection() {
         </div>
 
         {/* Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+        <motion.div
+          variants={containerVariants}
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, amount: 0.2 }}
+          className="grid grid-cols-1 md:grid-cols-3 gap-8"
+        >
           {testimonials.map((t, idx) => (
             <motion.div
               key={idx}
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: idx * 0.15, duration: 0.4 }}
-              className="p-8 rounded-3xl bg-surface border border-border-theme shadow-md flex flex-col justify-between relative hover:border-accent-red/30 transition-all"
+              variants={itemVariants}
+              className="group p-6 rounded-2xl bg-surface border border-border-theme shadow-sm flex flex-col justify-between relative overflow-hidden hover:shadow-lg hover:-translate-y-1 hover:border-accent-blue/30 transition-all duration-300"
             >
-              <div>
+              <Quote className="pointer-events-none absolute -top-2 -right-2 text-accent-blue/10 group-hover:text-accent-blue/20 transition-colors duration-300" size={72} strokeWidth={1.5} />
+
+              <div className="relative">
                 <div className="flex justify-between items-center mb-6">
-                  <div className="flex items-center space-x-1 text-amber-500">
+                  <div className="flex items-center space-x-1 text-amber-400">
                     {Array.from({ length: 5 }).map((_, i) => (
-                      <Star key={i} size={16} fill="currentColor" />
+                      <Star key={i} size={16} className="fill-amber-400" />
                     ))}
                   </div>
                   <span className="px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-500 text-[10px] font-mono font-bold">
@@ -85,17 +109,22 @@ export default function TestimonialsSection() {
                 </p>
               </div>
 
-              <div className="pt-4 border-t border-border-theme/60 flex items-center justify-between text-xs">
-                <div>
-                  <div className="font-extrabold text-prime">{t.name}</div>
-                  <div className="text-[10px] text-sub font-mono">{t.role}</div>
+              <div className="relative pt-4 border-t border-border-theme/60 flex items-center justify-between text-xs">
+                <div className="flex items-center space-x-3">
+                  <div className="flex items-center justify-center h-9 w-9 rounded-full bg-accent-blue/10 ring-2 ring-accent-blue/30 ring-offset-2 ring-offset-surface shrink-0">
+                    <Wallet size={16} className="text-accent-blue" />
+                  </div>
+                  <div>
+                    <div className="font-extrabold text-prime">{t.name}</div>
+                    <div className="text-[10px] text-sub font-mono">{t.role}</div>
+                  </div>
                 </div>
 
                 <a
                   href={`https://testnet.bscscan.com/tx/${t.txHash}`}
                   target="_blank"
                   rel="noreferrer"
-                  className="p-2 rounded-xl bg-surface-elevated text-sub hover:text-accent-red transition-colors flex items-center space-x-1 text-[10px] font-mono"
+                  className="p-2 rounded-xl bg-surface-elevated text-sub hover:text-accent-blue transition-colors flex items-center space-x-1 text-[10px] font-mono"
                 >
                   <span>{t.address}</span>
                   <ExternalLink size={12} />
@@ -103,7 +132,7 @@ export default function TestimonialsSection() {
               </div>
             </motion.div>
           ))}
-        </div>
+        </motion.div>
 
       </div>
     </section>

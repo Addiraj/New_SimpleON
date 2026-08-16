@@ -187,7 +187,7 @@ export default function About() {
                   
                   {/* Root Level (Row 1) */}
                   <div className="relative group cursor-pointer z-10">
-                    <div className="h-10 w-10 rounded-full bg-red-600 flex items-center justify-center text-xs font-black text-white shadow-lg shadow-red-600/30 transition-transform hover:scale-110">
+                    <div className="h-10 w-10 rounded-full bg-blue-600 flex items-center justify-center text-xs font-black text-white shadow-lg shadow-blue-600/30 transition-transform hover:scale-110">
                       You
                     </div>
                     {/* Tooltip */}
@@ -208,7 +208,7 @@ export default function About() {
                   <div className="flex justify-between w-full px-4 relative z-10">
                     {/* Node A (Direct) */}
                     <div className="flex flex-col items-center relative group cursor-pointer w-1/3">
-                      <div className="h-8 w-8 rounded-full bg-red-500 border-2 border-surface flex items-center justify-center text-[10px] font-black text-white shadow-md transition-transform hover:scale-115">
+                      <div className="h-8 w-8 rounded-full bg-blue-500 border-2 border-surface flex items-center justify-center text-[10px] font-black text-white shadow-md transition-transform hover:scale-115">
                         A
                       </div>
                       <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-32 bg-neutral-900 text-white text-[10px] p-2 rounded-lg opacity-0 group-hover:opacity-100 pointer-events-none transition-all duration-200 shadow-md z-30 text-center">
@@ -224,7 +224,7 @@ export default function About() {
 
                     {/* Node B (Direct) */}
                     <div className="flex flex-col items-center relative group cursor-pointer w-1/3">
-                      <div className="h-8 w-8 rounded-full bg-red-500 border-2 border-surface flex items-center justify-center text-[10px] font-black text-white shadow-md transition-transform hover:scale-115">
+                      <div className="h-8 w-8 rounded-full bg-blue-500 border-2 border-surface flex items-center justify-center text-[10px] font-black text-white shadow-md transition-transform hover:scale-115">
                         B
                       </div>
                       <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-32 bg-neutral-900 text-white text-[10px] p-2 rounded-lg opacity-0 group-hover:opacity-100 pointer-events-none transition-all duration-200 shadow-md z-30 text-center">
@@ -260,7 +260,7 @@ export default function About() {
                     {/* Sub-nodes of A */}
                     <div className="flex justify-around w-1/3 px-1">
                       <div className="relative group cursor-pointer">
-                        <div className="h-6 w-6 rounded-full bg-red-400 border border-surface flex items-center justify-center text-[8px] font-bold text-white transition-transform hover:scale-115">
+                        <div className="h-6 w-6 rounded-full bg-blue-400 border border-surface flex items-center justify-center text-[8px] font-bold text-white transition-transform hover:scale-115">
                           A1
                         </div>
                         <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 w-28 bg-neutral-900 text-white text-[9px] p-1.5 rounded shadow-lg opacity-0 group-hover:opacity-100 pointer-events-none transition-all duration-200 z-30 text-center">
@@ -282,7 +282,7 @@ export default function About() {
                     {/* Sub-nodes of B */}
                     <div className="flex justify-around w-1/3 px-1">
                       <div className="relative group cursor-pointer">
-                        <div className="h-6 w-6 rounded-full bg-red-400 border border-surface flex items-center justify-center text-[8px] font-bold text-white transition-transform hover:scale-115">
+                        <div className="h-6 w-6 rounded-full bg-blue-400 border border-surface flex items-center justify-center text-[8px] font-bold text-white transition-transform hover:scale-115">
                           B1
                         </div>
                         <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 w-28 bg-neutral-900 text-white text-[9px] p-1.5 rounded shadow-lg opacity-0 group-hover:opacity-100 pointer-events-none transition-all duration-200 z-30 text-center">
@@ -291,7 +291,7 @@ export default function About() {
                         </div>
                       </div>
                       <div className="relative group cursor-pointer">
-                        <div className="h-6 w-6 rounded-full bg-red-400 border border-surface flex items-center justify-center text-[8px] font-bold text-white transition-transform hover:scale-115">
+                        <div className="h-6 w-6 rounded-full bg-blue-400 border border-surface flex items-center justify-center text-[8px] font-bold text-white transition-transform hover:scale-115">
                           B2
                         </div>
                         <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 w-28 bg-neutral-900 text-white text-[9px] p-1.5 rounded shadow-lg opacity-0 group-hover:opacity-100 pointer-events-none transition-all duration-200 z-30 text-center">
@@ -329,7 +329,7 @@ export default function About() {
                 {/* Legend */}
                 <div id="about-diagram-legend" className="flex justify-center items-center space-x-6 text-[10px] font-bold border-t border-border-theme pt-4">
                   <div className="flex items-center space-x-1.5">
-                    <span className="h-2.5 w-2.5 rounded-full bg-red-600 inline-block" />
+                    <span className="h-2.5 w-2.5 rounded-full bg-blue-600 inline-block" />
                     <span className="text-prime">Direct referral</span>
                   </div>
                   <div className="flex items-center space-x-1.5">

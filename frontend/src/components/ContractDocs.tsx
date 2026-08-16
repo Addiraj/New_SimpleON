@@ -91,7 +91,7 @@ export default function ContractDocs() {
         <div className="p-6 rounded-3xl bg-surface border border-border-theme shadow-sm space-y-4">
           <div className="flex items-center justify-between">
             <span className="text-xs font-black uppercase tracking-wider text-accent-blue">Payment Token</span>
-            <span className="text-[10px] bg-blue-500/10 text-accent-blue border border-blue-500/30 px-2.5 py-0.5 rounded-full font-bold">
+            <span className="text-[10px] bg-accent-blue/10 text-accent-blue border border-accent-blue/30 px-2.5 py-0.5 rounded-full font-bold">
               BEP-20 Token
             </span>
           </div>

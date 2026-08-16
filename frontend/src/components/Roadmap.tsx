@@ -47,13 +47,24 @@ export default function Roadmap() {
   ];
 
   return (
-    <section id="roadmap-section" className="py-16 transition-colors duration-300">
-      <div id="roadmap-container" className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        
+    <section id="roadmap-section" className="relative overflow-hidden py-16 bg-surface-elevated transition-colors duration-300">
+      {/* Ambient accent-purple glow orbs */}
+      <div className="pointer-events-none absolute -top-24 -right-32 h-96 w-96 rounded-full bg-accent-purple/20 blur-3xl animate-pulse-slow -z-10" />
+      <div className="pointer-events-none absolute bottom-0 -left-32 h-80 w-80 rounded-full bg-accent-purple/10 blur-3xl animate-pulse-slow -z-10" />
+
+      <div id="roadmap-container" className="relative z-10 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+
         {/* Header */}
         <div id="roadmap-header" className="text-center max-w-3xl mx-auto mb-16">
+          <div className="inline-flex items-center space-x-2 rounded-full bg-accent-purple/10 px-3.5 py-1.5 text-xs font-bold text-accent-purple border border-accent-purple/20 mb-3">
+            <Compass size={14} />
+            <span>Our Journey Ahead</span>
+          </div>
           <h2 id="roadmap-heading" className="text-3xl font-extrabold tracking-tight text-prime sm:text-4xl">
-            SimpleOn Growth Timeline
+            SimpleOn{' '}
+            <span className="bg-gradient-to-r from-accent-purple via-accent-blue to-accent-orange bg-clip-text text-transparent">
+              Growth Timeline
+            </span>
           </h2>
           <p id="roadmap-subheading" className="mt-4 text-base text-sub">
             A strategic, long-term development pathway focused on expansion, mobile experience, and cross-chain capabilities.
@@ -61,35 +72,50 @@ export default function Roadmap() {
         </div>
 
         {/* Timeline Layout */}
-        <div id="roadmap-timeline" className="relative border-l-2 border-border-theme max-w-3xl mx-auto pl-6 sm:pl-8 space-y-12">
+        <div id="roadmap-timeline" className="relative max-w-3xl mx-auto pl-6 sm:pl-8 space-y-10">
+          {/* Vertical gradient timeline line */}
+          <div
+            aria-hidden="true"
+            className="absolute left-[3px] sm:left-[3px] top-2 bottom-2 w-0.5 rounded-full bg-gradient-to-b from-accent-purple via-accent-blue to-accent-orange opacity-60"
+          />
+
           {roadmapItems.map((item, idx) => {
             const isActive = item.status === 'active';
             return (
               <motion.div
                 key={idx}
                 id={`roadmap-item-${idx}`}
-                initial={{ opacity: 0, x: -20 }}
+                initial={{ opacity: 0, x: -24 }}
                 whileInView={{ opacity: 1, x: 0 }}
-                viewport={{ once: true, margin: '-100px' }}
-                transition={{ duration: 0.4 }}
+                viewport={{ once: true, amount: 0.3 }}
+                transition={{ duration: 0.5, delay: idx * 0.15, ease: 'easeOut' }}
                 className="relative"
               >
                 {/* Timeline node circle */}
-                <div 
+                <div
                   id={`roadmap-node-${idx}`}
-                  className={`absolute -left-[35px] sm:-left-[43px] top-1.5 flex h-8 w-8 items-center justify-center rounded-full border-2 bg-surface transition-colors ${
-                    isActive 
-                      ? 'border-accent-red text-accent-red' 
-                      : 'border-border-theme text-sub'
+                  className={`absolute -left-[35px] sm:-left-[43px] top-1.5 flex h-8 w-8 items-center justify-center rounded-full border-2 transition-colors ${
+                    isActive
+                      ? 'border-accent-purple bg-gradient-to-br from-accent-purple to-accent-blue text-white shadow-md shadow-accent-purple/30'
+                      : 'border-border-theme bg-surface text-sub'
                   }`}
                 >
-                  {item.icon}
+                  {isActive && (
+                    <span
+                      aria-hidden="true"
+                      className="absolute inset-0 rounded-full bg-accent-purple/40 animate-ping"
+                    />
+                  )}
+                  <span className="relative">{item.icon}</span>
                 </div>
 
                 {/* Card Container */}
-                <div id={`roadmap-card-${idx}`} className="space-y-2">
+                <div
+                  id={`roadmap-card-${idx}`}
+                  className="space-y-2 rounded-2xl border border-border-theme bg-surface shadow-sm p-5 hover:shadow-md transition-all"
+                >
                   <div id={`roadmap-card-header-${idx}`} className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
-                    <span id={`roadmap-card-phase-${idx}`} className="text-xs font-black uppercase tracking-wider text-accent-red">
+                    <span id={`roadmap-card-phase-${idx}`} className="text-xs font-black uppercase tracking-wider text-accent-purple">
                       {item.phase}
                     </span>
                     <span id={`roadmap-card-date-${idx}`} className="inline-flex items-center space-x-1 text-xs font-bold text-sub mt-0.5 sm:mt-0">
@@ -101,7 +127,7 @@ export default function Roadmap() {
                   <h3 id={`roadmap-card-title-${idx}`} className="text-lg font-bold text-prime">
                     {item.title}
                   </h3>
-                  
+
                   <p id={`roadmap-card-desc-${idx}`} className="text-sm text-sub leading-relaxed">
                     {item.desc}
                   </p>

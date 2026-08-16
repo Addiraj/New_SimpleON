@@ -47,9 +47,10 @@ export default function Hero({ onCtaClick, onConnectWallet }: HeroProps) {
     <section id="hero-section" className="relative overflow-hidden pt-12 pb-20 lg:pt-16 lg:pb-28 transition-colors duration-300">
       
       {/* Background Glow Accents */}
-      <div id="hero-bg-glow-1" className="absolute -top-40 -right-40 h-[500px] w-[500px] rounded-full bg-accent-red/10 blur-[120px] pointer-events-none" />
-      <div id="hero-bg-glow-2" className="absolute top-1/2 -left-40 h-[400px] w-[400px] rounded-full bg-accent-blue/10 blur-[100px] pointer-events-none" />
-      <div id="hero-bg-grid" className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:36px_36px] pointer-events-none opacity-40" />
+      <div id="hero-bg-glow-1" className="absolute -top-40 -right-40 h-[560px] w-[560px] rounded-full bg-accent-red/15 blur-[130px] pointer-events-none animate-pulse-slow" />
+      <div id="hero-bg-glow-2" className="absolute top-1/2 -left-40 h-[450px] w-[450px] rounded-full bg-accent-blue/15 blur-[110px] pointer-events-none animate-pulse-slow" style={{ animationDelay: '2s' }} />
+      <div id="hero-bg-glow-3" className="absolute bottom-0 left-1/3 h-[320px] w-[320px] rounded-full bg-accent-purple/10 blur-[100px] pointer-events-none animate-pulse-slow" style={{ animationDelay: '3.5s' }} />
+      <div id="hero-bg-grid" className="absolute inset-0 bg-grid-pattern pointer-events-none opacity-40" />
 
       <div id="hero-content-container" className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 relative z-10">
         
@@ -62,7 +63,7 @@ export default function Hero({ onCtaClick, onConnectWallet }: HeroProps) {
           className="text-center max-w-4xl mx-auto"
         >
           {/* Audit Badge */}
-          <motion.div id="hero-badge-wrapper" variants={itemVariants} className="inline-flex items-center space-x-2 rounded-full bg-accent-red/10 px-4 py-2 text-xs font-bold text-accent-red border border-accent-red/20 backdrop-blur-md shadow-sm">
+          <motion.div id="hero-badge-wrapper" variants={itemVariants} className="inline-flex items-center space-x-2 rounded-full bg-accent-red/10 px-4 py-2 text-xs font-bold text-accent-red border border-accent-red/20 backdrop-blur-md shadow-sm shadow-accent-red/10 hover:shadow-md hover:shadow-accent-red/20 hover:border-accent-red/40 transition-all duration-300">
             <ShieldCheck size={16} />
             <span>100% Audited BEP-20 Smart Contract Income Engine</span>
             <span className="flex h-2 w-2 rounded-full bg-accent-red animate-ping" />
@@ -74,7 +75,7 @@ export default function Hero({ onCtaClick, onConnectWallet }: HeroProps) {
             variants={itemVariants} 
             className="mt-6 text-4xl font-black tracking-tight text-prime sm:text-6xl lg:text-7xl leading-[1.08]"
           >
-            <span className="bg-gradient-to-r from-accent-red via-red-500 to-accent-orange bg-clip-text text-transparent">SimpleOn</span><br/>
+            <span className="bg-gradient-to-r from-accent-red to-accent-orange bg-clip-text text-transparent">SimpleOn</span><br/>
             Start Small. Grow Smart. Build Bigger.
           </motion.h1>
 
@@ -96,7 +97,7 @@ export default function Hero({ onCtaClick, onConnectWallet }: HeroProps) {
             <button
               id="hero-primary-cta"
               onClick={isConnected ? () => onCtaClick('dashboard') : (onConnectWallet || (() => onCtaClick('dashboard')))}
-              className="w-full sm:w-auto inline-flex items-center justify-center space-x-2.5 rounded-full bg-accent-red px-8 py-4 text-sm font-extrabold text-white shadow-xl shadow-accent-red/30 hover:bg-accent-red/90 transition-all duration-200 transform hover:-translate-y-0.5"
+              className="w-full sm:w-auto inline-flex items-center justify-center space-x-2.5 rounded-full bg-gradient-to-r from-accent-red to-blue-700 px-8 py-4 text-sm font-extrabold text-white shadow-xl shadow-accent-red/30 hover:shadow-2xl hover:shadow-accent-red/50 hover:brightness-110 transition-all duration-300 transform hover:-translate-y-1"
             >
               <Wallet size={18} />
               <span>{isConnecting ? 'Connecting...' : isConnected ? 'Enter Dashboard' : 'Connect Wallet & Start'}</span>
@@ -122,9 +123,10 @@ export default function Hero({ onCtaClick, onConnectWallet }: HeroProps) {
           transition={{ duration: 0.8, delay: 0.3 }}
           className="mt-14 relative mx-auto max-w-5xl"
         >
-          {/* Main Glassmorphism Frame */}
-          <div className="rounded-3xl border border-border-theme bg-surface/80 backdrop-blur-xl p-6 sm:p-8 shadow-2xl relative overflow-hidden">
-            
+          {/* Main Glassmorphism Frame (gradient border + gentle ambient float) */}
+          <div className="rounded-3xl p-[1px] bg-gradient-to-br from-accent-red/40 via-border-theme to-accent-blue/40 shadow-2xl shadow-accent-red/10 animate-float">
+          <div className="rounded-[calc(1.5rem-1px)] border border-border-theme/40 bg-surface/80 backdrop-blur-xl p-6 sm:p-8 relative overflow-hidden">
+
             {/* Top Bar Mockup */}
             <div className="flex items-center justify-between pb-6 border-b border-border-theme/60">
               <div className="flex items-center space-x-2">
@@ -233,6 +235,7 @@ export default function Hero({ onCtaClick, onConnectWallet }: HeroProps) {
             </div>
 
           </div>
+          </div>
         </motion.div>
 
         {/* Highlight Cards Grid */}
@@ -243,32 +246,36 @@ export default function Hero({ onCtaClick, onConnectWallet }: HeroProps) {
         >
           {[
             {
-              icon: <Zap className="text-accent-red" size={24} />,
+              icon: <Zap size={24} />,
+              iconWrap: 'bg-gradient-to-br from-accent-red/20 to-accent-red/5 text-accent-red',
               title: 'Instant Payouts',
               desc: 'Direct peer-to-peer BEP-20 USDT routing to your Web3 wallet.'
             },
             {
-              icon: <RefreshCw className="text-accent-red" size={24} />,
+              icon: <RefreshCw size={24} />,
+              iconWrap: 'bg-gradient-to-br from-accent-blue/20 to-accent-blue/5 text-accent-blue',
               title: 'Auto Re-Topup',
               desc: '5-partner completion re-activates matrix slots automatically.'
             },
             {
-              icon: <Layers className="text-accent-red" size={24} />,
+              icon: <Layers size={24} />,
+              iconWrap: 'bg-gradient-to-br from-accent-orange/20 to-accent-orange/5 text-accent-orange',
               title: '13-Level Matrix',
               desc: '65% of revenue allocated into deep 3x3 forced spillover pools.'
             },
             {
-              icon: <ShieldCheck className="text-accent-red" size={24} />,
+              icon: <ShieldCheck size={24} />,
+              iconWrap: 'bg-gradient-to-br from-accent-green/20 to-accent-green/5 text-accent-green',
               title: '100% Unalterable',
               desc: 'Immutable smart contract with zero admin custody of user funds.'
             }
           ].map((item, idx) => (
-            <div 
-              key={idx} 
+            <div
+              key={idx}
               id={`hero-highlight-card-${idx}`}
-              className="p-5 rounded-2xl bg-surface border border-border-theme transition-all duration-300 shadow-sm hover:shadow-md hover:border-accent-red/30 flex flex-col items-center text-center"
+              className="group p-5 rounded-2xl bg-surface border border-border-theme transition-all duration-300 shadow-sm hover:shadow-xl hover:-translate-y-1 hover:border-accent-red/30 flex flex-col items-center text-center"
             >
-              <div id={`hero-highlight-icon-${idx}`} className="p-3 bg-accent-red/10 rounded-xl mb-3">
+              <div id={`hero-highlight-icon-${idx}`} className={`p-3 rounded-xl mb-3 transition-transform duration-300 group-hover:scale-110 ${item.iconWrap}`}>
                 {item.icon}
               </div>
               <h3 id={`hero-highlight-title-${idx}`} className="text-sm font-bold text-prime">{item.title}</h3>

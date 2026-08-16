@@ -1,30 +1,30 @@
 @import "tailwindcss";
 
 :root {
-  --bg-page: #f8fafc;
+  --bg-page: #f6f8fc;
   --bg-surface: #ffffff;
-  --bg-surface-elevated: #f1f5f9;
-  --text-primary: #111827;
-  --text-secondary: #4b5563;
-  --border-color: #e5e7eb;
-  --accent-red: #ff2e2e;
-  --accent-blue: #3b82f6;
-  --accent-orange: #f59e0b;
+  --bg-surface-elevated: #eef1f8;
+  --text-primary: #0f172a;
+  --text-secondary: #475569;
+  --border-color: #e2e6f0;
+  --accent-red: #2563eb;
+  --accent-blue: #0891b2;
+  --accent-orange: #d97706;
   --accent-green: #10b981;
   --accent-purple: #8b5cf6;
-  --shadow-color: rgba(0, 0, 0, 0.04);
+  --shadow-color: rgba(15, 23, 42, 0.06);
 }
 
 .dark {
-  --bg-page: #0b0f19;
-  --bg-surface: #111827;
-  --bg-surface-elevated: #1f2937;
-  --text-primary: #f9fafb;
-  --text-secondary: #9ca3af;
-  --border-color: #1f2937;
-  --accent-red: #ff2e2e;
-  --accent-blue: #3b82f6;
-  --accent-orange: #f59e0b;
+  --bg-page: #05080f;
+  --bg-surface: #0b0e16;
+  --bg-surface-elevated: #151b2c;
+  --text-primary: #f3f4f6;
+  --text-secondary: #94a3b8;
+  --border-color: #1c2436;
+  --accent-red: #3b82f6;
+  --accent-blue: #22d3ee;
+  --accent-orange: #fbbf24;
   --accent-green: #10b981;
   --accent-purple: #a855f7;
   --shadow-color: rgba(0, 0, 0, 0.5);
@@ -102,4 +102,57 @@
 .scrollbar-none {
   -ms-overflow-style: none;  /* IE and Edge */
   scrollbar-width: none;  /* Firefox */
+}
+
+/* ---------------------------------------------------------------- */
+/* Shared decorative utilities for the landing page redesign        */
+/* ---------------------------------------------------------------- */
+
+/* Ambient floating motion for cards / decorative blobs */
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-14px); }
+}
+.animate-float {
+  animation: float 6s ease-in-out infinite;
+}
+.animate-float-delay {
+  animation: float 7s ease-in-out infinite;
+  animation-delay: 1.2s;
+}
+
+/* Slow ambient pulse for background glow orbs */
+@keyframes pulse-slow {
+  0%, 100% { opacity: 0.55; transform: scale(1); }
+  50% { opacity: 0.9; transform: scale(1.1); }
+}
+.animate-pulse-slow {
+  animation: pulse-slow 7s ease-in-out infinite;
+}
+
+/* Reusable faint grid backdrop (matches the hero pattern) */
+.bg-grid-pattern {
+  background-image: linear-gradient(to right, #80808012 1px, transparent 1px),
+    linear-gradient(to bottom, #80808012 1px, transparent 1px);
+  background-size: 36px 36px;
+}
+
+/* Infinite horizontal marquee (logo strips / trust bars) */
+@keyframes marquee {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+.animate-marquee {
+  animation: marquee 26s linear infinite;
+}
+.animate-marquee:hover {
+  animation-play-state: paused;
+}
+
+/* Gradient text helper (brand blue -> gold) */
+.text-gradient-brand {
+  background-image: linear-gradient(135deg, var(--accent-red), var(--accent-orange));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
 }

@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { motion } from 'motion/react';
 import { Sun, Moon, Menu, X, ArrowRight, Wallet, Network, Code, Terminal, Zap, Bell, User, ShieldCheck } from 'lucide-react';
 import { useWeb3Store } from '../store/useWeb3Store';
 
@@ -47,6 +48,7 @@ export default function Navbar({ theme, toggleTheme, activeTab, setActiveTab }: 
           onClick={() => handleNavClick('home')}
         >
           <div id="logo-hexagon" className="relative flex h-10 w-10 items-center justify-center">
+            <span aria-hidden="true" className="absolute inset-0 -z-10 scale-150 rounded-full bg-accent-red/20 blur-lg" />
             <svg viewBox="0 0 100 100" className="absolute inset-0 h-full w-full text-accent-red fill-current drop-shadow-[0_2px_8px_rgba(220,38,38,0.3)]">
               <polygon points="50,5 95,27.5 95,72.5 50,95 5,72.5 5,27.5" />
             </svg>
@@ -72,18 +74,23 @@ export default function Navbar({ theme, toggleTheme, activeTab, setActiveTab }: 
           {navItems.map((item) => {
             const isActive = activeTab === item.id;
             return (
-              <button
+              <motion.button
                 key={item.id}
                 id={`nav-link-${item.id}`}
                 onClick={() => handleNavClick(item.id)}
+                whileHover={{ y: -1 }}
+                whileTap={{ y: 0 }}
                 className={`relative px-3 py-2 text-xs font-bold transition-colors duration-200 rounded-lg ${
-                  isActive 
-                    ? 'text-accent-red bg-accent-red/5' 
+                  isActive
+                    ? 'text-accent-red bg-accent-red/10 shadow-sm'
                     : 'text-sub hover:text-prime hover:bg-surface-elevated'
                 }`}
               >
                 {item.label}
-              </button>
+                {isActive && (
+                  <span className="absolute inset-x-2 -bottom-[1px] h-0.5 rounded-full bg-accent-red" />
+                )}
+              </motion.button>
             );
           })}
         </nav>
@@ -94,7 +101,7 @@ export default function Navbar({ theme, toggleTheme, activeTab, setActiveTab }: 
           <button
             id="notification-center-btn"
             onClick={toggleNotificationCenter}
-            className="relative rounded-xl border border-border-theme p-2 text-prime bg-surface hover:bg-surface-elevated transition-colors duration-200"
+            className="relative rounded-xl border border-border-theme p-2 text-prime bg-surface hover:bg-surface-elevated hover:border-accent-red/30 hover:shadow-sm transition-all duration-200"
             aria-label="Notification Center"
           >
             <Bell size={18} />
@@ -109,7 +116,7 @@ export default function Navbar({ theme, toggleTheme, activeTab, setActiveTab }: 
           <button
             id="theme-toggle-btn"
             onClick={toggleTheme}
-            className="rounded-xl border border-border-theme p-2 text-prime bg-surface hover:bg-surface-elevated transition-colors duration-200"
+            className="rounded-xl border border-border-theme p-2 text-prime bg-surface hover:bg-surface-elevated hover:border-accent-red/30 hover:shadow-sm transition-all duration-200"
             aria-label="Toggle Theme"
           >
             {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
@@ -123,14 +130,14 @@ export default function Navbar({ theme, toggleTheme, activeTab, setActiveTab }: 
         <div id="mobile-controls" className="flex items-center space-x-2 lg:hidden">
           <button
             onClick={toggleTheme}
-            className="rounded-xl border border-border-theme p-2 text-prime bg-surface"
+            className="rounded-xl border border-border-theme p-2 text-prime bg-surface hover:border-accent-red/30 transition-colors duration-200"
           >
             {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
           </button>
 
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="rounded-xl border border-border-theme p-2 text-prime bg-surface"
+            className="rounded-xl border border-border-theme p-2 text-prime bg-surface hover:border-accent-red/30 transition-colors duration-200"
           >
             {mobileMenuOpen ? <X size={18} /> : <Menu size={18} />}
           </button>
@@ -140,22 +147,28 @@ export default function Navbar({ theme, toggleTheme, activeTab, setActiveTab }: 
 
       {/* Mobile Drawer */}
       {mobileMenuOpen && (
-        <div id="mobile-nav-drawer" className="border-b border-border-theme bg-surface px-4 py-4 lg:hidden space-y-2">
+        <motion.div
+          id="mobile-nav-drawer"
+          initial={{ opacity: 0, height: 0 }}
+          animate={{ opacity: 1, height: 'auto' }}
+          transition={{ duration: 0.2, ease: 'easeOut' }}
+          className="border-b border-border-theme bg-surface px-4 py-4 lg:hidden space-y-1.5 overflow-hidden"
+        >
           {navItems.map((item) => (
             <button
               key={item.id}
               onClick={() => handleNavClick(item.id)}
-              className={`flex w-full items-center justify-between px-4 py-2.5 text-xs font-bold rounded-xl ${
-                activeTab === item.id ? 'bg-accent-red/10 text-accent-red' : 'text-sub hover:bg-surface-elevated'
+              className={`flex w-full items-center justify-between px-4 py-2.5 text-xs font-bold rounded-xl transition-colors duration-200 ${
+                activeTab === item.id ? 'bg-accent-red/10 text-accent-red shadow-sm' : 'text-sub hover:bg-surface-elevated hover:text-prime'
               }`}
             >
               <span>{item.label}</span>
             </button>
           ))}
-          <div className="pt-2 border-t border-border-theme flex justify-center">
+          <div className="pt-3 mt-2 border-t border-border-theme flex justify-center">
             <appkit-button />
           </div>
-        </div>
+        </motion.div>
       )}
     </header>
   );
