@@ -85,7 +85,7 @@ export const useWeb3Store = create<Web3State>((set, get) => ({
 
   isNotificationCenterOpen: false,
   unreadNotificationCount: 0,
-  
+
   isAdminLoggedIn: false,
 
   openWalletModal: () => {
@@ -318,12 +318,12 @@ export const useWeb3Store = create<Web3State>((set, get) => ({
       if (!provider) throw new Error('Wallet not connected or provider unavailable');
 
       const signer = await provider.getSigner();
-      
-      const usdtAddress = import.meta.env.VITE_USDT_ADDRESS;
-      const boosterAddress = import.meta.env.VITE_CONTRACT_ADDRESS;
+
+      const usdtAddress = import.meta.env.VITE_USDT_ADDRESS || import.meta.env.VITE_USDT_CONTRACT_ADDRESS;
+      const boosterAddress = import.meta.env.VITE_CONTRACT_ADDRESS || import.meta.env.VITE_SIMPLEON_CONTRACT_ADDRESS;
 
       if (!usdtAddress || !boosterAddress) {
-         throw new Error('Contract addresses not configured in environment');
+        throw new Error('Contract addresses not configured in environment');
       }
 
       const usdtAbi = ["function approve(address spender, uint256 amount) external returns (bool)"];
@@ -365,11 +365,11 @@ export const useWeb3Store = create<Web3State>((set, get) => ({
       if (!provider) throw new Error('Wallet not connected or provider unavailable');
 
       const signer = await provider.getSigner();
-      const usdtAddress = import.meta.env.VITE_USDT_ADDRESS;
-      const boosterAddress = import.meta.env.VITE_CONTRACT_ADDRESS;
+      const usdtAddress = import.meta.env.VITE_USDT_ADDRESS || import.meta.env.VITE_USDT_CONTRACT_ADDRESS;
+      const boosterAddress = import.meta.env.VITE_CONTRACT_ADDRESS || import.meta.env.VITE_SIMPLEON_CONTRACT_ADDRESS;
 
       if (!usdtAddress || !boosterAddress) {
-         throw new Error('Contract addresses not configured in environment');
+        throw new Error('Contract addresses not configured in environment');
       }
 
       const usdtAbi = ["function approve(address spender, uint256 amount) external returns (bool)"];
@@ -386,7 +386,7 @@ export const useWeb3Store = create<Web3State>((set, get) => ({
 
       console.log('Requesting register and activate...');
       // Use zero address if no referrer
-      const referrerAddress = referrer || ethers.ZeroAddress; 
+      const referrerAddress = referrer || ethers.ZeroAddress;
       const joinTx = await boosterContract.registerAndActivate(referrerAddress);
       await joinTx.wait();
 
@@ -405,11 +405,11 @@ export const useWeb3Store = create<Web3State>((set, get) => ({
       if (!provider) throw new Error('Wallet not connected or provider unavailable');
 
       const signer = await provider.getSigner();
-      const usdtAddress = import.meta.env.VITE_USDT_ADDRESS;
-      const boosterAddress = import.meta.env.VITE_CONTRACT_ADDRESS;
+      const usdtAddress = import.meta.env.VITE_USDT_ADDRESS || import.meta.env.VITE_USDT_CONTRACT_ADDRESS;
+      const boosterAddress = import.meta.env.VITE_CONTRACT_ADDRESS || import.meta.env.VITE_SIMPLEON_CONTRACT_ADDRESS;
 
       if (!usdtAddress || !boosterAddress) {
-         throw new Error('Contract addresses not configured in environment');
+        throw new Error('Contract addresses not configured in environment');
       }
 
       const usdtAbi = ["function approve(address spender, uint256 amount) external returns (bool)"];
