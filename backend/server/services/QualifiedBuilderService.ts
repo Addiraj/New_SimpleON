@@ -34,22 +34,8 @@ export class QualifiedBuilderService {
         },
       });
 
-      // 2. Qualified builders count: Direct referrals who have reached Builder level (level_order >= 2)
+      // 2. Qualified builders count: Direct referrals who have reached Builder level (level_order >= 3)
       const builderCount = await db.referralRelation.count({
-        where: {
-          sponsor_user_id: userId,
-          depth: 1,
-          status: 'ACTIVE',
-          referred: {
-            current_level: {
-              level_order: { gte: 2 },
-            },
-          },
-        },
-      });
-
-      // 2a. Qualified leaders count: Direct referrals who have reached Leader level (level_order >= 3)
-      const leaderCount = await db.referralRelation.count({
         where: {
           sponsor_user_id: userId,
           depth: 1,
@@ -62,8 +48,8 @@ export class QualifiedBuilderService {
         },
       });
 
-      // 2b. Qualified champions count: Direct referrals who have reached Champion level (level_order >= 4)
-      const championCount = await db.referralRelation.count({
+      // 2a. Qualified leaders count: Direct referrals who have reached Leader level (level_order >= 4)
+      const leaderCount = await db.referralRelation.count({
         where: {
           sponsor_user_id: userId,
           depth: 1,
@@ -71,6 +57,20 @@ export class QualifiedBuilderService {
           referred: {
             current_level: {
               level_order: { gte: 4 },
+            },
+          },
+        },
+      });
+
+      // 2b. Qualified champions count: Direct referrals who have reached Champion level (level_order >= 5)
+      const championCount = await db.referralRelation.count({
+        where: {
+          sponsor_user_id: userId,
+          depth: 1,
+          status: 'ACTIVE',
+          referred: {
+            current_level: {
+              level_order: { gte: 5 },
             },
           },
         },
@@ -134,7 +134,7 @@ export class QualifiedBuilderService {
   }
 
   /**
-   * Helper to check if a specific user is a Qualified Builder (level_order >= 2)
+   * Helper to check if a specific user is a Qualified Builder (level_order >= 3)
    */
   static async isQualifiedBuilder(
     userId: string,
@@ -146,7 +146,7 @@ export class QualifiedBuilderService {
         include: { current_level: true },
       });
       if (!user || !user.current_level) return false;
-      return user.current_level.level_order >= 2;
+      return user.current_level.level_order >= 3;
     } catch (err: any) {
       return false;
     }

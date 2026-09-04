@@ -23,7 +23,7 @@ describe('14-16. Booster Plan Unit Tests', () => {
     expect(level1.dailyCapUsdt).toBeDefined();
   });
 
-  it('15. Booster calculation projects potential rewards for a given tier and team size', async () => {
+  it('15. Booster calculation projects tier metrics and Visionary sizing for a given base plan', async () => {
     const res = await request(app)
       .post('/api/booster/calculate')
       .send({ levelNumber: 1, directReferrals: 5 });
@@ -31,7 +31,17 @@ describe('14-16. Booster Plan Unit Tests', () => {
     expect(res.status).toBe(200);
     expect(res.body.success).toBe(true);
     expect(res.body.data.calculation).toBeDefined();
-    expect(res.body.data.calculation.projectedDailyIncomeUsdt).toBeGreaterThanOrEqual(0);
+    // Upgradeable ladder — real per-tier metrics, no fabricated projections. Not asserting
+    // specific tier slugs here: this suite runs against a real shared Postgres DB alongside
+    // other spec files that TRUNCATE/reseed level_configurations in their own beforeEach
+    // (a pre-existing test-isolation gap, not specific to this test), so the exact tier set
+    // present at this instant isn't guaranteed — only that the endpoint returns real,
+    // non-fabricated data in the correct shape.
+    expect(Array.isArray(res.body.data.calculation.tiers)).toBe(true);
+    expect(res.body.data.calculation.tiers.length).toBeGreaterThan(0);
+    // Visionary sizing facts only (200 X3 + 300/20-level) — no invented reward figures.
+    expect(res.body.data.calculation.visionary).toBeDefined();
+    expect(res.body.data.calculation.visionary.part2LevelCount).toBe(20);
   });
 
   it('16. Plan eligibility checks if user meets prerequisites to purchase/join a booster level', async () => {

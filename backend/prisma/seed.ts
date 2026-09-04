@@ -1,95 +1,65 @@
 import { PrismaClient, UserRole, UserStatus, LevelStatus } from '@prisma/client';
+import { BOOSTER_TIER_CONFIGS } from '../server/services/BoosterConfigService.js';
 
 const prisma = new PrismaClient();
+
+// Non-financial per-tier metadata that has no equivalent in BoosterConfigService
+// (display name shown in upgrade notifications/UpgradeHistory, differs deliberately
+// from BoosterConfigService's "X Pool" matrix-view labels; income_per_position/cycle_reward
+// are matrix-display-only derivatives, not consumed by the live reward-routing logic).
+const LEVEL_METADATA: Record<string, { name: string; income_per_position: string; cycle_reward: string; auto_upgrade_enabled: boolean }> = {
+  launch: { name: 'Launch', income_per_position: '1.66666667', cycle_reward: '10.00000000', auto_upgrade_enabled: true },
+  starter: { name: 'Starter', income_per_position: '2.00000000', cycle_reward: '40.00000000', auto_upgrade_enabled: true },
+  builder: { name: 'Builder', income_per_position: '8.00000000', cycle_reward: '160.00000000', auto_upgrade_enabled: true },
+  leader: { name: 'Leader', income_per_position: '16.00000000', cycle_reward: '320.00000000', auto_upgrade_enabled: true },
+  champion: { name: 'Champion', income_per_position: '64.00000000', cycle_reward: '780.00000000', auto_upgrade_enabled: false },
+  visionary: { name: 'Visionary', income_per_position: '66.66666667', cycle_reward: '400.00000000', auto_upgrade_enabled: false },
+};
+
+// level_order: Launch=1 (deliberately not 0, which already means "user has no level yet"
+// throughout UpgradeEligibilityService/PaymentService) through Visionary=6, top tier.
+const LEVEL_ORDER: Record<string, number> = {
+  launch: 1, starter: 2, builder: 3, leader: 4, champion: 5, visionary: 6,
+};
 
 async function main() {
   console.log('🌱 Starting SimpleOn Database Seeding...');
 
   // ----------------------------------------------------
-  // 1. Seed Level Configurations (Starter, Builder, Leader, Champion)
-  // NOTE: Financial values below are clearly marked PLACEHOLDERS.
-  // CLIENT NOTICE: The client-approved business financial values must replace
-  // these placeholder values before production deployment.
+  // 1. Seed Level Configurations (Launch, Starter, Builder, Leader, Champion, Visionary)
+  // Financial amounts (joining/upgrade/retopup, matrix size/type, capping, referral
+  // requirements) are derived from BoosterConfigService.BOOSTER_TIER_CONFIGS — the single
+  // authoritative source — so this seed can never drift from the values the reward-routing
+  // logic uses. Builder's Bititan Wallet amount comes from tier.reserveAmount (see comment
+  // in BoosterConfigService.ts on why that field doubles as bititan_amount's source).
   // ----------------------------------------------------
 
-  const levelsData = [
-    {
-      name: 'Starter',
-      slug: 'starter',
-      level_order: 1,
-      joining_amount: '10.00000000',
-      upgrade_amount: '40.00000000',
-      matrix_size: 5,
-      income_per_position: '2.00000000',
-      cycle_reward: '40.00000000',   // Cycle 2+ net income: 5 x $8 = $40
-      retopup_amount: '10.00000000',
+  const levelsData = (['launch', 'starter', 'builder', 'leader', 'champion', 'visionary'] as const).map((slug) => {
+    const tier = BOOSTER_TIER_CONFIGS.find((t) => t.code === slug)!;
+    const meta = LEVEL_METADATA[slug];
+    return {
+      name: meta.name,
+      slug: tier.code,
+      level_order: LEVEL_ORDER[slug],
+      joining_amount: tier.subscriptionAmount.toFixed(8),
+      upgrade_amount: (tier.upgradeAmount ?? 0).toFixed(8),
+      matrix_size: tier.slotsPerCycle,
+      income_per_position: meta.income_per_position,
+      cycle_reward: meta.cycle_reward,
+      retopup_amount: tier.resubscribeAmount.toFixed(8),
       daily_cap: '0.00000000',
-      daily_cycle_limit: 5,
-      required_direct_referrals: 0,
-      required_qualified_builders: 0,
-      auto_upgrade_enabled: true,
+      daily_cycle_limit: tier.defaultDailyCapping,
+      required_direct_referrals: tier.requiredDirectReferrals,
+      required_qualified_builders: tier.requiredQualifiedBuilders,
+      auto_upgrade_enabled: meta.auto_upgrade_enabled,
+      capping_enabled: tier.cappingEnabled,
+      bititan_amount: tier.reserveAmount != null ? tier.reserveAmount.toFixed(8) : null,
+      matrix_type: 'STANDARD',
       retopup_enabled: true,
       status: LevelStatus.ACTIVE,
       version: 1,
-    },
-    {
-      name: 'Builder',
-      slug: 'builder',
-      level_order: 2,
-      joining_amount: '40.00000000',
-      upgrade_amount: '80.00000000',
-      matrix_size: 5,
-      income_per_position: '8.00000000',
-      cycle_reward: '160.00000000',  // Cycle 2+ net income: 5 x $32 = $160
-      retopup_amount: '40.00000000',
-      daily_cap: '0.00000000',
-      daily_cycle_limit: 5,
-      required_direct_referrals: 5,
-      required_qualified_builders: 0,
-      auto_upgrade_enabled: true,
-      retopup_enabled: true,
-      status: LevelStatus.ACTIVE,
-      version: 1,
-    },
-    {
-      name: 'Leader',
-      slug: 'leader',
-      level_order: 3,
-      joining_amount: '80.00000000',
-      upgrade_amount: '320.00000000',
-      matrix_size: 5,
-      income_per_position: '16.00000000',
-      cycle_reward: '320.00000000',  // Cycle 2+ net income: 5 x $64 = $320
-      retopup_amount: '80.00000000',
-      daily_cap: '0.00000000',
-      daily_cycle_limit: 5,
-      required_direct_referrals: 5,
-      required_qualified_builders: 5,
-      auto_upgrade_enabled: true,
-      retopup_enabled: true,
-      status: LevelStatus.ACTIVE,
-      version: 1,
-    },
-    {
-      name: 'Champion',
-      slug: 'champion',
-      level_order: 4,
-      joining_amount: '320.00000000',
-      upgrade_amount: '500.00000000', // Main Plan activation cost per spec
-      matrix_size: 5,
-      income_per_position: '64.00000000',
-      cycle_reward: '780.00000000',   // Cycle 1 net income: $780. Cycle 2+: $1280 (handled in code)
-      retopup_amount: '320.00000000',
-      daily_cap: '0.00000000',
-      daily_cycle_limit: 5,
-      required_direct_referrals: 3,
-      required_qualified_builders: 2,
-      auto_upgrade_enabled: false,
-      retopup_enabled: true,
-      status: LevelStatus.ACTIVE,
-      version: 1,
-    },
-  ];
+    };
+  });
 
   for (const level of levelsData) {
     await prisma.levelConfiguration.upsert({
@@ -104,7 +74,7 @@ async function main() {
     });
   }
 
-  console.log('✅ Level Configurations seeded: Starter, Builder, Leader, Champion.');
+  console.log('✅ Level Configurations seeded: Launch, Starter, Builder, Leader, Champion, Visionary.');
 
   // Fetch starter level for default user association
   const starterLevel = await prisma.levelConfiguration.findFirst({

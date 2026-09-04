@@ -8,7 +8,7 @@ export default function Roadmap() {
       phase: 'Phase 1: Foundation',
       title: 'Smart Contract Deployment',
       date: 'Q3 2026',
-      desc: 'Verify and publish the Core Booster and Main Plan smart contracts on EVM chain. Launch the decentralized frontend for public marketing.',
+      desc: 'Verify and publish the Core Booster smart contracts, covering all six tiers from Launch through Visionary, on EVM chain. Launch the decentralized frontend for public marketing.',
       status: 'active',
       icon: <Shield size={16} />
     },

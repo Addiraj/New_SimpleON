@@ -171,13 +171,19 @@ export class PlacementFinderService {
       const nextCycleNum = (lastRootCycle?.cycle_number || 0) + 1;
       const rootCycleId = `mc-${rootUserId}-${levelConfigId}-c${nextCycleNum}`;
 
+      const levelConfig = await db.levelConfiguration.findUnique({
+        where: { id: levelConfigId },
+        select: { matrix_size: true },
+      });
+      const matrixSize = levelConfig?.matrix_size || 5;
+
       rootCycle = await db.matrixCycle.create({
         data: {
           id: rootCycleId,
           user_id: rootUserId,
           level_configuration_id: levelConfigId,
           cycle_number: nextCycleNum,
-          total_positions: 5,
+          total_positions: matrixSize,
           filled_positions: 0,
           status: 'ACTIVE',
           started_at: new Date(),

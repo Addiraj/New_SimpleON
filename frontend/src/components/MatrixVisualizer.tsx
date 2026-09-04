@@ -1,26 +1,16 @@
 import React, { useState } from 'react';
 import { motion } from 'motion/react';
-import { Network, Layers, HelpCircle, CheckCircle2, ChevronRight, Layers2, ShieldAlert } from 'lucide-react';
-import { useWeb3Store } from '../store/useWeb3Store';
+import { Network, ShieldAlert } from 'lucide-react';
+import { getBoosterTierConfig, formatUsdt } from '../data/boosterPlan';
 
 export default function MatrixVisualizer() {
-  const { basePlan } = useWeb3Store();
-  const [selectedTab, setSelectedTab] = useState<'13level' | 'x5split' | 'x4passive'>('13level');
+  const visionary = getBoosterTierConfig('visionary')!;
+  const [selectedTab, setSelectedTab] = useState<'part1' | 'part2'>('part1');
 
-  const mainPlanCost = basePlan * 100;
-  const perLevelReward = (mainPlanCost * 0.65) / 13;
-
-  const matrixLevels = Array.from({ length: 13 }, (_, i) => {
-    const level = i + 1;
-    const capacity = Math.pow(3, level);
-    return {
-      level,
-      capacity: capacity > 1000000 ? capacity.toExponential(2) : capacity.toLocaleString(),
-      rewardPerNode: perLevelReward,
-      allocation: '5%',
-      sampleFilled: Math.min(3, level * 2)
-    };
-  });
+  const part1Amount = visionary.visionaryPart1Amount ?? 200;
+  const part2Amount = visionary.visionaryPart2Amount ?? 300;
+  const unitAmount = 15;
+  const part2Levels = part2Amount / unitAmount; // 300 / 15 = 20
 
   return (
     <div className="section-container relative py-24 overflow-hidden">
@@ -44,10 +34,10 @@ export default function MatrixVisualizer() {
             </span>
           </div>
           <h2 className="section-title">
-            SimpleOn 13-Level, X5 & X4 Matrix Engines
+            Visionary's Dual Matrix Structure
           </h2>
           <p className="section-subtitle mx-auto">
-            Interactive placement hierarchy and real-time reward allocation mapping for your active Base Plan of <strong className="text-accent-blue font-mono">{basePlan.toFixed(2)} USDT</strong>.
+            Visionary (<strong className="text-accent-blue font-mono">{formatUsdt(visionary.subscriptionAmount)}</strong>) is the top tier of the booster ladder, reached after Champion, and splits activation into two independent components.
           </p>
         </div>
 
@@ -55,9 +45,8 @@ export default function MatrixVisualizer() {
         <div className="flex justify-center">
           <div className="p-1 rounded-full bg-surface-elevated border border-border-subtle inline-flex shadow-sm">
             {[
-              { id: '13level', label: '13-Level Forced Matrix (65%)' },
-              { id: 'x5split', label: 'X5 Matrix Split (15%)' },
-              { id: 'x4passive', label: 'X4 Passive Pool (20%)' }
+              { id: 'part1', label: `Part 1 — X3 Matrix (${formatUsdt(part1Amount)})` },
+              { id: 'part2', label: `Part 2 — 3×3, ${part2Levels} Levels (${formatUsdt(part2Amount)})` }
             ].map((tab) => (
               <button
                 key={tab.id}
@@ -74,139 +63,74 @@ export default function MatrixVisualizer() {
           </div>
         </div>
 
-        {/* Tab Content Wrapper with Coming Soon Overlay */}
+        {/* Tab Content */}
         <div className="relative mt-8">
-          {/* Obscured/Blurred Content */}
-          <div className="opacity-30 blur-[4px] pointer-events-none select-none transition-all duration-300">
-            {/* Tab 1: 13-Level Forced Matrix Table */}
-        {selectedTab === '13level' && (
-          <div className="card overflow-hidden">
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-6 sm:p-8 pb-6 border-b border-border-subtle gap-4 bg-surface-sunken">
-              <div>
-                <h3 className="text-[17px] font-extrabold text-prime">13-Level 3×3 Forced Matrix Breakdown</h3>
+          {/* Tab 1: Part 1 — X3 Recycling Matrix */}
+          {selectedTab === 'part1' && (
+            <div className="card p-6 sm:p-8 space-y-8">
+              <div className="pb-6 border-b border-border-subtle">
+                <h3 className="text-[17px] font-extrabold text-prime">Part 1 — X3 Recycling Matrix</h3>
                 <p className="text-[13px] text-sub mt-1.5">
-                  65% of 100x Main Plan ({ (mainPlanCost * 0.65).toFixed(2) } USDT) distributed as <strong className="text-prime font-mono">{perLevelReward.toFixed(2)} USDT</strong> per level across 13 levels.
+                  {formatUsdt(part1Amount)} of your Visionary activation funds a 3-position recycling matrix, structured the same way as Launch.
                 </p>
               </div>
-              <div className="px-4 py-2.5 rounded-xl bg-accent-blue/10 border border-accent-blue/20 text-accent-blue font-mono text-[13px] font-black shrink-0">
-                Per Level: {perLevelReward.toFixed(2)} USDT (5%)
-              </div>
-            </div>
 
-            <div className="overflow-x-auto scrollbar-none">
-              <table className="w-full text-left text-[13px]">
-                <thead>
-                  <tr className="bg-surface-elevated text-muted font-bold uppercase text-[11px] tracking-wider border-b border-border-subtle">
-                    <th className="py-4 px-6">Level</th>
-                    <th className="py-4 px-6">Matrix Formula</th>
-                    <th className="py-4 px-6">Level Capacity</th>
-                    <th className="py-4 px-6">Reward / Node</th>
-                    <th className="py-4 px-6">Total Level Potential</th>
-                    <th className="py-4 px-6 text-right">Status</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-border-subtle font-mono">
-                  {matrixLevels.map((lvl) => (
-                    <tr key={lvl.level} className="hover:bg-surface-elevated transition-colors">
-                      <td className="py-4 px-6">
-                        <span className="inline-flex items-center justify-center min-w-[2rem] h-8 px-2 rounded-full bg-accent-blue/10 text-accent-blue font-bold text-[13px]">
-                          {lvl.level}
-                        </span>
-                      </td>
-                      <td className="py-4 px-6 text-sub">3<sup>{lvl.level}</sup> Nodes</td>
-                      <td className="py-4 px-6 font-bold text-prime">{lvl.capacity}</td>
-                      <td className="py-4 px-6 text-accent-blue font-bold">{lvl.rewardPerNode.toFixed(2)} USDT</td>
-                      <td className="py-4 px-6 text-accent-green font-bold">
-                        {(typeof lvl.capacity === 'number' ? (lvl.capacity * lvl.rewardPerNode) : 0).toLocaleString()} USDT
-                      </td>
-                      <td className="py-4 px-6 text-right">
-                        <span className="badge badge-success px-2.5 py-1">
-                          <CheckCircle2 size={12} />
-                          <span>Active</span>
-                        </span>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        )}
-
-        {/* Tab 2: X5 Matrix Split */}
-        {selectedTab === 'x5split' && (
-          <div className="card p-6 sm:p-8 space-y-8">
-            <div className="pb-6 border-b border-border-subtle">
-              <h3 className="text-[17px] font-extrabold text-prime">X5 Matrix Split Engine (15%)</h3>
-              <p className="text-[13px] text-sub mt-1.5">
-                Allocates 15% of Main Plan ({ (mainPlanCost * 0.15).toFixed(2) } USDT) across a 5-position matrix.
-              </p>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {[
-                { label: 'Position 1', title: 'Re-topup Wallet (20%)', amount: mainPlanCost * 0.15 * 0.20, color: 'text-accent-purple', borderHover: 'hover:border-accent-purple/30', desc: 'Automatically reserved to fund your matrix re-subscription when cycle finishes.' },
-                { label: 'Position 2', title: 'Upgrade Wallet (40%)', amount: mainPlanCost * 0.15 * 0.40, color: 'text-accent-blue', borderHover: 'hover:border-accent-blue/30', desc: 'Accumulates capital to seamlessly auto-upgrade your account to subsequent matrix ranks.' },
-                { label: 'Position 3', title: 'Direct Net Income (40%)', amount: mainPlanCost * 0.15 * 0.40, color: 'text-accent-green', borderHover: 'hover:border-accent-green/30', desc: 'Distributed instantly to your web3 wallet without holding periods or manual withdrawal delays.' }
-              ].map((pos, idx) => (
-                <div key={idx} className={`p-6 rounded-2xl bg-surface-elevated border border-border-subtle space-y-3 transition-colors ${pos.borderHover}`}>
-                  <span className={`text-[11px] font-black uppercase tracking-wider ${pos.color}`}>{pos.label}</span>
-                  <h4 className="text-[15px] font-extrabold text-prime">{pos.title}</h4>
-                  <p className={`text-2xl font-mono font-black ${pos.color}`}>
-                    {pos.amount.toFixed(2)} USDT
-                  </p>
-                  <p className="text-[13px] text-sub leading-relaxed pt-2 border-t border-border-subtle/50">
-                    {pos.desc}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="p-6 rounded-2xl bg-surface-elevated border border-border-subtle space-y-3">
+                  <span className="text-[11px] font-black uppercase tracking-wider text-accent-purple">Cycle 1</span>
+                  <h4 className="text-[15px] font-extrabold text-prime">Re-subscription</h4>
+                  <p className="text-[13px] text-sub leading-relaxed">
+                    Your first cycle's collection re-subscribes you into the next pool, keeping your matrix position active.
                   </p>
                 </div>
-              ))}
+                <div className="p-6 rounded-2xl bg-surface-elevated border border-border-subtle space-y-3">
+                  <span className="text-[11px] font-black uppercase tracking-wider text-accent-green">Cycle 2+</span>
+                  <h4 className="text-[15px] font-extrabold text-prime">Income + Re-subscription</h4>
+                  <p className="text-[13px] text-sub leading-relaxed">
+                    Subsequent cycles pay income to your wallet alongside the re-subscription — uncapped, with no daily cycle limit.
+                  </p>
+                </div>
+              </div>
             </div>
-          </div>
-        )}
+          )}
 
-        {/* Tab 3: X4 Passive Matrix */}
-        {selectedTab === 'x4passive' && (
-          <div className="card p-6 sm:p-8 space-y-8">
-            <div className="pb-6 border-b border-border-subtle">
-              <h3 className="text-[17px] font-extrabold text-prime">X4 Passive 2×2 Spillover Matrix (20%)</h3>
-              <p className="text-[13px] text-sub mt-1.5">
-                Allocates 20% of Main Plan ({ (mainPlanCost * 0.20).toFixed(2) } USDT) into the global spillover recycling system.
-              </p>
-            </div>
-
-            <div className="p-8 rounded-2xl bg-surface-sunken border border-border-subtle flex flex-col md:flex-row items-center justify-between gap-8">
-              <div className="space-y-3">
-                <span className="badge badge-brand text-accent-blue bg-accent-blue/10 border-accent-blue/20 uppercase tracking-wider text-[10px]">
-                  Spillover Placement Engine
-                </span>
-                <h4 className="text-[17px] font-extrabold text-prime">Passive Upline & Downline Team Support</h4>
-                <p className="text-[13px] text-sub max-w-xl leading-relaxed">
-                  The X4 Matrix utilizes a 2×2 forced placement algorithm. Slots are automatically populated from active upstream referrers or global network activity.
+          {/* Tab 2: Part 2 — Forced 3-Wide, 20-Level Matrix */}
+          {selectedTab === 'part2' && (
+            <div className="card p-6 sm:p-8 space-y-8">
+              <div className="pb-6 border-b border-border-subtle">
+                <h3 className="text-[17px] font-extrabold text-prime">Part 2 — Forced 3-Wide, {part2Levels}-Level Matrix</h3>
+                <p className="text-[13px] text-sub mt-1.5">
+                  {formatUsdt(part2Amount)} of your Visionary activation funds a forced 3-wide matrix spanning {part2Levels} depth levels.
                 </p>
               </div>
-              <div className="p-6 rounded-2xl bg-surface border border-border-subtle text-center font-mono shadow-sm min-w-[200px]">
-                <span className="text-[11px] font-bold text-muted uppercase tracking-wider block mb-2">Passive Pool Value</span>
-                <span className="text-3xl font-black text-accent-blue">{(mainPlanCost * 0.20).toFixed(2)}</span>
-                <span className="text-sub font-bold text-sm ml-1">USDT</span>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+                <div className="p-6 rounded-2xl bg-surface-elevated border border-border-subtle text-center">
+                  <span className="text-[11px] font-bold text-muted uppercase tracking-wider block mb-2">Total Value</span>
+                  <span className="text-2xl font-black text-accent-blue font-mono">{formatUsdt(part2Amount)}</span>
+                </div>
+                <div className="p-6 rounded-2xl bg-surface-elevated border border-border-subtle text-center">
+                  <span className="text-[11px] font-bold text-muted uppercase tracking-wider block mb-2">Width</span>
+                  <span className="text-2xl font-black text-accent-blue font-mono">3-wide</span>
+                </div>
+                <div className="p-6 rounded-2xl bg-surface-elevated border border-border-subtle text-center">
+                  <span className="text-[11px] font-bold text-muted uppercase tracking-wider block mb-2">Depth</span>
+                  <span className="text-2xl font-black text-accent-blue font-mono">{part2Levels} levels</span>
+                </div>
+              </div>
+
+              <div className="p-6 rounded-2xl bg-surface-sunken border border-border-subtle flex items-start space-x-3">
+                <ShieldAlert className="text-amber-500 w-5 h-5 mt-0.5 shrink-0" />
+                <p className="text-[13px] text-sub leading-relaxed">
+                  Sized in {formatUsdt(unitAmount)} units ({part2Amount} ÷ {unitAmount} = {part2Levels} base units). Placement and occupancy tracking is fully live; reward and recycling rules for this component have not yet been finalized and will be published once confirmed.
+                </p>
               </div>
             </div>
-          </div>
-        )}
-          </div>
+          )}
+        </div>
 
-          {/* Coming Soon Overlay Box */}
-          <div className="absolute inset-0 z-10 flex flex-col items-center justify-center p-6 text-center">
-             <div className="bg-surface/80 backdrop-blur-md border border-border-theme p-8 md:p-12 rounded-3xl shadow-2xl max-w-lg w-full flex flex-col items-center">
-               <ShieldAlert className="text-amber-500 w-12 h-12 mb-4" />
-               <h3 className="text-2xl font-black text-prime mb-3">Main Plan is Coming Soon</h3>
-               <p className="text-sm text-sub leading-relaxed">
-                 The 13-Level Pool, X5 Matrix Split, and X4 Passive Spillover structures are part of the upcoming Main Plan system upgrade.
-               </p>
-               <button className="mt-6 px-6 py-2.5 rounded-full bg-accent-blue/10 text-accent-blue font-bold text-sm border border-accent-blue/20">
-                 Stay Tuned
-               </button>
-             </div>
-          </div>
+        <div className="text-center text-xs text-sub max-w-lg mx-auto">
+          Visionary is reached by completing Champion and is the ladder's final tier — there is no further upgrade target above it.
         </div>
       </motion.div>
     </div>

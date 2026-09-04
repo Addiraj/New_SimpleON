@@ -195,8 +195,9 @@ export class MatrixQueryService {
     const tierConfig = this.getTierConfigFromCycle(activeCycle, context.selectedTier.code);
     const slotValue = tierConfig.subscriptionAmount;
     const cycleNum = activeCycle?.cycle_number || 1;
+    const totalSlots = activeCycle?.total_positions || tierConfig.slotsPerCycle || 5;
 
-    // Map 5 position nodes (1 through 5)
+    // Map position nodes 1..totalSlots (matrix-width-aware — Launch/Visionary-X3 are 3, not 5)
     const positionsMap = new Map<number, any>();
     if (activeCycle?.positions) {
       activeCycle.positions.forEach((pos) => {
@@ -205,13 +206,13 @@ export class MatrixQueryService {
     }
 
     const currentNodes = [];
-    for (let slot = 1; slot <= 5; slot++) {
+    for (let slot = 1; slot <= totalSlots; slot++) {
       const pos = positionsMap.get(slot);
       if (pos) {
         const addr = pos.member_user?.wallet_address || '0x0000...';
         currentNodes.push({
           slotNumber: slot,
-          label: slot === 5 ? `Position #${slot} (Auto-Recycle)` : `Position #${slot}`,
+          label: slot === totalSlots ? `Position #${slot} (Auto-Recycle)` : `Position #${slot}`,
           isFilled: true,
           address: addr,
           shortAddress: `${addr.slice(0, 6)}...${addr.slice(-4)}`,
@@ -231,7 +232,7 @@ export class MatrixQueryService {
       } else {
         currentNodes.push({
           slotNumber: slot,
-          label: slot === 5 ? `Position #${slot} (Auto-Recycle)` : `Position #${slot}`,
+          label: slot === totalSlots ? `Position #${slot} (Auto-Recycle)` : `Position #${slot}`,
           isFilled: false,
           status: 'PENDING',
           tierAmount: slotValue,
@@ -247,10 +248,10 @@ export class MatrixQueryService {
       cycleNumber: cycleNum,
       status: activeCycle?.status || 'ACTIVE',
       filledPositions: activeCycle?.filled_positions || currentNodes.filter((n) => n.isFilled).length,
-      totalPositions: activeCycle?.total_positions || 5,
+      totalPositions: totalSlots,
       slotValueUsdt: slotValue,
       generatedAmount: X5MatrixService.calculateCurrentCycleGeneratedAmount(tierConfig.code, activeCycle?.filled_positions || currentNodes.filter((n) => n.isFilled).length),
-      pendingPositions: X5MatrixService.calculatePendingSlots(activeCycle?.filled_positions || currentNodes.filter((n) => n.isFilled).length, activeCycle?.total_positions || 5),
+      pendingPositions: X5MatrixService.calculatePendingSlots(activeCycle?.filled_positions || currentNodes.filter((n) => n.isFilled).length, totalSlots),
       levelName: tierConfig.name,
       levelSlug: tierConfig.code,
       tier: tierConfig,

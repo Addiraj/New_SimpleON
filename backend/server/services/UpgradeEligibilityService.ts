@@ -11,6 +11,8 @@ export interface LevelInfo {
   levelOrder: number;
   joiningAmount: number;
   upgradeAmount: number;
+  matrixSize: number;
+  cappingEnabled: boolean;
   requiredDirectReferrals: number;
   requiredQualifiedBuilders: number;
   autoUpgradeEnabled: boolean;
@@ -101,6 +103,8 @@ export class UpgradeEligibilityService {
       levelOrder: cfg.level_order,
       joiningAmount: parseFloat(cfg.joining_amount?.toString() || '0'),
       upgradeAmount: parseFloat(cfg.upgrade_amount?.toString() || '0'),
+      matrixSize: cfg.matrix_size || 5,
+      cappingEnabled: cfg.capping_enabled ?? true,
       requiredDirectReferrals: cfg.required_direct_referrals || 0,
       requiredQualifiedBuilders: cfg.required_qualified_builders || 0,
       autoUpgradeEnabled: cfg.auto_upgrade_enabled ?? true,
@@ -119,6 +123,8 @@ export class UpgradeEligibilityService {
         levelOrder: user.current_level.level_order,
         joiningAmount: parseFloat(user.current_level.joining_amount?.toString() || '0'),
         upgradeAmount: parseFloat(user.current_level.upgrade_amount?.toString() || '0'),
+        matrixSize: user.current_level.matrix_size || 5,
+        cappingEnabled: user.current_level.capping_enabled ?? true,
         requiredDirectReferrals: user.current_level.required_direct_referrals || 0,
         requiredQualifiedBuilders: user.current_level.required_qualified_builders || 0,
         autoUpgradeEnabled: user.current_level.auto_upgrade_enabled ?? true,
@@ -142,6 +148,8 @@ export class UpgradeEligibilityService {
             levelOrder: num,
             joiningAmount: 0,
             upgradeAmount: 0,
+            matrixSize: 5,
+            cappingEnabled: true,
             requiredDirectReferrals: 0,
             requiredQualifiedBuilders: 0,
             autoUpgradeEnabled: true,
@@ -204,7 +212,7 @@ export class UpgradeEligibilityService {
     let currentQualified = qualifications.builderCount;
     let qualifiedTypeName = 'builder(s)';
 
-    if (targetLevelOrder === 4) {
+    if (targetLevelOrder === 5) {
       currentQualified = qualifications.leaderCount;
       qualifiedTypeName = 'leader(s)';
     }

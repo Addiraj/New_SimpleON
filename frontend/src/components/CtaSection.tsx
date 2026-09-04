@@ -2,6 +2,7 @@ import React from 'react';
 import { motion } from 'motion/react';
 import { Wallet, ArrowUpRight, Network, Sparkles, ShieldCheck } from 'lucide-react';
 import { useWeb3Store } from '../store/useWeb3Store';
+import { getBoosterTierConfig } from '../data/boosterPlan';
 
 interface CtaSectionProps {
   onConnectWallet?: () => void;
@@ -11,6 +12,7 @@ interface CtaSectionProps {
 
 export default function CtaSection({ onConnectWallet, onOpenMatrix, onEnterDashboard }: CtaSectionProps) {
   const { isConnected, isConnecting } = useWeb3Store();
+  const launch = getBoosterTierConfig('launch')!;
   return (
     <section
       id="cta-banner-section"
@@ -43,7 +45,7 @@ export default function CtaSection({ onConnectWallet, onOpenMatrix, onEnterDashb
           </h2>
 
           <p className="mt-8 text-[15px] sm:text-[17px] text-white/80 max-w-2xl mx-auto leading-relaxed">
-            Subscribe starting at $10 USDT (Starter Booster). Enjoy 100% peer-to-peer payout security, automatic slot re-topups, and 13-Level forced matrix spillovers.
+            Subscribe starting at ${launch.subscriptionAmount} USDT (Launch Booster). Enjoy 100% peer-to-peer payout security, automatic slot re-topups, and forced-matrix spillovers all the way to Visionary.
           </p>
 
           <div className="mt-12 flex flex-col sm:flex-row items-center justify-center gap-4">

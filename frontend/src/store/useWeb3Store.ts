@@ -58,6 +58,7 @@ interface Web3State {
   upgradeTier: (targetTier: string) => Promise<string>;
   registerAndActivate: (referrer?: string) => Promise<string>;
   activateMainPlan: () => Promise<string>;
+  activateViaTransfer: (amount: string | number, receiverAddress: string, tokenAddress: string) => Promise<string>;
   switchChain: (targetChainId: number) => Promise<void>;
 }
 
@@ -395,6 +396,36 @@ export const useWeb3Store = create<Web3State>((set, get) => ({
       return joinTx.hash;
     } catch (err: any) {
       console.error('Join error:', err.message);
+      throw err;
+    }
+  },
+
+  // Launch and Visionary have no slot in the deployed contract's fixed BoosterTier enum (see
+  // off-chain-only decision — no contract redeploy). They activate via a plain ERC-20 transfer
+  // straight to the payment intent's receiver for the intent's exact amount, verified the same
+  // way as every other tier: PaymentService scans the resulting tx receipt for a matching
+  // Transfer log, regardless of which contract method (if any) produced it. Existing
+  // Starter/Builder/Leader/Champion flows (registerAndActivate/upgradeTier above) are untouched.
+  activateViaTransfer: async (amount, receiverAddress, tokenAddress) => {
+    try {
+      const { provider } = get();
+      if (!provider) throw new Error('Wallet not connected or provider unavailable');
+      if (!tokenAddress || !receiverAddress) throw new Error('Payment intent is missing token or receiver address');
+
+      const signer = await provider.getSigner();
+      const usdtAbi = ["function transfer(address to, uint256 amount) external returns (bool)"];
+      const usdtContract = new ethers.Contract(tokenAddress, usdtAbi, signer);
+
+      const amountToSend = ethers.parseUnits(amount.toString(), 18);
+
+      console.log('Requesting direct USDT transfer for activation...');
+      const tx = await usdtContract.transfer(receiverAddress, amountToSend);
+      await tx.wait();
+
+      console.log('Direct transfer activation confirmed on blockchain');
+      return tx.hash;
+    } catch (err: any) {
+      console.error('Direct transfer activation error:', err.message);
       throw err;
     }
   },

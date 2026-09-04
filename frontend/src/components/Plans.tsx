@@ -3,11 +3,12 @@ import { motion } from 'motion/react';
 import {
   Rocket, TrendingUp, Users, Trophy, ChevronDown,
   ChevronUp, Layers, Target, AlertCircle, RefreshCw,
-  CheckCircle2, Lock, Zap, Check
+  CheckCircle2, Lock, Zap, Check, Sparkles, Gem
 } from 'lucide-react';
 import { boosterApi, paymentApi, upgradeApi } from '../services/api';
 import { useWeb3Store } from '../store/useWeb3Store';
 import { BOOSTER_TIER_CONFIGS, formatUsdt } from '../data/boosterPlan';
+
 export interface FormattedPlanApi {
   id: string;
   name: string;
@@ -20,32 +21,111 @@ export interface FormattedPlanApi {
   cycleReward: string;
   retopupAmount: string;
   dailyCap: string;
-  dailyCycleLimit?: number;
+  dailyCycleLimit?: number | null;
   requiredDirectReferrals: number;
   requiredQualifiedBuilders: number;
   autoUpgradeEnabled: boolean;
   retopupEnabled: boolean;
+  cappingEnabled?: boolean;
+  bititanAmount?: string | null;
+  matrixType?: string;
+  visionaryPart1Amount?: number;
+  visionaryPart2Amount?: number;
   status: string;
   version: number;
 }
 
+// Entry tier — the only tier a user can directly purchase; every tier after it activates
+// automatically via qualification + cycle completion (unchanged design, just repointed from
+// Starter to Launch since Launch is now the ladder's floor).
+const ENTRY_TIER_SLUG = 'launch';
+// Upgradeable tiers shown in the main grid, in ladder order. Visionary is the top tier and gets
+// its own section below — it has no further upgrade target.
+const UPGRADEABLE_TIER_SLUGS = ['launch', 'starter', 'builder', 'leader', 'champion'] as const;
+
+const TIER_VISUALS: Record<string, { icon: React.ReactNode; accent: string; badgeBg: string }> = {
+  launch: {
+    icon: <Sparkles size={20} className="text-emerald-600 dark:text-emerald-500" />,
+    accent: 'border-emerald-500 dark:border-emerald-600',
+    badgeBg: 'bg-emerald-50 text-emerald-600 dark:bg-emerald-950/25 dark:text-emerald-500',
+  },
+  starter: {
+    icon: <Rocket size={20} className="text-blue-600 dark:text-blue-500" />,
+    accent: 'border-blue-500 dark:border-blue-600',
+    badgeBg: 'bg-blue-50 text-blue-600 dark:bg-blue-950/25 dark:text-blue-500',
+  },
+  builder: {
+    icon: <TrendingUp size={20} className="text-cyan-600 dark:text-cyan-500" />,
+    accent: 'border-cyan-500 dark:border-cyan-600',
+    badgeBg: 'bg-cyan-50 text-cyan-600 dark:bg-cyan-950/25 dark:text-cyan-500',
+  },
+  leader: {
+    icon: <Users size={20} className="text-amber-600 dark:text-amber-500" />,
+    accent: 'border-amber-500 dark:border-amber-600',
+    badgeBg: 'bg-amber-50 text-amber-600 dark:bg-amber-950/25 dark:text-amber-500',
+  },
+  champion: {
+    icon: <Trophy size={20} className="text-purple-600 dark:text-purple-500" />,
+    accent: 'border-purple-500 dark:border-purple-600',
+    badgeBg: 'bg-purple-50 text-purple-600 dark:bg-purple-950/25 dark:text-purple-500',
+  },
+};
+
+// Minimal fallback fields used only if a tier is entirely absent from the API response
+// (unreachable backend) — never used to override or reject a valid live response.
+function fallbackPlanFor(slug: string): FormattedPlanApi {
+  const cfg = BOOSTER_TIER_CONFIGS.find((t) => t.code === slug) || BOOSTER_TIER_CONFIGS[0];
+  return {
+    id: cfg.id,
+    name: cfg.name,
+    slug: cfg.code,
+    levelOrder: 0,
+    joiningAmount: String(cfg.subscriptionAmount),
+    upgradeAmount: String(cfg.upgradeAmount ?? 0),
+    matrixSize: cfg.slotsPerCycle,
+    incomePerPosition: '0',
+    cycleReward: '0',
+    retopupAmount: String(cfg.resubscribeAmount),
+    dailyCap: '0',
+    dailyCycleLimit: cfg.cappingEnabled ? cfg.defaultDailyCapping : null,
+    requiredDirectReferrals: 0,
+    requiredQualifiedBuilders: 0,
+    autoUpgradeEnabled: true,
+    retopupEnabled: true,
+    cappingEnabled: cfg.cappingEnabled,
+    bititanAmount: cfg.reserveAmount != null ? String(cfg.reserveAmount) : null,
+    visionaryPart1Amount: cfg.visionaryPart1Amount,
+    visionaryPart2Amount: cfg.visionaryPart2Amount,
+    status: 'ACTIVE',
+    version: 1,
+  };
+}
+
+/** Every field this page actually reads must be present and numeric-parseable — this replaces
+ *  the old exact-value-match gate that actively rejected legitimate backend price changes. */
+function isWellFormedPlan(plan: any): plan is FormattedPlanApi {
+  return (
+    plan &&
+    typeof plan.slug === 'string' &&
+    !Number.isNaN(Number.parseFloat(plan.joiningAmount)) &&
+    !Number.isNaN(Number(plan.matrixSize)) &&
+    !Number.isNaN(Number.parseFloat(plan.retopupAmount))
+  );
+}
+
 export default function Plans({ basePlan = 1 }: { basePlan?: number } = {}) {
-  const { isConnected, isAuthenticated, openWalletModal, userProfile, fetchProfile } = useWeb3Store();
-  const [expandedSection, setExpandedSection] = useState<'booster' | 'main' | null>('booster');
+  const { isConnected, isAuthenticated, openWalletModal, userProfile } = useWeb3Store();
+  const [expandedSection, setExpandedSection] = useState<'booster' | 'visionary' | null>('booster');
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [usingFallbackConfig, setUsingFallbackConfig] = useState<boolean>(false);
 
   const [apiPlans, setApiPlans] = useState<FormattedPlanApi[]>([]);
-  const [calculations, setCalculations] = useState<any>(null);
   const [eligibilityData, setEligibilityData] = useState<any>(null);
 
-  // Payment Intent State
   const [actionLoadingSlug, setActionLoadingSlug] = useState<string | null>(null);
   const [activePaymentIntent, setActivePaymentIntent] = useState<any | null>(null);
   const [paymentError, setPaymentError] = useState<string | null>(null);
-
-  // Verification States
 
   const [verificationStep, setVerificationStep] = useState<
     'idle' | 'wallet_confirm' | 'blockchain_pending' | 'backend_verifying' | 'confirmed' | 'failed'
@@ -66,7 +146,6 @@ export default function Plans({ basePlan = 1 }: { basePlan?: number } = {}) {
     setActivePaymentIntent(null);
 
     try {
-      // 1. Create Intent
       setVerifyStatusMessage('Initializing secure payment session...');
       setVerificationStep('backend_verifying');
       let res: any;
@@ -84,19 +163,25 @@ export default function Plans({ basePlan = 1 }: { basePlan?: number } = {}) {
       const intentData = res?.data || res;
       setActivePaymentIntent(intentData);
 
-      // 2. Trigger Web3 Transaction
       setVerifyStatusMessage('Please confirm the transaction in your wallet...');
       setVerificationStep('wallet_confirm');
       const store = useWeb3Store.getState();
 
+      // Launch and Visionary have no on-chain contract enum slot — they activate via a plain
+      // ERC-20 transfer against the live payment-intent amount/receiver, verified the same way
+      // as every other tier (PaymentService scans for a matching Transfer log; it doesn't care
+      // which method produced it). Existing Starter-Champion buttons are untouched.
+      const usesDirectTransfer = levelSlug === 'launch' || levelSlug === 'visionary';
+
       let txHash: string;
-      if (type === 'JOIN' || type === 'RETOPUP') {
+      if (usesDirectTransfer) {
+        txHash = await store.activateViaTransfer(intentData.expectedAmount, intentData.receiverAddress, intentData.tokenAddress);
+      } else if (type === 'JOIN' || type === 'RETOPUP') {
         txHash = await store.registerAndActivate();
       } else {
         txHash = await store.upgradeTier(levelSlug.toUpperCase());
       }
 
-      // 3. Verify on Backend
       setVerifyStatusMessage('Verifying transaction on the blockchain...');
       setVerificationStep('blockchain_pending');
 
@@ -125,38 +210,28 @@ export default function Plans({ basePlan = 1 }: { basePlan?: number } = {}) {
     }
   };
 
-  // Load level configurations from MySQL via API
   const loadPlanData = useCallback(async () => {
     setLoading(true);
     setError(null);
     setUsingFallbackConfig(false);
     try {
-      const [plansRes, calcRes, eligRes] = await Promise.all([
+      const [plansRes, eligRes] = await Promise.all([
         boosterApi.getPlans(),
-        boosterApi.calculate(basePlan),
         upgradeApi.getEligibility().catch(() => boosterApi.getEligibility().catch(() => null)),
       ]);
 
       const plansArray: FormattedPlanApi[] = Array.isArray(plansRes)
         ? plansRes
-        : plansRes?.data || plansRes?.plans || [];
+        : plansRes?.data?.plans || plansRes?.data || plansRes?.plans || [];
 
-      const validPlans = plansArray.length === 4 && plansArray.every((plan) => {
-        const verified = BOOSTER_TIER_CONFIGS.find((tier) => tier.code === plan.slug);
-        return verified
-          && Number.parseFloat(plan.joiningAmount) === verified.subscriptionAmount
-          && Number(plan.matrixSize) === verified.slotsPerCycle
-          && Number.parseFloat(plan.retopupAmount) === verified.resubscribeAmount
-          && Number(plan.dailyCycleLimit ?? 5) === verified.defaultDailyCapping;
-      });
+      const wellFormed = plansArray.length > 0 && plansArray.every(isWellFormedPlan);
 
-      if (!validPlans) {
-        console.warn('Booster API config unavailable or invalid; rendering verified default tier configuration.', plansArray);
+      if (!wellFormed) {
+        console.warn('Booster API returned no plans or malformed data; rendering default tier configuration.', plansArray);
         setUsingFallbackConfig(true);
       }
 
-      setApiPlans(validPlans ? plansArray : []);
-      setCalculations(calcRes?.data || calcRes);
+      setApiPlans(wellFormed ? plansArray : []);
 
       if (eligRes) {
         setEligibilityData(eligRes?.data || eligRes);
@@ -174,185 +249,106 @@ export default function Plans({ basePlan = 1 }: { basePlan?: number } = {}) {
     loadPlanData();
   }, [loadPlanData]);
 
-  // Fallback defaults if API is loading or empty
-  const starterPlan = apiPlans.find((p) => p.slug === 'starter') || {
-    joiningAmount: String(BOOSTER_TIER_CONFIGS[0].subscriptionAmount),
-    upgradeAmount: String(BOOSTER_TIER_CONFIGS[0].upgradeAmount),
-    retopupAmount: String(BOOSTER_TIER_CONFIGS[0].resubscribeAmount),
-    dailyCap: String(BOOSTER_TIER_CONFIGS[0].defaultDailyCapping),
-    matrixSize: BOOSTER_TIER_CONFIGS[0].slotsPerCycle,
-    requiredDirectReferrals: 0,
-    requiredQualifiedBuilders: 0,
-  };
-  const builderPlan = apiPlans.find((p) => p.slug === 'builder') || {
-    joiningAmount: String(BOOSTER_TIER_CONFIGS[1].subscriptionAmount),
-    upgradeAmount: String(BOOSTER_TIER_CONFIGS[1].upgradeAmount),
-    retopupAmount: String(BOOSTER_TIER_CONFIGS[1].resubscribeAmount),
-    dailyCap: String(BOOSTER_TIER_CONFIGS[1].defaultDailyCapping),
-    matrixSize: BOOSTER_TIER_CONFIGS[1].slotsPerCycle,
-    requiredDirectReferrals: 1,
-    requiredQualifiedBuilders: 0,
-  };
-  const leaderPlan = apiPlans.find((p) => p.slug === 'leader') || {
-    joiningAmount: String(BOOSTER_TIER_CONFIGS[2].subscriptionAmount),
-    upgradeAmount: String(BOOSTER_TIER_CONFIGS[2].upgradeAmount),
-    retopupAmount: String(BOOSTER_TIER_CONFIGS[2].resubscribeAmount),
-    dailyCap: String(BOOSTER_TIER_CONFIGS[2].defaultDailyCapping),
-    matrixSize: BOOSTER_TIER_CONFIGS[2].slotsPerCycle,
-    requiredDirectReferrals: 2,
-    requiredQualifiedBuilders: 1,
-  };
-  const championPlan = apiPlans.find((p) => p.slug === 'champion') || {
-    joiningAmount: String(BOOSTER_TIER_CONFIGS[3].subscriptionAmount),
-    upgradeAmount: String(BOOSTER_TIER_CONFIGS[3].mainPlanAmount),
-    retopupAmount: String(BOOSTER_TIER_CONFIGS[3].resubscribeAmount),
-    dailyCap: String(BOOSTER_TIER_CONFIGS[3].defaultDailyCapping),
-    matrixSize: BOOSTER_TIER_CONFIGS[3].slotsPerCycle,
-    requiredDirectReferrals: 3,
-    requiredQualifiedBuilders: 2,
-  };
+  const planBySlug = (slug: string): FormattedPlanApi =>
+    apiPlans.find((p) => p.slug === slug) || fallbackPlanFor(slug);
 
-  const starterCost = basePlan * parseFloat(starterPlan.joiningAmount || '10');
-  const builderCost = basePlan * parseFloat(builderPlan.joiningAmount || '40');
-  const leaderCost = basePlan * parseFloat(leaderPlan.joiningAmount || '80');
-  const championCost = basePlan * parseFloat(championPlan.joiningAmount || '320');
-  const mainPlanCost = basePlan * 500;
+  const ladderSteps = BOOSTER_TIER_CONFIGS.map((cfg) => {
+    const plan = planBySlug(cfg.code);
+    return {
+      slug: cfg.code,
+      name: cfg.name.replace(' Pool', ''),
+      cost: parseFloat(plan.joiningAmount),
+      topTier: cfg.code === 'visionary',
+    };
+  });
 
-  const boosterTiers = [
-    {
-      slug: 'starter',
-      name: 'Starter Booster',
-      levelOrder: 1,
-      cost: formatUsdt(starterCost),
-      costFormula: `${parseFloat(starterPlan.joiningAmount || '10')} × Base Plan`,
-      collection: `${starterPlan.matrixSize || 5} × ${formatUsdt(starterCost)} = ${formatUsdt(starterCost * (starterPlan.matrixSize || 5))}`,
-      reSubscribe: formatUsdt(starterCost),
-      upgrade: formatUsdt(builderCost),
-      income: `Cycle 1: 0 | Cycle 2+: ${formatUsdt(basePlan * 40)}`,
-      requiredDirects: starterPlan.requiredDirectReferrals ?? 0,
-      requiredBuilders: starterPlan.requiredQualifiedBuilders ?? 0,
-      description: `Your entry ticket. Out of ${(starterCost * (starterPlan.matrixSize || 5)).toFixed(2)} USDT collected in Cycle 1, ${starterCost.toFixed(2)} USDT re-subscribes you and ${builderCost.toFixed(2)} USDT automatically upgrades you to Builder. From Cycle 2 onwards, you earn 40.00 USDT Net Profit per cycle!`,
-      accent: 'border-blue-500 dark:border-blue-600',
-      badgeBg: 'bg-blue-50 text-blue-600 dark:bg-blue-950/25 dark:text-blue-500',
-      icon: <Rocket size={20} className="text-blue-600 dark:text-blue-500" />,
-    },
-    {
-      slug: 'builder',
-      name: 'Builder Booster',
-      levelOrder: 2,
-      cost: formatUsdt(builderCost),
-      costFormula: `${parseFloat(builderPlan.joiningAmount || '40')} × Base Plan`,
-      collection: `${builderPlan.matrixSize || 5} × ${formatUsdt(builderCost)} = ${formatUsdt(builderCost * (builderPlan.matrixSize || 5))}`,
-      reSubscribe: formatUsdt(builderCost),
-      upgrade: formatUsdt(leaderCost),
-      income: `Cycle 1: 0 | Cycle 2+: ${formatUsdt(basePlan * 160)}`,
-      requiredDirects: builderPlan.requiredDirectReferrals ?? 1,
-      requiredBuilders: builderPlan.requiredQualifiedBuilders ?? 0,
-      description: `The second tier. Out of ${(builderCost * (builderPlan.matrixSize || 5)).toFixed(2)} USDT collected in Cycle 1, ${builderCost.toFixed(2)} USDT is recycled for re-subscription, ${leaderCost.toFixed(2)} USDT auto-upgrades you to Leader, and 80.00 USDT goes to the B-Titan Reserve. From Cycle 2 onwards, you earn 160.00 USDT Net Profit per cycle!`,
-      accent: 'border-cyan-500 dark:border-cyan-600',
-      badgeBg: 'bg-cyan-50 text-cyan-600 dark:bg-cyan-950/25 dark:text-cyan-500',
-      icon: <TrendingUp size={20} className="text-cyan-600 dark:text-cyan-500" />,
-    },
-    {
-      slug: 'leader',
-      name: 'Leader Booster',
-      levelOrder: 3,
-      cost: formatUsdt(leaderCost),
-      costFormula: `${parseFloat(leaderPlan.joiningAmount || '80')} × Base Plan`,
-      collection: `${leaderPlan.matrixSize || 5} × ${formatUsdt(leaderCost)} = ${formatUsdt(leaderCost * (leaderPlan.matrixSize || 5))}`,
-      reSubscribe: formatUsdt(leaderCost),
-      upgrade: formatUsdt(championCost),
-      income: `Cycle 1: 0 | Cycle 2+: ${formatUsdt(basePlan * 320)}`,
-      requiredDirects: leaderPlan.requiredDirectReferrals ?? 2,
-      requiredBuilders: leaderPlan.requiredQualifiedBuilders ?? 1,
-      description: `The high tier. Out of ${(leaderCost * (leaderPlan.matrixSize || 5)).toFixed(2)} USDT collected in Cycle 1, ${leaderCost.toFixed(2)} USDT goes to re-subscription and ${championCost.toFixed(2)} USDT automatically upgrades you to Champion. From Cycle 2 onwards, you earn 320.00 USDT Net Profit per cycle!`,
-      accent: 'border-amber-500 dark:border-amber-600',
-      badgeBg: 'bg-amber-50 text-amber-600 dark:bg-amber-950/25 dark:text-amber-500',
-      icon: <Users size={20} className="text-amber-600 dark:text-amber-500" />,
-    },
-    {
-      slug: 'champion',
-      name: 'Champion Booster',
-      levelOrder: 4,
-      cost: formatUsdt(championCost),
-      costFormula: `${parseFloat(championPlan.joiningAmount || '320')} × Base Plan`,
-      collection: `${championPlan.matrixSize || 5} × ${formatUsdt(championCost)} = ${formatUsdt(championCost * (championPlan.matrixSize || 5))}`,
-      reSubscribe: formatUsdt(championCost),
-      upgrade: `${formatUsdt(mainPlanCost)} (to Main Plan)`,
-      income: `Cycle 1: ${formatUsdt(basePlan * 780)} | Cycle 2+: ${formatUsdt(basePlan * 1280)}`,
-      requiredDirects: championPlan.requiredDirectReferrals ?? 3,
-      requiredBuilders: championPlan.requiredQualifiedBuilders ?? 2,
-      description: `The peak of Booster. Cycle 1 distributes ${formatUsdt(championCost * (championPlan.matrixSize || 5))} exactly: ${formatUsdt(championCost)} for re-topup, ${formatUsdt(mainPlanCost)} to activate Main Plan, and ${formatUsdt(basePlan * 780)} Net Income. From Cycle 2 onwards, you earn ${formatUsdt(basePlan * 1280)} Net Income per cycle!`,
-      accent: 'border-purple-500 dark:border-purple-600',
-      badgeBg: 'bg-purple-50 text-purple-600 dark:bg-purple-950/25 dark:text-purple-500',
-      icon: <Trophy size={20} className="text-purple-600 dark:text-purple-500" />,
-    },
-  ];
+  const boosterTiers = UPGRADEABLE_TIER_SLUGS.map((slug, idx) => {
+    const plan = planBySlug(slug);
+    const cfg = BOOSTER_TIER_CONFIGS.find((t) => t.code === slug)!;
+    const visuals = TIER_VISUALS[slug];
 
-  const x5Amt = calculations?.mainPlan?.x5MatrixSplit ?? mainPlanCost * 0.15;
-  const levelPoolAmt = calculations?.mainPlan?.forcedLevelPool ?? mainPlanCost * 0.65;
-  const x4Amt = calculations?.mainPlan?.x4MatrixAllocation ?? mainPlanCost * 0.20;
+    const cost = parseFloat(plan.joiningAmount);
+    const matrixSize = Number(plan.matrixSize) || cfg.slotsPerCycle;
+    const collection = cost * matrixSize;
+    const reactivation = parseFloat(plan.retopupAmount);
+    const nextTierSlug = cfg.upgradeTarget;
+    const nextTierPlan = nextTierSlug ? planBySlug(nextTierSlug) : null;
+    const nextTierCost = parseFloat(plan.upgradeAmount || '0');
+    const isChampion = slug === 'champion';
+    const isBuilder = slug === 'builder';
+    const bititanAmount = plan.bititanAmount ? parseFloat(plan.bititanAmount) : 0;
 
-  const mainPlanAllocations = [
-    {
-      module: 'X5 Matrix Split',
-      percentage: '15%',
-      amount: `${x5Amt.toFixed(2)} USDT`,
-      formula: '15% × Main Plan Amount',
-      description: 'A dedicated 5-position matrix. Payout cycle 1: 20% retopup, 40% upgrade wallet, 40% income. From cycle 2 onward: 20% retopup, 80% direct net income.',
-    },
-    {
-      module: '13-Level Forced Income Pool',
-      percentage: '65%',
-      amount: `${levelPoolAmt.toFixed(2)} USDT`,
-      formula: '65% × Main Plan Amount',
-      description: `Distributed evenly as ${(levelPoolAmt / 13).toFixed(2)} USDT per level across 13 levels. Leverages a 3×3 forced matrix with automated spillover placement.`,
-    },
-    {
-      module: 'X4 Matrix Allocation',
-      percentage: '20%',
-      amount: `${x4Amt.toFixed(2)} USDT`,
-      formula: '20% × Main Plan Amount',
-      description: 'A 2×2 forced spillover matrix. Allocates 20.00 USDT for automated spillover recycling, unlimited cycles, and passive team placement.',
-    },
-  ];
+    const cycle1Income = isChampion ? Math.max(0, collection - reactivation - nextTierCost) : 0;
+    const cycle2PlusIncome = Math.max(0, collection - reactivation);
+    const cappingEnabled = plan.cappingEnabled ?? cfg.cappingEnabled;
+    const dailyCap = cappingEnabled ? (plan.dailyCycleLimit ?? cfg.defaultDailyCapping) : null;
 
-  const ladderSteps = [
-    { name: 'Starter', multiple: `${parseFloat(starterPlan.joiningAmount || '1')}x`, cost: starterCost, color: 'text-accent-red border-accent-red/30 bg-accent-red/5' },
-    { name: 'Builder', multiple: `${parseFloat(builderPlan.joiningAmount || '4')}x`, cost: builderCost, color: 'text-accent-blue border-accent-blue/30 bg-accent-blue/5' },
-    { name: 'Leader', multiple: `${parseFloat(leaderPlan.joiningAmount || '16')}x`, cost: leaderCost, color: 'text-accent-orange border-accent-orange/30 bg-accent-orange/5' },
-    { name: 'Champion', multiple: `${parseFloat(championPlan.joiningAmount || '64')}x`, cost: championCost, color: 'text-accent-purple border-accent-purple/30 bg-accent-purple/5' },
-    { name: 'Main Plan', multiple: '100x', cost: mainPlanCost, color: 'text-green-600 border-green-500/30 bg-green-500/5' },
-  ];
+    let description: string;
+    if (isChampion) {
+      description = `The peak of the Booster ladder. Cycle 1 distributes ${formatUsdt(collection)} exactly: ${formatUsdt(reactivation)} for re-activation, ${formatUsdt(nextTierCost)} to fund your Visionary activation, and ${formatUsdt(cycle1Income)} Net Income to you immediately. From Cycle 2 onward, you earn ${formatUsdt(cycle2PlusIncome)} Net Income per cycle.`;
+    } else if (isBuilder) {
+      description = `Out of ${formatUsdt(collection)} collected in Cycle 1, ${formatUsdt(reactivation)} re-activates you, ${formatUsdt(nextTierCost)} automatically funds your Leader activation, and ${formatUsdt(bititanAmount)} is reserved separately in the Bititan Wallet. From Cycle 2 onward, you earn ${formatUsdt(cycle2PlusIncome)} Net Income per cycle.`;
+    } else if (slug === 'launch') {
+      description = `Your entry ticket, on a fast X3 matrix. Out of ${formatUsdt(collection)} collected in Cycle 1, ${formatUsdt(reactivation)} re-activates Launch and ${formatUsdt(nextTierCost)} automatically funds your Starter activation. From Cycle 2 onward, ${formatUsdt(reactivation)} re-activates you and you earn ${formatUsdt(cycle2PlusIncome)} Net Income per cycle — with no daily cycle limit.`;
+    } else {
+      description = `Out of ${formatUsdt(collection)} collected in Cycle 1, ${formatUsdt(reactivation)} re-activates you and ${formatUsdt(nextTierCost)} automatically upgrades you to ${nextTierPlan?.name?.replace(' Pool', '') || cfg.upgradeTarget}. From Cycle 2 onward, you earn ${formatUsdt(cycle2PlusIncome)} Net Income per cycle.`;
+    }
+
+    return {
+      slug,
+      name: cfg.name.replace(' Pool', ' Booster'),
+      levelOrder: idx + 1, // display-only ordering within this grid, independent of backend level_order
+      matrixLabel: matrixSize === 3 ? 'X3' : 'X5',
+      cost: formatUsdt(cost),
+      costFormula: `${matrixSize}-position ${matrixSize === 3 ? 'X3' : 'X5'} matrix`,
+      collection: `${matrixSize} × ${formatUsdt(cost)} = ${formatUsdt(collection)}`,
+      upgrade: nextTierSlug ? formatUsdt(nextTierCost) : '—',
+      upgradeTargetName: nextTierPlan?.name?.replace(' Pool', '') || null,
+      income: isChampion
+        ? `Cycle 1: ${formatUsdt(cycle1Income)} | Cycle 2+: ${formatUsdt(cycle2PlusIncome)}`
+        : `Cycle 1: 0 | Cycle 2+: ${formatUsdt(cycle2PlusIncome)}`,
+      dailyCapLabel: dailyCap === null ? 'Unlimited' : `${dailyCap} cycles / 24h`,
+      requiredDirects: plan.requiredDirectReferrals ?? 0,
+      requiredBuilders: plan.requiredQualifiedBuilders ?? 0,
+      description,
+      accent: visuals.accent,
+      badgeBg: visuals.badgeBg,
+      icon: visuals.icon,
+    };
+  });
+
+  const visionaryPlan = planBySlug('visionary');
+  const visionaryCost = parseFloat(visionaryPlan.joiningAmount);
+  const visionaryPart1 = visionaryPlan.visionaryPart1Amount ?? 200;
+  const visionaryPart2 = visionaryPlan.visionaryPart2Amount ?? 300;
 
   const [openFaq, setOpenFaq] = useState<number | null>(null);
 
   const faqItems = [
     {
-      question: "What happens when a Booster tier's 5 direct slots are full?",
-      answer: `Once your 5 direct partner slots are filled, the gathered subscription value triggers two simultaneous actions: first, your current Booster tier is immediately re-subscribed (re-topup) so you can receive from subsequent cycles, and second, the remaining collected value is used to automatically upgrade your position to the next higher Booster level.`
+      question: "What happens when a Booster tier's matrix cycle completes?",
+      answer: 'Once your matrix cycle fills (3 positions for Launch, 5 for Starter through Champion), the collected value triggers two actions: your current tier is re-activated (re-topup) for the next cycle, and the remaining collected value automatically funds your upgrade to the next tier — Builder tier additionally reserves a portion in a separate Bititan Wallet.',
     },
     {
       question: "What is 'daily capping' and how do I increase mine?",
-      answer: "Daily capping is a protective limit that defines the maximum cycle distributions you can receive in a 24-hour period (initially set to 5 cycles). To increase your daily capping limit, you can support your active direct referrals in upgrading to higher tier qualification levels (such as Qualified Builder, Leader, or Champion)."
+      answer: 'Daily capping limits how many cycle completions can pay out to you in a 24-hour period (a floor of 5 for Starter through Champion). Launch and Visionary\'s X3 leg have no daily cap. To raise your limit above the floor, support your direct referrals in reaching qualified Builder, Leader, or Champion status.',
     },
     {
-      question: "What's the difference between the Booster Plan and the Main Plan?",
-      answer: `The Booster Plan is the entry and acceleration phase where participants start with a low, flexible budget (1x Base Plan) and build up team size and upgrade capital. The Main Plan is the advanced, high-yield tier (100x Base Plan) that activates once you complete the Champion Booster, opening deep matrix splits, level pools, and global spillovers.`
+      question: 'How do I reach Visionary?',
+      answer: 'Visionary is the top tier, reached by completing Champion (which funds 500 USDT toward Visionary activation on its first cycle). Visionary itself splits into a 200 USDT X3 matrix leg and a separate 300 USDT 3×3, 20-level matrix leg.',
     },
     {
-      question: "What are the X5 and X4 matrices?",
-      answer: "The X5 Matrix is a fast-recycling 5-position matrix where payouts are split in real-time (splitting into recycling, upgrade, and income wallets depending on your current cycle number). The X4 Matrix is a 2×2 forced passive placement matrix that utilizes global spillover pathways, allowing slots to be filled by upstream or downstream team activity."
+      question: 'What are the X3 and X5 matrices?',
+      answer: 'X5 is the standard 5-position recycling matrix used by Starter through Champion. X3 is a faster 3-position recycling matrix used by Launch and by Visionary\'s first component. Both split collected value in real time between re-activation, next-tier funding, and your income wallet depending on the cycle number.',
     },
-    {
-      question: "What happens to my position if I stop referring new members?",
-      answer: "Because SimpleOn includes passive structures like the 13-Level forced pool and the X4 Matrix, your position can still receive passive spillover placements and distributions from active upline or downline members. However, active direct referrals are highly recommended to accelerate your booster tier upgrades and increase your daily capping limits."
-    }
   ];
+
+  const rawOrder = (eligibilityData?.currentLevelOrder !== undefined && eligibilityData?.currentLevelOrder !== null)
+    ? eligibilityData.currentLevelOrder
+    : 0;
 
   return (
     <section id="plans-section" className="relative overflow-hidden bg-surface-elevated py-16 transition-colors duration-300">
-      {/* Decorative ambient glow orbs */}
       <div
         aria-hidden="true"
         className="pointer-events-none absolute -top-24 -left-24 h-80 w-80 rounded-full bg-accent-red/20 blur-3xl animate-pulse-slow"
@@ -371,14 +367,13 @@ export default function Plans({ basePlan = 1 }: { basePlan?: number } = {}) {
             <span>Pricing &amp; Plans</span>
           </span>
           <h2 id="plans-heading" className="text-3xl font-extrabold tracking-tight text-prime sm:text-4xl lg:text-5xl">
-            Dual-Plan <span className="text-gradient-brand">Earning</span> Structure
+            Launch to <span className="text-gradient-brand">Visionary</span> Ladder
           </h2>
           <p id="plans-subheading" className="mt-4 text-base text-sub">
-            A dynamic mathematical system where Booster levels feed directly into the high-yield Main Plan.
+            Six tiers, one matrix engine — start on Launch, automatically climb through Starter, Builder, Leader and Champion, and top out at Visionary.
           </p>
         </div>
 
-        {/* Error Banner with Retry */}
         {error && (
           <div className="mb-12 p-6 rounded-2xl border border-amber-500/30 bg-amber-500/5 text-center flex flex-col items-center justify-center space-y-3">
             <div className="flex items-center space-x-2 text-amber-600 dark:text-amber-400 font-bold text-sm">
@@ -401,63 +396,55 @@ export default function Plans({ basePlan = 1 }: { basePlan?: number } = {}) {
           </div>
         )}
 
-        {/* Loading Indicator */}
         {loading && !error && (
           <div className="mb-12 p-8 rounded-2xl border border-border-theme bg-surface text-center flex flex-col items-center justify-center space-y-3">
             <RefreshCw size={24} className="animate-spin text-accent-red" />
-            <span className="text-xs font-bold text-sub">Fetching MySQL Booster Plan Configurations...</span>
+            <span className="text-xs font-bold text-sub">Fetching Booster Plan Configurations...</span>
           </div>
         )}
 
-        {/* ===========================================
-            4. SLOT/LEVEL PRICING LADDER
-           =========================================== */}
+        {/* Pricing ladder */}
         <div id="pricing-ladder" className="mb-16">
           <div className="bg-surface-elevated/40 border border-border-theme rounded-3xl p-6 md:p-8 shadow-sm">
             <h3 className="text-lg font-extrabold text-prime mb-8 text-center sm:text-left flex items-center space-x-2">
               <Target size={20} className="text-accent-red" />
-              <span>SimpleOn Pricing Ladder & Growth Multipliers</span>
+              <span>SimpleOn Pricing Ladder</span>
             </h3>
 
-            {/* Desktop / Tablet Timeline view */}
-            <div className="hidden md:flex items-center justify-between relative px-4">
-              <div className="absolute left-12 right-12 top-10 h-0.5 bg-dashed bg-border-theme z-0" />
+            <div className="hidden md:flex items-center justify-between relative px-2">
+              <div className="absolute left-8 right-8 top-10 h-0.5 bg-dashed bg-border-theme z-0" />
 
               {ladderSteps.map((step, idx) => (
-                <React.Fragment key={idx}>
-                  <div className="flex flex-col items-center relative z-10 w-28">
-                    <div className={`h-14 w-14 rounded-full border-2 flex flex-col items-center justify-center font-mono ${step.color} shadow-sm`}>
-                      <span className="text-[10px] font-black tracking-tighter opacity-80">{step.multiple}</span>
-                      <span className="text-[12px] font-extrabold -mt-1">{step.cost.toFixed(0)}</span>
+                <React.Fragment key={step.slug}>
+                  <div className="flex flex-col items-center relative z-10 w-24">
+                    <div className={`h-14 w-14 rounded-full border-2 flex flex-col items-center justify-center font-mono shadow-sm ${step.topTier ? 'text-green-600 border-green-500/40 bg-green-500/5' : 'text-accent-red border-accent-red/30 bg-accent-red/5'}`}>
+                      <span className="text-[12px] font-extrabold">{step.cost.toFixed(0)}</span>
                     </div>
                     <div className="text-center mt-3">
                       <span className="text-sm font-black text-prime block">{step.name}</span>
                       <span className="text-[11px] text-sub font-bold">{step.cost.toFixed(2)} USDT</span>
+                      {step.topTier && <span className="text-[9px] text-green-600 font-black uppercase tracking-wide">Top Tier</span>}
                     </div>
                   </div>
 
                   {idx < ladderSteps.length - 1 && (
-                    <div className="flex flex-col items-center justify-center text-xs font-black text-accent-red bg-surface-elevated px-2.5 py-1.5 rounded-xl border border-border-theme shadow-xs relative z-10 hover:scale-105 transition-transform">
-                      <span>×4</span>
-                      <span className="text-[9px] text-sub uppercase tracking-tighter">Scale</span>
+                    <div className="flex flex-col items-center justify-center text-xs font-black text-accent-red bg-surface-elevated px-2 py-1.5 rounded-xl border border-border-theme shadow-xs relative z-10">
+                      <span>×{ladderSteps[idx + 1].cost > 0 && step.cost > 0 ? (ladderSteps[idx + 1].cost / step.cost).toFixed(1).replace(/\.0$/, '') : '—'}</span>
                     </div>
                   )}
                 </React.Fragment>
               ))}
             </div>
 
-            {/* Mobile List/Vertical view */}
             <div className="flex md:hidden flex-col space-y-4">
-              {ladderSteps.map((step, idx) => (
-                <div key={idx} className="flex items-center justify-between p-4 rounded-2xl border border-border-theme bg-surface">
+              {ladderSteps.map((step) => (
+                <div key={step.slug} className="flex items-center justify-between p-4 rounded-2xl border border-border-theme bg-surface">
                   <div className="flex items-center space-x-4">
-                    <div className={`h-11 w-11 rounded-full border flex flex-col items-center justify-center font-mono ${step.color}`}>
-                      <span className="text-[8px] font-bold">{step.multiple}</span>
+                    <div className={`h-11 w-11 rounded-full border flex items-center justify-center font-mono ${step.topTier ? 'text-green-600 border-green-500/40' : 'text-accent-red border-accent-red/30'}`}>
                       <span className="text-xs font-black">{step.cost.toFixed(0)}</span>
                     </div>
                     <div>
-                      <span className="text-sm font-black text-prime block">{step.name} Tier</span>
-                      <span className="text-xs text-sub">{step.multiple} of Base Plan</span>
+                      <span className="text-sm font-black text-prime block">{step.name}{step.topTier ? ' (Top Tier)' : ''}</span>
                     </div>
                   </div>
                   <div className="text-right">
@@ -470,7 +457,6 @@ export default function Plans({ basePlan = 1 }: { basePlan?: number } = {}) {
           </div>
         </div>
 
-        {/* Payment Error Alert */}
         {paymentError && (
           <div className="mb-6 p-4 rounded-2xl bg-red-500/10 border border-red-500/30 text-xs text-red-500 font-bold flex items-center justify-between">
             <div className="flex items-center space-x-2">
@@ -481,10 +467,9 @@ export default function Plans({ basePlan = 1 }: { basePlan?: number } = {}) {
           </div>
         )}
 
-        {/* Section Accordions */}
         <div id="plans-accordions" className="space-y-6">
 
-          {/* 1. Booster Plan */}
+          {/* 1. Booster Plan (Launch -> Champion) */}
           <div id="plans-accordion-booster" className="border border-border-theme rounded-3xl overflow-hidden bg-surface shadow-sm transition-colors duration-300">
             <button
               id="plans-accordion-booster-trigger"
@@ -496,8 +481,8 @@ export default function Plans({ basePlan = 1 }: { basePlan?: number } = {}) {
                   <Rocket size={24} />
                 </div>
                 <div>
-                  <h3 id="booster-header-title" className="text-xl font-bold text-prime">Booster Plan (4 Upgrade Tiers)</h3>
-                  <p id="booster-header-desc" className="text-xs text-sub mt-1">Scale from 1 USDT to 64 USDT to trigger automatic Main Plan entry</p>
+                  <h3 id="booster-header-title" className="text-xl font-bold text-prime">Booster Plan (5 Tiers)</h3>
+                  <p id="booster-header-desc" className="text-xs text-sub mt-1">Launch (5 USDT) through Champion (320 USDT) — Champion automatically funds Visionary</p>
                 </div>
               </div>
               <div id="booster-header-toggle">
@@ -509,62 +494,46 @@ export default function Plans({ basePlan = 1 }: { basePlan?: number } = {}) {
               <div id="plans-accordion-booster-content" className="p-6 md:p-8 border-t border-border-theme bg-surface-elevated/40">
                 <motion.div
                   id="booster-tiers-grid"
-                  className="grid gap-6 md:grid-cols-2 lg:grid-cols-4"
+                  className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5"
                   initial="hidden"
                   whileInView="visible"
                   viewport={{ once: true, amount: 0.15 }}
                   variants={{ hidden: {}, visible: { transition: { staggerChildren: 0.1 } } }}
                 >
                   {boosterTiers.map((tier, idx) => {
-                    const rawOrder = (eligibilityData?.currentLevelOrder !== undefined && eligibilityData?.currentLevelOrder !== null)
-                      ? eligibilityData.currentLevelOrder
-                      : 0;
-
-                    const isConfirmedIntent = activePaymentIntent?.status === 'CONFIRMED' && (
-                      activePaymentIntent?.level?.slug === tier.slug ||
-                      activePaymentIntent?.metadata?.planSlug === tier.slug ||
-                      activePaymentIntent?.intent?.level?.slug === tier.slug
-                    );
-
-                    const confirmedLevelOrder = (activePaymentIntent?.status === 'CONFIRMED' && activePaymentIntent?.level?.levelOrder)
-                      ? activePaymentIntent.level.levelOrder
-                      : isConfirmedIntent ? tier.levelOrder : 0;
-
-                    const currentOrder = Math.max(rawOrder, confirmedLevelOrder);
-                    const isCurrentOrPassed = (currentOrder >= tier.levelOrder && currentOrder > 0) || (tier.slug === 'starter' && userProfile?.status === 'ACTIVE');
-                    const isTargetLevel = tier.levelOrder === (currentOrder === 0 ? 1 : currentOrder + 1);
+                    const isCurrentOrPassed = (rawOrder >= tier.levelOrder && rawOrder > 0) || (tier.slug === ENTRY_TIER_SLUG && userProfile?.status === 'ACTIVE');
+                    const isTargetLevel = tier.levelOrder === (rawOrder === 0 ? 1 : rawOrder + 1);
                     const isEligibleForUpgrade = isTargetLevel && (eligibilityData?.eligible ?? true) && !isCurrentOrPassed;
-                    const isLocked = (tier.levelOrder > currentOrder + 1) || (isTargetLevel && !eligibilityData?.eligible);
+                    const isLocked = (tier.levelOrder > rawOrder + 1) || (isTargetLevel && !eligibilityData?.eligible);
+                    const isDirectlyJoinable = tier.slug === ENTRY_TIER_SLUG;
 
                     const [costValue, costUnit] = tier.cost.split(' ');
 
                     return (
                       <motion.div
-                        key={idx}
+                        key={tier.slug}
                         id={`booster-tier-card-${idx}`}
                         variants={{ hidden: { opacity: 0, y: 24 }, visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: 'easeOut' } } }}
                         className={`flex flex-col rounded-2xl border bg-surface shadow-md p-6 sm:p-8 hover:shadow-xl hover:-translate-y-1 transition-all duration-300 ${tier.accent}`}
                       >
-                        <div id={`booster-tier-icon-group-${idx}`} className="flex items-center justify-between mb-4">
-                          <span id={`booster-tier-badge-${idx}`} className={`inline-flex items-center px-3 py-1 text-xs font-black rounded-lg ${tier.badgeBg}`}>
-                            {tier.costFormula}
+                        <div className="flex items-center justify-between mb-4">
+                          <span className={`inline-flex items-center px-3 py-1 text-xs font-black rounded-lg ${tier.badgeBg}`}>
+                            {tier.matrixLabel} Matrix
                           </span>
-                          <div id={`booster-tier-icon-${idx}`} className="p-2 bg-surface-elevated rounded-xl">
+                          <div className="p-2 bg-surface-elevated rounded-xl">
                             {tier.icon}
                           </div>
                         </div>
 
-                        <h4 id={`booster-tier-name-${idx}`} className="text-lg font-bold text-prime mb-3">{tier.name}</h4>
+                        <h4 className="text-lg font-bold text-prime mb-3">{tier.name}</h4>
 
-                        {/* Prominent price display */}
-                        <div id={`booster-tier-price-${idx}`} className="flex items-baseline gap-1.5 mb-4">
+                        <div className="flex items-baseline gap-1.5 mb-4">
                           <span className="text-4xl sm:text-5xl font-black text-prime tracking-tight">{costValue}</span>
                           <span className="text-xs sm:text-sm font-bold text-sub uppercase">{costUnit || 'USDT'}</span>
                         </div>
 
-                        <p id={`booster-tier-desc-${idx}`} className="text-xs text-sub mb-4 flex-grow leading-relaxed">{tier.description}</p>
+                        <p className="text-xs text-sub mb-4 flex-grow leading-relaxed">{tier.description}</p>
 
-                        {/* Requirements Badge */}
                         <div className="mb-4 text-[10px] font-bold text-sub space-y-1 bg-surface-elevated/60 p-2.5 rounded-xl border border-border-theme">
                           <div className="flex justify-between">
                             <span>Direct Referrals Req:</span>
@@ -574,29 +543,35 @@ export default function Plans({ basePlan = 1 }: { basePlan?: number } = {}) {
                             <span>Qualified Builders Req:</span>
                             <span className="text-prime font-black">{tier.requiredBuilders}</span>
                           </div>
+                          <div className="flex justify-between">
+                            <span>Daily Cap:</span>
+                            <span className="text-prime font-black">{tier.dailyCapLabel}</span>
+                          </div>
                         </div>
 
-                        <div id={`booster-tier-stats-${idx}`} className="space-y-3 pt-4 border-t border-border-theme text-xs font-bold text-prime">
-                          <div id={`booster-tier-stat-coll-${idx}`} className="flex items-center justify-between">
+                        <div className="space-y-3 pt-4 border-t border-border-theme text-xs font-bold text-prime">
+                          <div className="flex items-center justify-between">
                             <span className="flex items-center gap-2 text-sub font-normal">
                               <span className="flex items-center justify-center h-4 w-4 rounded-full bg-accent-green/10 text-accent-green shrink-0">
                                 <Check size={10} strokeWidth={3} />
                               </span>
-                              Collection (5x)
+                              Cycle Collection
                             </span>
                             <span className="text-prime">{tier.collection}</span>
                           </div>
-                          <div id={`booster-tier-stat-up-${idx}`} className="flex items-center justify-between">
-                            <span className="flex items-center gap-2 text-sub font-normal">
-                              <span className="flex items-center justify-center h-4 w-4 rounded-full bg-accent-green/10 text-accent-green shrink-0">
-                                <Check size={10} strokeWidth={3} />
+                          {tier.upgradeTargetName && (
+                            <div className="flex items-center justify-between">
+                              <span className="flex items-center gap-2 text-sub font-normal">
+                                <span className="flex items-center justify-center h-4 w-4 rounded-full bg-accent-green/10 text-accent-green shrink-0">
+                                  <Check size={10} strokeWidth={3} />
+                                </span>
+                                Funds {tier.upgradeTargetName}
                               </span>
-                              Auto Upgrade
-                            </span>
-                            <span className="text-accent-red">{tier.upgrade}</span>
-                          </div>
+                              <span className="text-accent-red">{tier.upgrade}</span>
+                            </div>
+                          )}
                           {tier.income && (
-                            <div id={`booster-tier-stat-inc-${idx}`} className="flex items-center justify-between pt-2 border-t border-dashed border-border-theme">
+                            <div className="flex items-center justify-between pt-2 border-t border-dashed border-border-theme">
                               <span className="flex items-center gap-2 text-green-600">
                                 <span className="flex items-center justify-center h-4 w-4 rounded-full bg-accent-green/10 text-accent-green shrink-0">
                                   <Check size={10} strokeWidth={3} />
@@ -608,18 +583,17 @@ export default function Plans({ basePlan = 1 }: { basePlan?: number } = {}) {
                           )}
                         </div>
 
-                        {/* Plan Action Button (Disabled when ineligible) */}
                         <div className="mt-6 pt-3 border-t border-border-theme space-y-3">
                           <button
-                            disabled={tier.slug !== 'starter' || isLocked || isCurrentOrPassed || actionLoadingSlug === tier.slug}
+                            disabled={!isDirectlyJoinable || isLocked || isCurrentOrPassed || actionLoadingSlug === tier.slug}
                             onClick={() => {
                               if (isEligibleForUpgrade) {
-                                handlePurchaseFlow(tier.slug === 'starter' ? 'JOIN' : 'UPGRADE', tier.slug);
+                                handlePurchaseFlow(tier.slug === ENTRY_TIER_SLUG ? 'JOIN' : 'UPGRADE', tier.slug);
                               }
                             }}
                             className={`w-full py-3 px-3 rounded-full text-xs font-black flex items-center justify-center space-x-2 transition-all duration-300 ${isCurrentOrPassed
                                 ? 'bg-green-500/10 text-green-600 dark:text-green-400 border border-green-500/30 cursor-default'
-                                : tier.slug !== 'starter'
+                                : !isDirectlyJoinable
                                   ? 'border border-border-theme text-sub opacity-60 cursor-not-allowed hover:border-accent-red/40'
                                   : isEligibleForUpgrade
                                     ? 'bg-gradient-to-r from-accent-red to-blue-700 text-white shadow-xl shadow-accent-red/30 hover:shadow-2xl hover:brightness-110 cursor-pointer'
@@ -636,7 +610,7 @@ export default function Plans({ basePlan = 1 }: { basePlan?: number } = {}) {
                                 <CheckCircle2 size={14} />
                                 <span>Active Tier</span>
                               </>
-                            ) : tier.slug !== 'starter' ? (
+                            ) : !isDirectlyJoinable ? (
                               <>
                                 <Lock size={14} />
                                 <span>Auto Upgrades Only</span>
@@ -644,7 +618,7 @@ export default function Plans({ basePlan = 1 }: { basePlan?: number } = {}) {
                             ) : isEligibleForUpgrade ? (
                               <>
                                 <Rocket size={14} />
-                                <span>Join (10 USDT)</span>
+                                <span>Join ({tier.cost})</span>
                               </>
                             ) : (
                               <>
@@ -658,7 +632,6 @@ export default function Plans({ basePlan = 1 }: { basePlan?: number } = {}) {
                             )}
                           </button>
 
-                          {/* Active Pending Payment Intent Box for this tier */}
                           {activePaymentIntent && (activePaymentIntent.level?.slug === tier.slug || activePaymentIntent.metadata?.planSlug === tier.slug || activePaymentIntent.intent?.level?.slug === tier.slug) && (
                             <div className="p-3.5 rounded-xl bg-surface-elevated border border-amber-500/30 text-[11px] space-y-2 font-mono">
                               <div className="flex justify-between items-center font-bold">
@@ -682,7 +655,6 @@ export default function Plans({ basePlan = 1 }: { basePlan?: number } = {}) {
                                 <span className="font-bold text-prime truncate max-w-[120px]">{activePaymentIntent.receiverAddress}</span>
                               </div>
 
-                              {/* Verification Stepper */}
                               {verificationStep !== 'idle' && (
                                 <div className={`p-2 rounded-lg text-[10px] border space-y-1 mt-2 ${verificationStep === 'confirmed'
                                     ? 'bg-green-500/10 border-green-500/30 text-green-500'
@@ -713,40 +685,63 @@ export default function Plans({ basePlan = 1 }: { basePlan?: number } = {}) {
             )}
           </div>
 
-          {/* 2. Main Plan */}
-          <div id="plans-accordion-main" className="border border-border-theme rounded-3xl overflow-hidden bg-surface shadow-sm transition-colors duration-300">
+          {/* 2. Visionary — Top Tier */}
+          <div id="plans-accordion-visionary" className="border border-green-500/30 rounded-3xl overflow-hidden bg-surface shadow-sm transition-colors duration-300">
             <button
-              id="plans-accordion-main-trigger"
-              onClick={() => setExpandedSection(expandedSection === 'main' ? null : 'main')}
+              id="plans-accordion-visionary-trigger"
+              onClick={() => setExpandedSection(expandedSection === 'visionary' ? null : 'visionary')}
               className="w-full flex items-center justify-between p-6 md:p-8 text-left focus:outline-none hover:bg-surface-elevated transition-colors"
             >
-              <div id="main-header-group" className="flex items-center space-x-4">
-                <div id="main-header-icon" className="p-3 rounded-2xl bg-accent-red/10 text-accent-red">
-                  <Layers size={24} />
+              <div className="flex items-center space-x-4">
+                <div className="p-3 rounded-2xl bg-green-500/10 text-green-600">
+                  <Gem size={24} />
                 </div>
                 <div>
-                  <h3 id="main-header-title" className="text-xl font-bold text-prime">Main Plan</h3>
-                  <p id="main-header-desc" className="text-xs text-sub mt-1">Multi-tiered matrix engine</p>
+                  <h3 className="text-xl font-bold text-prime flex items-center gap-2">
+                    Visionary
+                    <span className="px-2 py-0.5 text-[9px] font-black uppercase tracking-wide bg-green-500/10 text-green-600 rounded-full border border-green-500/30">Top Tier</span>
+                  </h3>
+                  <p className="text-xs text-sub mt-1">{formatUsdt(visionaryCost)} activation — reached after completing Champion</p>
                 </div>
               </div>
-              <div id="main-header-toggle">
-                {expandedSection === 'main' ? <ChevronUp size={20} className="text-sub" /> : <ChevronDown size={20} className="text-sub" />}
+              <div>
+                {expandedSection === 'visionary' ? <ChevronUp size={20} className="text-sub" /> : <ChevronDown size={20} className="text-sub" />}
               </div>
             </button>
 
-            {expandedSection === 'main' && (
-              <div id="plans-accordion-main-content" className="p-12 md:p-16 border-t border-border-theme bg-surface-elevated/40 flex flex-col items-center justify-center text-center">
-                <h4 className="text-2xl font-black text-prime mb-2">Coming Soon</h4>
-                <p className="text-sm text-sub">Main Plan is currently unavailable and will be available soon.</p>
+            {expandedSection === 'visionary' && (
+              <div className="p-6 md:p-8 border-t border-border-theme bg-surface-elevated/40">
+                <div className="grid gap-6 md:grid-cols-2">
+                  <div className="rounded-2xl border border-border-theme bg-surface p-6">
+                    <div className="flex items-center justify-between mb-3">
+                      <span className="text-xs font-black uppercase tracking-wide text-sub">Part 1</span>
+                      <span className="px-2 py-0.5 text-[10px] font-black rounded-lg bg-emerald-50 text-emerald-600 dark:bg-emerald-950/25 dark:text-emerald-500">X3 Matrix</span>
+                    </div>
+                    <div className="text-3xl font-black text-prime mb-2">{formatUsdt(visionaryPart1)}</div>
+                    <p className="text-xs text-sub leading-relaxed">
+                      A 3-position recycling matrix, structured the same way as Launch. First cycle: 200 USDT re-subscribes you into the next pool. Subsequent cycles pay income and re-subscription, uncapped — no daily cycle limit.
+                    </p>
+                  </div>
+                  <div className="rounded-2xl border border-border-theme bg-surface p-6">
+                    <div className="flex items-center justify-between mb-3">
+                      <span className="text-xs font-black uppercase tracking-wide text-sub">Part 2</span>
+                      <span className="px-2 py-0.5 text-[10px] font-black rounded-lg bg-purple-50 text-purple-600 dark:bg-purple-950/25 dark:text-purple-500">3×3, 20 Levels</span>
+                    </div>
+                    <div className="text-3xl font-black text-prime mb-2">{formatUsdt(visionaryPart2)}</div>
+                    <p className="text-xs text-sub leading-relaxed">
+                      A forced 3-wide matrix spanning 20 depth levels, sized in 15 USDT units (300 ÷ 15 = 20 base units). Placement and occupancy tracking is fully live; reward and recycling rules for this component have not yet been finalized and will be published once confirmed.
+                    </p>
+                  </div>
+                </div>
+                <div className="mt-6 text-center text-xs text-sub">
+                  Visionary is the final tier — there is no further upgrade target above it.
+                </div>
               </div>
             )}
           </div>
 
         </div>
 
-        {/* ===========================================
-            6. EXPANDED FAQ SECTION
-           =========================================== */}
         <div id="plans-faq-section" className="mt-20 pt-12 border-t border-border-theme/40">
           <div className="text-center max-w-2xl mx-auto mb-12">
             <span className="inline-flex items-center space-x-1 px-2.5 py-1 text-[10px] font-black bg-accent-red/10 text-accent-red rounded-full uppercase tracking-wider mb-2">

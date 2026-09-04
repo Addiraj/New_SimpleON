@@ -56,10 +56,12 @@ export class ReferralRepository {
     const normalized = tierCode?.toLowerCase().trim();
     const config = BoosterConfigService.getTierConfig(normalized);
     const orderByTier: Record<string, number> = {
-      starter: 1,
-      builder: 2,
-      leader: 3,
-      champion: 4,
+      launch: 1,
+      starter: 2,
+      builder: 3,
+      leader: 4,
+      champion: 5,
+      visionary: 6,
     };
     return config ? orderByTier[config.code] : 1;
   }

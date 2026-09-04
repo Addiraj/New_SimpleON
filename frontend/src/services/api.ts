@@ -321,11 +321,22 @@ export const walletApi = {
     return res.data || res;
   },
 
+  // Bititan Wallet reserve (Builder tier only) — deliberately separate from getSummary(),
+  // never merged with the Income Wallet balance.
+  getBititanSummary: async () => {
+    const res: any = await api.get('/wallet/bititan');
+    return res.data || res;
+  },
+
   getLedger: async (params?: { page?: number; limit?: number; entryType?: string; status?: string; direction?: string; search?: string; startDate?: string; endDate?: string }) => {
     const res: any = await api.get('/wallet/ledger', { params });
     return res.data || res;
   },
 
+  demoActivate: async (data?: { referralCode?: string }) => {
+    const res: any = await api.post('/wallet/demo-activate', data || {});
+    return res.data || res;
+  },
 };
 
 // Transaction API

@@ -19,13 +19,13 @@ export default function ApiDocs() {
       id: 'calculations',
       method: 'GET',
       path: '/api/booster/calculations?basePlan=1.0',
-      description: 'Calculate 4 Booster Tiers & Main Plan distribution parameters.'
+      description: 'Calculate distribution parameters for all 6 Booster Tiers (Launch through Visionary).'
     },
     {
       id: 'matrixTree',
       method: 'GET',
       path: '/api/matrix/13-level-tree?address=0x71C7656EC7ab88b098defB751B7401B5f6d8976F',
-      description: 'Fetch 13-Level 3×3 Forced Matrix hierarchy and earnings breakdown.'
+      description: 'Fetch booster matrix hierarchy and earnings breakdown.'
     },
     {
       id: 'stats',

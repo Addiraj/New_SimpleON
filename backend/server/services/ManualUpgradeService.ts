@@ -276,6 +276,7 @@ export class ManualUpgradeService {
 
       // 8. Create Next Level Matrix Cycle #1 (Preserves old level matrix cycles untouched)
       const firstCycleId = `mc-${userId}-${targetLevel.id}-c1`;
+      const targetMatrixSize = targetLevel.matrixSize || 5;
       const newMatrixCycle = await tx.matrixCycle.upsert({
         where: { id: firstCycleId },
         create: {
@@ -283,15 +284,16 @@ export class ManualUpgradeService {
           user_id: userId,
           level_configuration_id: targetLevel.id,
           cycle_number: 1,
-          total_positions: 5,
+          total_positions: targetMatrixSize,
           filled_positions: 0,
           status: 'ACTIVE',
           configuration_snapshot: {
             id: targetLevel.id,
             name: targetLevel.name,
             slug: targetLevel.slug,
-            joiningAmount: upgradeAmount,
-            matrix_size: 5,
+            joining_amount: upgradeAmount,
+            matrix_size: targetMatrixSize,
+            capping_enabled: targetLevel.cappingEnabled,
           },
           started_at: now,
         },

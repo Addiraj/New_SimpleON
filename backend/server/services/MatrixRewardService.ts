@@ -2,7 +2,9 @@ import { Prisma, CappingHandlingType } from '@prisma/client';
 import { prisma } from '../config/database.js';
 import { logger } from '../config/logger.js';
 import { DailyCappingService } from './DailyCappingService.js';
-import { BoosterConfigService } from './BoosterConfigService.js';
+import { BoosterConfigService, BoosterTierConfig } from './BoosterConfigService.js';
+
+const D = (v: number | string) => new Prisma.Decimal(v);
 
 export interface RewardCalculationResult {
   grossReward: number;
@@ -12,12 +14,20 @@ export interface RewardCalculationResult {
   currentGrossToday: number;
   ledgerEntry: any;
   transaction: any;
+  extraDestinations: Array<{ entryType: string; amount: number; transaction: any; ledgerEntry: any }>;
+}
+
+interface ExtraDestination {
+  entryType: 'NEXT_TIER_ACTIVATION_FUNDING' | 'BITITAN_CREDIT';
+  amount: Prisma.Decimal;
+  description: string;
+  metadata: Record<string, any>;
 }
 
 export class MatrixRewardService {
   /**
    * Calculates and credits cycle reward for a completed matrix cycle.
-   * Ensures idempotency via unique ledger idempotency key `reward-mc-${cycleId}`.
+   * Ensures idempotency via unique ledger idempotency keys `reward-mc-${cycleId}-${entryType}`.
    * Enforces daily cycle capping rules and Immediate Sponsor routing for capped cycles.
    *
    * @param cycle MatrixCycle record
@@ -36,55 +46,103 @@ export class MatrixRewardService {
 
     // 1. Determine verified Booster distribution — PURE MATH, no hardcoded values.
     //
-    // Business Rules (must match image spec exactly):
-    //   Cycle 1, all plans except Champion:
-    //     → Net income = $0. The entire collection is consumed:
-    //       resubscribeAmount funds the next Cycle 1 re-entry.
-    //       upgradeAmount funds the next-level plan activation.
-    //       reserveAmount (Builder only) stays in B-Titan reserve.
-    //       Nothing reaches the user's income wallet.
+    // Business rules (client-approved final ladder — Launch/Starter/Builder/Leader/Champion/Visionary):
+    //   Cycle 1, all tiers except Champion:
+    //     -> Income (MATRIX_REWARD) = $0. The entire collection is consumed by:
+    //       retopupAmount (funds the next Cycle 1 re-entry — handled by RetopupService's
+    //         RETOPUP_DEBIT, unconditionally created for every completing cycle, so it
+    //         already IS this leg's auditable ledger entry; not duplicated here).
+    //       upgradeAmount (funds the next-tier activation) -> explicit NEXT_TIER_ACTIVATION_FUNDING.
+    //       Builder only: reserveAmount stays in the Bititan Wallet -> explicit BITITAN_CREDIT,
+    //         kept structurally separate from the user's Income Wallet (WalletService excludes
+    //         both new entry types from availableBalance/totalEarned).
+    //       Visionary's first-cycle "400 -> next pool" leg is intentionally left uncredited —
+    //         the client spec does not define a discrete external destination for it (unlike
+    //         every other tier's upgradeAmount leg), so no ledger entry is invented for it.
     //
     //   Cycle 1, Champion only:
-    //     → Net income = collectionAmount - resubscribeAmount - mainPlanAmount
-    //       (Champion has no upgrade target, so only resub + main plan are deducted)
-    //       Math: 1600 - 320 - 500 = 780 USDT
+    //     -> Income = collectionAmount - retopupAmount - mainPlanAmount (1600-320-500=780)
+    //       mainPlanAmount (500) funds Visionary activation -> explicit NEXT_TIER_ACTIVATION_FUNDING.
     //
-    //   Cycle 2+, ALL plans:
-    //     → Net income = collectionAmount - resubscribeAmount
-    //       (only resubscription is deducted automatically; everything else goes to wallet)
-    //       Starter:  50 - 10 = 40 USDT
-    //       Builder: 200 - 40 = 160 USDT
-    //       Leader:  400 - 80 = 320 USDT
-    //       Champion: 1600 - 320 = 1280 USDT
+    //   Cycle 2+, ALL tiers (including Launch and Visionary's X3 leg):
+    //     -> Income = collectionAmount - retopupAmount (only resubscription is deducted;
+    //       everything else goes to the wallet). No NEXT_TIER_ACTIVATION_FUNDING/BITITAN_CREDIT
+    //       legs on subsequent cycles — matches the already-approved live Builder/Leader/Champion
+    //       subsequent-cycle behavior, extended unchanged to Launch/Starter/Visionary.
     //
-    // All numbers come dynamically from the database snapshot — if plan amounts ever change, this auto-adjusts.
+    //   Launch and Visionary's X3 leg never go through DailyCappingService (configSnapshot's
+    //   capping_enabled=false short-circuits the block below) — unlimited cycles, per spec.
+    //
+    // All numbers come dynamically from the database snapshot — if plan amounts ever change,
+    // this auto-adjusts. Visionary uses its 200 USDT X3-leg unit amount (BOOSTER_TIER_CONFIGS'
+    // visionaryPart1Amount), not its 500 USDT full joining amount, as the per-position unit —
+    // the 300 USDT 3x3/20-level leg (Part 2) is tracked entirely separately via
+    // VisionaryLevelProgress/VisionaryTreePosition, not through this cycle-engine at all.
     const tierConfig = BoosterConfigService.getTierConfig(configSnapshot?.slug) || BoosterConfigService.assertTierConfig('starter');
     const isFirstCycle = cycle.cycle_number === 1;
     const isChampion = tierConfig.code === 'champion';
+    const isVisionary = tierConfig.code === 'visionary';
 
-    // Extract raw financial values directly from the DB snapshot
-    const joiningAmount = configSnapshot?.joining_amount ? parseFloat(configSnapshot.joining_amount.toString()) : tierConfig.subscriptionAmount;
+    // Extract raw financial values directly from the DB snapshot (fallback to tierConfig for
+    // legacy snapshots captured before a given field existed).
+    const snapshotUnitAmount = configSnapshot?.joining_amount ? D(configSnapshot.joining_amount.toString()) : null;
+    const unitAmount = isVisionary
+      ? D(tierConfig.visionaryPart1Amount ?? tierConfig.subscriptionAmount)
+      : (snapshotUnitAmount ?? D(tierConfig.subscriptionAmount));
     const matrixSize = configSnapshot?.matrix_size ? parseInt(configSnapshot.matrix_size.toString(), 10) : tierConfig.slotsPerCycle;
-    const retopupAmount = configSnapshot?.retopup_amount ? parseFloat(configSnapshot.retopup_amount.toString()) : tierConfig.resubscribeAmount;
-    
-    // Core Mathematical Formula: Collection = Joining Amount * Matrix Size (5 slots)
-    const collectionAmount = joiningAmount * matrixSize;
+    const retopupAmount = configSnapshot?.retopup_amount ? D(configSnapshot.retopup_amount.toString()) : D(tierConfig.resubscribeAmount);
 
-    let grossReward: number;
-    if (isFirstCycle && !isChampion) {
-      // Cycle 1: Starter / Builder / Leader → zero income, all funds go to upgrade + resubscription + reserves
-      grossReward = 0;
-    } else if (isFirstCycle && isChampion) {
-      // Cycle 1: Champion → collection minus resubscription minus main plan reserve
-      // (Main plan reserve is fixed in config as it's a cross-system transfer)
-      grossReward = collectionAmount - retopupAmount - (tierConfig.mainPlanAmount ?? 0);
+    // Core Mathematical Formula: Collection = Unit Amount * Matrix Size
+    const collectionAmount = unitAmount.times(matrixSize);
+
+    let grossRewardDecimal: Prisma.Decimal;
+    const extras: ExtraDestination[] = [];
+
+    if (isFirstCycle && isChampion) {
+      // Cycle 1: Champion -> collection minus resubscription minus Visionary-activation funding
+      const mainPlanAmount = D(tierConfig.mainPlanAmount ?? 0);
+      grossRewardDecimal = collectionAmount.minus(retopupAmount).minus(mainPlanAmount);
+      if (mainPlanAmount.greaterThan(0) && tierConfig.upgradeTarget) {
+        extras.push({
+          entryType: 'NEXT_TIER_ACTIVATION_FUNDING',
+          amount: mainPlanAmount,
+          description: `Cycle #1 funding toward ${tierConfig.upgradeTarget} activation`,
+          metadata: { target_tier: tierConfig.upgradeTarget },
+        });
+      }
+    } else if (isFirstCycle) {
+      // Cycle 1: every other tier (Launch/Starter/Builder/Leader/Visionary-X3) -> zero income,
+      // all funds go to re-topup (handled by RetopupService) + next-tier funding + (Builder) reserve.
+      grossRewardDecimal = D(0);
+      const upgradeAmount = tierConfig.upgradeAmount != null ? D(tierConfig.upgradeAmount) : null;
+      if (upgradeAmount && upgradeAmount.greaterThan(0) && tierConfig.upgradeTarget) {
+        extras.push({
+          entryType: 'NEXT_TIER_ACTIVATION_FUNDING',
+          amount: upgradeAmount,
+          description: `Cycle #1 funding toward ${tierConfig.upgradeTarget} activation`,
+          metadata: { target_tier: tierConfig.upgradeTarget },
+        });
+      }
+      if (tierConfig.code === 'builder' && tierConfig.reserveAmount) {
+        extras.push({
+          entryType: 'BITITAN_CREDIT',
+          amount: D(tierConfig.reserveAmount),
+          description: `Cycle #1 Bititan Wallet reserve (kept separate from Income Wallet)`,
+          metadata: {},
+        });
+      }
+      // Visionary's "400 -> next pool" leg: intentionally not credited here — see comment above.
     } else {
-      // Cycle 2+: ALL plans → collection minus resubscription only, rest goes to wallet
-      grossReward = collectionAmount - retopupAmount;
+      // Cycle 2+: ALL tiers -> collection minus resubscription only, rest goes to wallet.
+      grossRewardDecimal = collectionAmount.minus(retopupAmount);
     }
 
-    // 2. Check and apply Daily Capping via DailyCappingService
-    // Only process if there's actually a gross reward to distribute
+    const grossReward = grossRewardDecimal.toNumber();
+
+    // 2. Check and apply Daily Capping via DailyCappingService.
+    // Launch and Visionary never reach here with grossReward>0 in a way that matters, since
+    // capping_enabled=false on their LevelConfiguration row skips this block entirely.
+    const cappingEnabled = configSnapshot?.capping_enabled !== false;
     let cappingEval = null;
     let allowedReward = grossReward;
     let cappedExcess = 0;
@@ -92,7 +150,7 @@ export class MatrixRewardService {
     let currentGrossToday = 0;
     let isCapped = false;
 
-    if (grossReward > 0) {
+    if (grossReward > 0 && cappingEnabled) {
       cappingEval = await DailyCappingService.evaluateAndApplyCapping(
         userId,
         levelConfigId,
@@ -109,116 +167,177 @@ export class MatrixRewardService {
       isCapped = cappingEval.isCapped;
     }
 
-    // 3. Create Wallet Ledger Credit (Idempotent)
+    // 3. Create Wallet Ledger Credit (Idempotent) for the primary MATRIX_REWARD leg
     const idempotencyKey = `reward-mc-${cycleId}`;
 
     const existingLedger = await db.walletLedger.findUnique({
       where: { idempotency_key: idempotencyKey },
     });
 
+    let transaction: any = null;
+    let ledgerEntry: any = null;
+
     if (existingLedger) {
       logger.info(
         { userId, cycleId, idempotencyKey },
         '[MatrixRewardService] Cycle reward ledger credit already exists (idempotent)'
       );
-      return {
-        grossReward,
-        allowedReward: parseFloat(existingLedger.amount.toString()),
-        cappedExcess,
-        dailyCapLimit,
-        currentGrossToday,
-        ledgerEntry: existingLedger,
-        transaction: null,
-      };
-    }
+      ledgerEntry = existingLedger;
+      allowedReward = parseFloat(existingLedger.amount.toString());
+    } else {
+      // 4. Determine actual wallet recipient (Participant vs Immediate Sponsor)
+      let recipientUserId = userId;
+      let isRedirectedToSponsor = false;
 
-    // 4. Determine actual wallet recipient (Participant vs Immediate Sponsor)
-    let recipientUserId = userId;
-    let isRedirectedToSponsor = false;
+      if (isCapped && grossReward > 0) {
+        const participantUser = await db.user.findUnique({
+          where: { id: userId },
+          select: { sponsor_id: true },
+        });
 
-    if (isCapped && grossReward > 0) {
-      // Fetch the participant's immediate sponsor
-      const participantUser = await db.user.findUnique({
-        where: { id: userId },
-        select: { sponsor_id: true }
-      });
-      
-      if (participantUser?.sponsor_id) {
-        recipientUserId = participantUser.sponsor_id;
-        isRedirectedToSponsor = true;
-        
+        if (participantUser?.sponsor_id) {
+          recipientUserId = participantUser.sponsor_id;
+          isRedirectedToSponsor = true;
+
+          logger.info(
+            { originalUserId: userId, sponsorId: recipientUserId, cycleId },
+            '[MatrixRewardService] Cycle reward capped. Redirecting reward to immediate sponsor.'
+          );
+        } else {
+          logger.warn(
+            { userId, cycleId },
+            '[MatrixRewardService] Cycle reward capped but user has NO immediate sponsor. Reward is lost.'
+          );
+        }
+      }
+
+      // 5. Create Transaction + WalletLedger credit (attributed to the recipient)
+      if (grossReward > 0 && (recipientUserId === userId || isRedirectedToSponsor)) {
+        transaction = await db.transaction.create({
+          data: {
+            user_id: recipientUserId,
+            transaction_type: 'MATRIX_REWARD',
+            amount: new Prisma.Decimal(grossReward),
+            currency: 'USDT',
+            status: 'COMPLETED',
+            description: isRedirectedToSponsor
+              ? `Matrix Cycle #${cycleNumber} Reward (Spill-up from capped user)`
+              : `Matrix Cycle #${cycleNumber} Verified Booster Net Income`,
+            metadata: {
+              cycle_id: cycleId,
+              cycle_number: cycleNumber,
+              gross_reward: grossReward,
+              allowed_reward: allowedReward,
+              capped_excess: cappedExcess,
+              daily_cap: dailyCapLimit,
+              tier_code: tierConfig.code,
+              is_capped_redirect: isRedirectedToSponsor,
+              original_participant_id: userId,
+            },
+            completed_at: new Date(),
+          },
+        });
+
+        ledgerEntry = await db.walletLedger.create({
+          data: {
+            user_id: recipientUserId,
+            transaction_id: transaction.id,
+            entry_type: 'MATRIX_REWARD',
+            direction: 'CREDIT',
+            amount: new Prisma.Decimal(grossReward),
+            available_amount: new Prisma.Decimal(grossReward),
+            status: 'AVAILABLE',
+            idempotency_key: idempotencyKey,
+            source_type: 'MATRIX_CYCLE',
+            source_id: cycleId,
+            metadata: {
+              cycle_number: cycleNumber,
+              tier_code: tierConfig.code,
+              is_capped_redirect: isRedirectedToSponsor,
+              original_participant_id: userId,
+            },
+          },
+        });
+
         logger.info(
-          { originalUserId: userId, sponsorId: recipientUserId, cycleId },
-          '[MatrixRewardService] Cycle reward capped. Redirecting reward to immediate sponsor.'
-        );
-      } else {
-        // If they have no sponsor, the reward is effectively lost per normal fallback rules
-        // (But we create a transaction indicating it was capped without a ledger credit)
-        logger.warn(
-          { userId, cycleId },
-          '[MatrixRewardService] Cycle reward capped but user has NO immediate sponsor. Reward is lost.'
+          { recipientUserId, originalUserId: userId, cycleId, amount: grossReward, isRedirectedToSponsor },
+          '[MatrixRewardService] Successfully credited cycle reward'
         );
       }
     }
 
-    // 5. Create Transaction record (attributed to the recipient)
-    let transaction = null;
-    let ledgerEntry = null;
+    // 6. Create explicit, independently-idempotent ledger entries for every "invisible" leg
+    // (next-tier activation funding, Builder's Bititan reserve). Always credited to the cycle
+    // owner — these are structural allocations from their own cycle, not a different person's
+    // income, and are excluded from availableBalance/totalEarned by WalletService.getSummary.
+    const extraDestinations: RewardCalculationResult['extraDestinations'] = [];
+    for (const extra of extras) {
+      if (extra.amount.lessThanOrEqualTo(0)) continue;
 
-    if (grossReward > 0 && (recipientUserId === userId || isRedirectedToSponsor)) {
-      // Using grossReward amount because the recipient gets the FULL reward 
-      // (whether they are the normal participant or the immediate sponsor)
-      transaction = await db.transaction.create({
+      const extraIdempotencyKey = `reward-mc-${cycleId}-${extra.entryType}`;
+      const existingExtraLedger = await db.walletLedger.findUnique({
+        where: { idempotency_key: extraIdempotencyKey },
+      });
+
+      if (existingExtraLedger) {
+        extraDestinations.push({
+          entryType: extra.entryType,
+          amount: parseFloat(existingExtraLedger.amount.toString()),
+          transaction: null,
+          ledgerEntry: existingExtraLedger,
+        } as any);
+        continue;
+      }
+
+      const extraTransaction = await db.transaction.create({
         data: {
-          user_id: recipientUserId,
-          transaction_type: 'MATRIX_REWARD',
-          amount: new Prisma.Decimal(grossReward),
+          user_id: userId,
+          transaction_type: extra.entryType === 'BITITAN_CREDIT' ? 'BOOSTER_REWARD' : 'UPGRADE',
+          amount: extra.amount,
           currency: 'USDT',
           status: 'COMPLETED',
-          description: isRedirectedToSponsor 
-            ? `Matrix Cycle #${cycleNumber} Reward (Spill-up from capped user)` 
-            : `Matrix Cycle #${cycleNumber} Verified Booster Net Income`,
+          description: extra.description,
           metadata: {
             cycle_id: cycleId,
             cycle_number: cycleNumber,
-            gross_reward: grossReward,
-            allowed_reward: allowedReward,
-            capped_excess: cappedExcess,
-            daily_cap: dailyCapLimit,
             tier_code: tierConfig.code,
-            is_capped_redirect: isRedirectedToSponsor,
-            original_participant_id: userId
+            ...extra.metadata,
           },
           completed_at: new Date(),
         },
       });
 
-      // Create WalletLedger Credit
-      ledgerEntry = await db.walletLedger.create({
+      const extraLedgerEntry = await db.walletLedger.create({
         data: {
-          user_id: recipientUserId,
-          transaction_id: transaction.id,
-          entry_type: 'MATRIX_REWARD',
+          user_id: userId,
+          transaction_id: extraTransaction.id,
+          entry_type: extra.entryType,
           direction: 'CREDIT',
-          amount: new Prisma.Decimal(grossReward),
-          available_amount: new Prisma.Decimal(grossReward),
-          status: 'AVAILABLE',
-          idempotency_key: idempotencyKey, // Idempotency protects duplicate routing
+          amount: extra.amount,
+          available_amount: D(0), // structural allocation, not spendable — excluded from balance summaries
+          status: 'COMPLETED',
+          idempotency_key: extraIdempotencyKey,
           source_type: 'MATRIX_CYCLE',
           source_id: cycleId,
           metadata: {
             cycle_number: cycleNumber,
             tier_code: tierConfig.code,
-            is_capped_redirect: isRedirectedToSponsor,
-            original_participant_id: userId
+            ...extra.metadata,
           },
         },
       });
 
       logger.info(
-        { recipientUserId, originalUserId: userId, cycleId, amount: grossReward, isRedirectedToSponsor },
-        '[MatrixRewardService] Successfully credited cycle reward'
+        { userId, cycleId, entryType: extra.entryType, amount: extra.amount.toString() },
+        '[MatrixRewardService] Successfully credited explicit cycle destination'
       );
+
+      extraDestinations.push({
+        entryType: extra.entryType,
+        amount: extra.amount.toNumber(),
+        transaction: extraTransaction,
+        ledgerEntry: extraLedgerEntry,
+      });
     }
 
     return {
@@ -229,6 +348,7 @@ export class MatrixRewardService {
       currentGrossToday,
       ledgerEntry,
       transaction,
+      extraDestinations,
     };
   }
 }

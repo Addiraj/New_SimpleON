@@ -67,10 +67,12 @@ export default function X5MatrixUI() {
 
   const urlTier = typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('tier') : null;
   const tierTabs = [
+    { slug: 'launch', name: 'Launch Booster', icon: 'LN' },
     { slug: 'starter', name: 'Starter Booster', icon: 'S' },
     { slug: 'builder', name: 'Builder Booster', icon: 'B' },
     { slug: 'leader', name: 'Leader Booster', icon: 'L' },
     { slug: 'champion', name: 'Champion Booster', icon: 'C' },
+    { slug: 'visionary', name: 'Visionary', icon: 'V' },
   ];
 
   const unlockedTierCodes = new Set(availableTiers.map((tier) => tier.code));
@@ -87,6 +89,18 @@ export default function X5MatrixUI() {
   const currentTierObj = visibleTierTabs.find((t) => t.slug === selectedTierSlug) || visibleTierTabs[0];
   const x5PoolAmount = activeTierConfig ? activeTierConfig.subscriptionAmount * basePlan : currentTierObj?.amount || 0;
   const slotValueLabel = x5PoolAmount === null ? '--' : formatUsdtPlain(x5PoolAmount);
+  // Matrix width is per-tier — Launch and Visionary's X3 leg are 3-wide, Starter through Champion
+  // (and Visionary's own resubscribe amount) are 5-wide. Never assume 5.
+  const matrixSize = activeTierConfig?.slotsPerCycle || 5;
+
+  /** Evenly spaces `count` nodes across the SVG's usable width — pixel-identical to the old
+   *  hardcoded [80,190,300,410,520] array when count=5. */
+  const computeNodePositions = (count: number, viewBoxWidth = 600, margin = 80): number[] => {
+    if (count <= 1) return [viewBoxWidth / 2];
+    const usable = viewBoxWidth - margin * 2;
+    const step = usable / (count - 1);
+    return Array.from({ length: count }, (_, i) => margin + step * i);
+  };
 
   // Load Matrix Data from Backend API
   const fetchMatrixData = async (slugToFetch = selectedTierSlug) => {
@@ -181,14 +195,15 @@ export default function X5MatrixUI() {
 
           const tierConfig = activeTierConfig || BOOSTER_TIER_CONFIGS[0];
           const slotAmount = tierConfig.subscriptionAmount * basePlan;
+          const cycleMatrixSize = tierConfig.slotsPerCycle || 5;
           const nodes: MatrixNode[] = [];
-          for (let slot = 1; slot <= 5; slot++) {
+          for (let slot = 1; slot <= cycleMatrixSize; slot++) {
             const pos = positionsMap.get(slot);
             if (pos) {
               const addr = pos.member_user?.wallet_address || '0x0000...';
               nodes.push({
                 slotNumber: slot,
-                label: slot === 5 ? `Position #${slot} (Auto-Recycle)` : `Position #${slot}`,
+                label: slot === cycleMatrixSize ? `Position #${slot} (Auto-Recycle)` : `Position #${slot}`,
                 isFilled: true,
                 address: addr,
                 timestamp: pos.placed_at ? new Date(pos.placed_at).toISOString().replace('T', ' ').slice(0, 19) : '',
@@ -205,7 +220,7 @@ export default function X5MatrixUI() {
             } else {
               nodes.push({
                 slotNumber: slot,
-                label: slot === 5 ? `Position #${slot} (Auto-Recycle)` : `Position #${slot}`,
+                label: slot === cycleMatrixSize ? `Position #${slot} (Auto-Recycle)` : `Position #${slot}`,
                 isFilled: false,
                 status: 'PENDING',
                 tierAmount: slotAmount,
@@ -223,10 +238,10 @@ export default function X5MatrixUI() {
     }
   };
 
-  // Fallback 5 empty nodes if backend hasn't populated yet
-  const displayNodes = currentNodes.length === 5 ? currentNodes : Array.from({ length: 5 }, (_, i) => ({
+  // Fallback empty nodes (matrix-width-aware) if backend hasn't populated yet
+  const displayNodes = currentNodes.length === matrixSize ? currentNodes : Array.from({ length: matrixSize }, (_, i) => ({
     slotNumber: i + 1,
-    label: i === 4 ? `Position #${i + 1} (Auto-Recycle)` : `Position #${i + 1}`,
+    label: i === matrixSize - 1 ? `Position #${i + 1} (Auto-Recycle)` : `Position #${i + 1}`,
     isFilled: false,
     status: 'PENDING' as const,
     tierAmount: x5PoolAmount || 0,
@@ -236,7 +251,7 @@ export default function X5MatrixUI() {
   }));
 
   const activeCount = displayNodes.filter(n => n.isFilled).length;
-  const pendingCount = Math.max(0, 5 - activeCount);
+  const pendingCount = Math.max(0, matrixSize - activeCount);
   const currentCycleGeneratedAmount = (x5PoolAmount || 0) * activeCount;
 
   return (
@@ -250,13 +265,13 @@ export default function X5MatrixUI() {
           <div className="space-y-2">
             <div className="inline-flex items-center space-x-2 rounded-full bg-accent-red/10 px-3.5 py-1 text-xs font-bold text-accent-red border border-accent-red/20">
               <Layers size={14} />
-              <span>X5 Matrix Engine • Booster Pool Cycle</span>
+              <span>{matrixSize === 3 ? 'X3' : 'X5'} Matrix Engine • Booster Pool Cycle</span>
             </div>
             <h1 className="text-3xl sm:text-4xl font-black text-prime tracking-tight">
-              Interactive <span className="text-accent-red">X5 Matrix</span> Dashboard
+              Interactive <span className="text-accent-red">{matrixSize === 3 ? 'X3' : 'X5'} Matrix</span> Dashboard
             </h1>
             <p className="text-xs sm:text-sm text-sub max-w-2xl leading-relaxed">
-              Every 5th placement triggers automated Booster Pool recycling. Current values are loaded from the active Booster tier and verified backend configuration.
+              Every {matrixSize === 3 ? '3rd' : '5th'} placement triggers automated Booster Pool recycling. Current values are loaded from the active Booster tier and verified backend configuration.
             </p>
           </div>
 
@@ -275,7 +290,7 @@ export default function X5MatrixUI() {
               <span className="text-2xl font-black font-mono text-accent-red">{summaryData.activeCycleNumber ? `Cycle #${summaryData.activeCycleNumber}` : 'Unavailable'}</span>
             </div>
             <div className="p-3 rounded-2xl bg-surface-elevated border border-border-theme text-right">
-              <span className="text-[10px] font-mono text-sub block uppercase font-bold">X5 Slot Value</span>
+              <span className="text-[10px] font-mono text-sub block uppercase font-bold">{matrixSize === 3 ? 'X3' : 'X5'} Slot Value</span>
               <span className="text-2xl font-black font-mono text-emerald-500">{slotValueLabel} USDT</span>
             </div>
           </div>
@@ -343,16 +358,16 @@ export default function X5MatrixUI() {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         <div className="p-6 rounded-3xl bg-surface border border-border-theme shadow-md space-y-1">
           <span className="text-[10px] font-mono font-bold text-sub uppercase">Filled Node Slots</span>
-          <div className="text-3xl font-black font-mono text-prime">{activeCount} / 5 Slots</div>
+          <div className="text-3xl font-black font-mono text-prime">{activeCount} / {matrixSize} Slots</div>
           <div className="w-full bg-border-theme h-2 rounded-full overflow-hidden mt-2">
-            <div className="bg-accent-red h-full rounded-full transition-all duration-500" style={{ width: `${(activeCount / 5) * 100}%` }} />
+            <div className="bg-accent-red h-full rounded-full transition-all duration-500" style={{ width: `${(activeCount / matrixSize) * 100}%` }} />
           </div>
         </div>
 
         <div className="p-6 rounded-3xl bg-surface border border-border-theme shadow-md space-y-1">
           <span className="text-[10px] font-mono font-bold text-sub uppercase">Pending Node Slots</span>
           <div className="text-3xl font-black font-mono text-amber-500">{pendingCount} Slots Open</div>
-          <p className="text-[11px] text-sub">Next slot: Position #{activeCount < 5 ? activeCount + 1 : 5}</p>
+          <p className="text-[11px] text-sub">Next slot: Position #{activeCount < matrixSize ? activeCount + 1 : matrixSize}</p>
         </div>
 
         <div className="p-6 rounded-3xl bg-surface border border-border-theme shadow-md space-y-1">
@@ -374,13 +389,13 @@ export default function X5MatrixUI() {
           <div>
             <h2 className="text-lg font-black text-prime flex items-center space-x-2">
               <Sparkles size={18} className="text-accent-red" />
-              <span>Interactive SVG X5 Matrix Node Map (Cycle #{selectedCycle})</span>
+              <span>Interactive SVG {matrixSize === 3 ? 'X3' : 'X5'} Matrix Node Map (Cycle #{selectedCycle})</span>
             </h2>
             <p className="text-xs text-sub">Hover over any position node to inspect live placement timestamps and wallet reward splits.</p>
           </div>
 
           <div className="flex items-center space-x-2">
-            {activeCount === 5 ? (
+            {activeCount === matrixSize ? (
               <span className="px-3 py-1 rounded-xl bg-emerald-500/10 text-emerald-500 font-mono text-xs font-bold border border-emerald-500/20 flex items-center space-x-1.5">
                 <CheckCircle2 size={14} />
                 <span>Cycle #{selectedCycle} COMPLETED & Recycled</span>
@@ -404,13 +419,11 @@ export default function X5MatrixUI() {
         <div className="relative p-4 sm:p-8 rounded-2xl bg-surface-elevated/80 border border-border-theme overflow-x-auto scrollbar-none mt-4 sm:mt-0">
           <div className="min-w-[600px] flex flex-col items-center justify-center min-h-[420px]">
           <svg className="w-full max-w-2xl h-80 overflow-visible" viewBox="0 0 600 320">
-            {/* Connector Lines from Root (300, 50) to 5 Nodes */}
+            {/* Connector Lines from Root (300, 50) to each node — matrix-width-aware */}
             <g stroke="currentColor" className="text-border-theme" strokeWidth="2" strokeDasharray="4 4">
-              <line x1="300" y1="50" x2="80" y2="230" />
-              <line x1="300" y1="50" x2="190" y2="230" />
-              <line x1="300" y1="50" x2="300" y2="230" />
-              <line x1="300" y1="50" x2="410" y2="230" />
-              <line x1="300" y1="50" x2="520" y2="230" />
+              {computeNodePositions(displayNodes.length).map((x, i) => (
+                <line key={i} x1="300" y1="50" x2={x} y2="230" />
+              ))}
             </g>
 
             {/* Root Node (Center Top) */}
@@ -421,14 +434,14 @@ export default function X5MatrixUI() {
               </text>
             </g>
 
-            {/* 5 Satellite Nodes */}
+            {/* Satellite Nodes — 3 for X3 tiers (Launch, Visionary), 5 for X5 tiers */}
             {displayNodes.map((node, index) => {
-              const xPositions = [80, 190, 300, 410, 520];
+              const xPositions = computeNodePositions(displayNodes.length);
               const cx = xPositions[index];
               const cy = 230;
 
               const isFilled = node.isFilled;
-              const isRecycleNode = index === 4;
+              const isRecycleNode = index === displayNodes.length - 1;
 
               return (
                 <g 
@@ -548,7 +561,7 @@ export default function X5MatrixUI() {
             </h3>
             <p className="text-xs text-sub leading-relaxed">
               {activeTierConfig?.code === 'champion' ? (
-                <><strong>{formatUsdtPlain(activeTierConfig.mainPlanAmount || 0)} USDT</strong> Main Plan activation + <strong>{formatUsdtPlain(activeTierConfig.netIncome || 0)} USDT</strong> first net income.</>
+                <><strong>{formatUsdtPlain(activeTierConfig.mainPlanAmount || 0)} USDT</strong> Visionary activation + <strong>{formatUsdtPlain(activeTierConfig.netIncome || 0)} USDT</strong> first net income.</>
               ) : (
                 <>Cycle 2+ distribution is loaded from backend configuration when available.</>
               )}
@@ -604,7 +617,7 @@ export default function X5MatrixUI() {
                   .filter(item => {
                     if (historyFilter === 'COMPLETED') return item.status === 'COMPLETED';
                     if (historyFilter === 'IN_PROGRESS') return item.status === 'ACTIVE' || item.status === 'IN_PROGRESS';
-                    if (['starter', 'builder', 'leader', 'champion'].includes(historyFilter)) return (item as any).levelSlug === historyFilter;
+                    if (['launch', 'starter', 'builder', 'leader', 'champion', 'visionary'].includes(historyFilter)) return (item as any).levelSlug === historyFilter;
                     return true;
                   })
                   .map((item) => (

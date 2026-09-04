@@ -67,7 +67,10 @@ describe('Booster verified configuration and capping', () => {
   });
 
   it('keeps verified tier distributions mathematically correct', () => {
-    const [starter, builder, leader, champion] = BOOSTER_TIER_CONFIGS;
+    const starter = BOOSTER_TIER_CONFIGS.find((t) => t.code === 'starter')!;
+    const builder = BOOSTER_TIER_CONFIGS.find((t) => t.code === 'builder')!;
+    const leader = BOOSTER_TIER_CONFIGS.find((t) => t.code === 'leader')!;
+    const champion = BOOSTER_TIER_CONFIGS.find((t) => t.code === 'champion')!;
 
     expect(starter.collectionAmount - starter.resubscribeAmount).toBe(starter.upgradeAmount! + (starter.reserveAmount || 0));
 
