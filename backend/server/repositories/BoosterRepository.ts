@@ -1,5 +1,6 @@
 import { prisma } from '../config/database.js';
 import { logger } from '../config/logger.js';
+import { BOOSTER_TIER_CONFIGS } from '../services/BoosterConfigService.js';
 
 export interface LevelConfigRecord {
   id: string;
@@ -18,6 +19,9 @@ export interface LevelConfigRecord {
   required_qualified_builders: number;
   auto_upgrade_enabled: boolean;
   retopup_enabled: boolean;
+  capping_enabled: boolean;
+  bititan_amount: string | null;
+  matrix_type: string;
   status: 'ACTIVE' | 'INACTIVE' | 'DEPRECATED';
   version: number;
   effective_from: Date;
@@ -74,110 +78,73 @@ export interface FormattedPlan {
   retopupEnabled: boolean;
   retopup_enabled: boolean;
   'Re-topup enabled': boolean;
+  cappingEnabled: boolean;
+  capping_enabled: boolean;
+  bititanAmount: string | null;
+  bititan_amount: string | null;
+  matrixType: string;
+  matrix_type: string;
+  /** Visionary only: the 500 USDT joining amount splits into a 200 X3 leg (Part 1) and a 300
+   *  3x3/20-level leg (Part 2), tracked entirely outside matrix_size/MatrixCycle. Undefined for
+   *  every other tier. */
+  visionaryPart1Amount?: number;
+  visionaryPart2Amount?: number;
   status: string;
   Status: string;
   version: number;
 }
 
-// In-memory seed data for active level configurations (Starter, Builder, Leader, Champion)
-const DEFAULT_LEVEL_CONFIGS: LevelConfigRecord[] = [
-  {
-    id: 'cfg-starter-v1',
-    name: 'Starter',
-    slug: 'starter',
-    level_order: 1,
-    joining_amount: '10.00000000',
-    upgrade_amount: '40.00000000',
-    matrix_size: 5,
-    income_per_position: '2.00000000',
-    cycle_reward: '40.00000000',   // Cycle 2+ net income
-    retopup_amount: '10.00000000',
+// Non-financial per-tier metadata with no equivalent in BoosterConfigService (see seed.ts for the
+// matching derivation used at DB-seed time — kept in sync manually since this is a distinct, in-memory
+// fallback path used only when Prisma is unreachable).
+const FALLBACK_LEVEL_METADATA: Record<string, { name: string; income_per_position: string; cycle_reward: string; auto_upgrade_enabled: boolean }> = {
+  launch: { name: 'Launch', income_per_position: '1.66666667', cycle_reward: '10.00000000', auto_upgrade_enabled: true },
+  starter: { name: 'Starter', income_per_position: '2.00000000', cycle_reward: '40.00000000', auto_upgrade_enabled: true },
+  builder: { name: 'Builder', income_per_position: '8.00000000', cycle_reward: '160.00000000', auto_upgrade_enabled: true },
+  leader: { name: 'Leader', income_per_position: '16.00000000', cycle_reward: '320.00000000', auto_upgrade_enabled: true },
+  champion: { name: 'Champion', income_per_position: '64.00000000', cycle_reward: '780.00000000', auto_upgrade_enabled: false },
+  visionary: { name: 'Visionary', income_per_position: '66.66666667', cycle_reward: '400.00000000', auto_upgrade_enabled: false },
+};
+
+const FALLBACK_LEVEL_ORDER: Record<string, number> = {
+  launch: 1, starter: 2, builder: 3, leader: 4, champion: 5, visionary: 6,
+};
+
+// In-memory seed data for active level configurations (Launch, Starter, Builder, Leader,
+// Champion, Visionary). Financial amounts, capping/matrix flags, and referral requirements
+// are derived from BOOSTER_TIER_CONFIGS — the single authoritative source — so this fallback
+// can never drift from the live-DB seed (seed.ts) again.
+const DEFAULT_LEVEL_CONFIGS: LevelConfigRecord[] = (['launch', 'starter', 'builder', 'leader', 'champion', 'visionary'] as const).map((slug) => {
+  const tier = BOOSTER_TIER_CONFIGS.find((t) => t.code === slug)!;
+  const meta = FALLBACK_LEVEL_METADATA[slug];
+  return {
+    id: `cfg-${slug}-v1`,
+    name: meta.name,
+    slug: tier.code,
+    level_order: FALLBACK_LEVEL_ORDER[slug],
+    joining_amount: tier.subscriptionAmount.toFixed(8),
+    upgrade_amount: (tier.upgradeAmount ?? 0).toFixed(8),
+    matrix_size: tier.slotsPerCycle,
+    income_per_position: meta.income_per_position,
+    cycle_reward: meta.cycle_reward,
+    retopup_amount: tier.resubscribeAmount.toFixed(8),
     daily_cap: '0.00000000',
-    daily_cycle_limit: 5,
-    required_direct_referrals: 0,
-    required_qualified_builders: 0,
-    auto_upgrade_enabled: true,
+    daily_cycle_limit: tier.defaultDailyCapping,
+    required_direct_referrals: tier.requiredDirectReferrals,
+    required_qualified_builders: tier.requiredQualifiedBuilders,
+    auto_upgrade_enabled: meta.auto_upgrade_enabled,
     retopup_enabled: true,
+    capping_enabled: tier.cappingEnabled,
+    bititan_amount: tier.reserveAmount != null ? tier.reserveAmount.toFixed(8) : null,
+    matrix_type: 'STANDARD',
     status: 'ACTIVE',
     version: 1,
     effective_from: new Date('2026-01-01'),
     effective_to: null,
     created_at: new Date('2026-01-01'),
     updated_at: new Date('2026-01-01'),
-  },
-  {
-    id: 'cfg-builder-v1',
-    name: 'Builder',
-    slug: 'builder',
-    level_order: 2,
-    joining_amount: '40.00000000',
-    upgrade_amount: '80.00000000',
-    matrix_size: 5,
-    income_per_position: '8.00000000',
-    cycle_reward: '160.00000000',  // Cycle 2+ net income
-    retopup_amount: '40.00000000',
-    daily_cap: '0.00000000',
-    daily_cycle_limit: 5,
-    required_direct_referrals: 1,
-    required_qualified_builders: 0,
-    auto_upgrade_enabled: true,
-    retopup_enabled: true,
-    status: 'ACTIVE',
-    version: 1,
-    effective_from: new Date('2026-01-01'),
-    effective_to: null,
-    created_at: new Date('2026-01-01'),
-    updated_at: new Date('2026-01-01'),
-  },
-  {
-    id: 'cfg-leader-v1',
-    name: 'Leader',
-    slug: 'leader',
-    level_order: 3,
-    joining_amount: '80.00000000',
-    upgrade_amount: '320.00000000',
-    matrix_size: 5,
-    income_per_position: '16.00000000',
-    cycle_reward: '320.00000000',  // Cycle 2+ net income
-    retopup_amount: '80.00000000',
-    daily_cap: '0.00000000',
-    daily_cycle_limit: 5,
-    required_direct_referrals: 2,
-    required_qualified_builders: 1,
-    auto_upgrade_enabled: true,
-    retopup_enabled: true,
-    status: 'ACTIVE',
-    version: 1,
-    effective_from: new Date('2026-01-01'),
-    effective_to: null,
-    created_at: new Date('2026-01-01'),
-    updated_at: new Date('2026-01-01'),
-  },
-  {
-    id: 'cfg-champion-v1',
-    name: 'Champion',
-    slug: 'champion',
-    level_order: 4,
-    joining_amount: '320.00000000',
-    upgrade_amount: '500.00000000', // Main Plan activation cost per spec
-    matrix_size: 5,
-    income_per_position: '64.00000000',
-    cycle_reward: '780.00000000',   // Cycle 1 net income $780
-    retopup_amount: '320.00000000',
-    daily_cap: '0.00000000',
-    daily_cycle_limit: 5,
-    required_direct_referrals: 3,
-    required_qualified_builders: 2,
-    auto_upgrade_enabled: true,
-    retopup_enabled: true,
-    status: 'ACTIVE',
-    version: 1,
-    effective_from: new Date('2026-01-01'),
-    effective_to: null,
-    created_at: new Date('2026-01-01'),
-    updated_at: new Date('2026-01-01'),
-  },
-];
+  };
+});
 
 export class BoosterRepository {
   /**
@@ -190,6 +157,9 @@ export class BoosterRepository {
     const cycleRew = config.cycle_reward?.toString ? config.cycle_reward.toString() : String(config.cycle_reward || '0');
     const retopupAmt = config.retopup_amount?.toString ? config.retopup_amount.toString() : String(config.retopup_amount || '0');
     const dailyCap = config.daily_cap?.toString ? config.daily_cap.toString() : String(config.daily_cap || '0');
+    const bititanAmt = config.bititan_amount != null
+      ? (config.bititan_amount?.toString ? config.bititan_amount.toString() : String(config.bititan_amount))
+      : null;
 
     return {
       id: config.id,
@@ -239,6 +209,18 @@ export class BoosterRepository {
       retopupEnabled: config.retopup_enabled,
       retopup_enabled: config.retopup_enabled,
       'Re-topup enabled': config.retopup_enabled,
+      cappingEnabled: config.capping_enabled ?? true,
+      capping_enabled: config.capping_enabled ?? true,
+      bititanAmount: bititanAmt,
+      bititan_amount: bititanAmt,
+      matrixType: config.matrix_type || 'STANDARD',
+      matrix_type: config.matrix_type || 'STANDARD',
+      visionaryPart1Amount: config.slug === 'visionary'
+        ? BOOSTER_TIER_CONFIGS.find((t) => t.code === 'visionary')?.visionaryPart1Amount
+        : undefined,
+      visionaryPart2Amount: config.slug === 'visionary'
+        ? BOOSTER_TIER_CONFIGS.find((t) => t.code === 'visionary')?.visionaryPart2Amount
+        : undefined,
       status: config.status,
       Status: config.status,
       version: config.version,
@@ -263,6 +245,7 @@ export class BoosterRepository {
           cycle_reward: cfg.cycle_reward.toString(),
           retopup_amount: cfg.retopup_amount.toString(),
           daily_cap: cfg.daily_cap.toString(),
+          bititan_amount: cfg.bititan_amount != null ? cfg.bititan_amount.toString() : null,
         })) as LevelConfigRecord[];
       }
     } catch (err: any) {
@@ -288,6 +271,7 @@ export class BoosterRepository {
           cycle_reward: dbConfig.cycle_reward.toString(),
           retopup_amount: dbConfig.retopup_amount.toString(),
           daily_cap: dbConfig.daily_cap.toString(),
+          bititan_amount: dbConfig.bititan_amount != null ? dbConfig.bititan_amount.toString() : null,
         } as LevelConfigRecord;
       }
     } catch (err: any) {
@@ -411,7 +395,7 @@ export class BoosterRepository {
         },
       });
 
-      // Count direct referrals who are at level_order >= 2 (Qualified Builders)
+      // Count direct referrals who are at level_order >= 3 (Qualified Builders)
       const builderCount = await prisma.referralRelation.count({
         where: {
           sponsor_user_id: userId,
@@ -419,7 +403,7 @@ export class BoosterRepository {
           status: 'ACTIVE',
           referred: {
             current_level: {
-              level_order: { gte: 2 },
+              level_order: { gte: 3 },
             },
           },
         },

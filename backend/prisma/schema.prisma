@@ -118,6 +118,10 @@ enum LedgerEntryType {
   WITHDRAWAL
   REVERSAL
   ADMIN_ADJUSTMENT
+  REACTIVATION_CREDIT
+  NEXT_TIER_ACTIVATION_FUNDING
+  BITITAN_CREDIT
+  PARTIAL_ACTIVATION_CREDIT
 }
 
 enum LedgerDirection {
@@ -221,7 +225,10 @@ model User {
   audit_logs                AuditLog[]           @relation("AuditLogUser")
   admin_audit_logs          AuditLog[]           @relation("AuditLogAdmin")
   idempotency_keys          IdempotencyKey[]
-  booster_wallet            BoosterWallet?
+  partial_activations       PartialActivation[]
+  visionary_level_progress          VisionaryLevelProgress[]
+  visionary_tree_positions_as_root   VisionaryTreePosition[]  @relation("VisionaryRoot")
+  visionary_tree_positions_as_member VisionaryTreePosition[]  @relation("VisionaryMember")
 
   @@index([wallet_address])
   @@index([referral_code])
@@ -293,6 +300,9 @@ model LevelConfiguration {
   required_qualified_builders Int         @default(0) @map("required_qualified_builders")
   auto_upgrade_enabled         Boolean     @default(true) @map("auto_upgrade_enabled")
   retopup_enabled              Boolean     @default(true) @map("retopup_enabled")
+  capping_enabled              Boolean     @default(true) @map("capping_enabled")
+  bititan_amount                Decimal?    @map("bititan_amount") @db.Decimal(20, 8)
+  matrix_type                  String      @default("STANDARD") @map("matrix_type") @db.VarChar(32)
   status                       LevelStatus @default(ACTIVE) @map("status")
   version                      Int         @default(1) @map("version")
   effective_from               DateTime    @default(now()) @map("effective_from")
@@ -308,11 +318,81 @@ model LevelConfiguration {
   daily_cappings            DailyCapping[]
   from_upgrade_histories    UpgradeHistory[]   @relation("UpgradeFromLevel")
   to_upgrade_histories      UpgradeHistory[]   @relation("UpgradeToLevel")
+  partial_activation_targets PartialActivation[]
 
   @@unique([name, version])
   @@unique([slug, version])
   @@unique([level_order, version])
   @@map("level_configurations")
+}
+
+// ==========================================
+// 4a. PARTIAL ACTIVATION
+// A user's accumulated contributions toward funding their NEXT tier's activation,
+// credited incrementally as each matrix position fills (see PartialActivationService).
+// One row per (user, target tier) — matches the spec's one-lower-tier-feeds-one-target flow
+// (Starter->Builder, Builder->Leader, Leader->Champion, Champion->Visionary).
+// ==========================================
+
+model PartialActivation {
+  id                             String    @id @default(uuid())
+  user_id                        String    @map("user_id")
+  target_level_configuration_id String    @map("target_level_configuration_id")
+  accumulated_amount             Decimal   @default(0) @map("accumulated_amount") @db.Decimal(20, 8)
+  threshold_amount                Decimal   @map("threshold_amount") @db.Decimal(20, 8)
+  status                         String    @default("ACCUMULATING") @map("status") @db.VarChar(32)
+  completed_at                   DateTime? @map("completed_at")
+  created_at                     DateTime  @default(now()) @map("created_at")
+  updated_at                     DateTime  @updatedAt @map("updated_at")
+
+  user                     User               @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  target_level_configuration LevelConfiguration @relation(fields: [target_level_configuration_id], references: [id])
+
+  @@unique([user_id, target_level_configuration_id])
+  @@map("partial_activations")
+}
+
+// ==========================================
+// 4b. VISIONARY 3x3 / 20-LEVEL MATRIX (Part 2)
+// Logical/count-based representation — VisionaryLevelProgress holds only 20 aggregate rows
+// per participant (never materializing the theoretical ~5.2B cumulative node count).
+// VisionaryTreePosition materializes only actually-occupied nodes, paginated by depth.
+// Placement/occupancy tracking only — reward/recycle rules are undefined by the client spec
+// and are intentionally NOT modeled here (see VisionaryTreeService).
+// ==========================================
+
+model VisionaryLevelProgress {
+  id           String   @id @default(uuid())
+  user_id      String   @map("user_id")
+  level_depth  Int      @map("level_depth")
+  capacity     BigInt   @map("capacity")
+  filled_count BigInt   @default(0) @map("filled_count")
+  status       String   @default("OPEN") @map("status") @db.VarChar(16)
+  created_at   DateTime @default(now()) @map("created_at")
+  updated_at   DateTime @updatedAt @map("updated_at")
+
+  user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@unique([user_id, level_depth])
+  @@map("visionary_level_progress")
+}
+
+model VisionaryTreePosition {
+  id                  String   @id @default(uuid())
+  root_user_id        String   @map("root_user_id")
+  level_depth         Int      @map("level_depth")
+  parent_position_id String?  @map("parent_position_id")
+  member_user_id      String   @map("member_user_id")
+  sponsor_user_id     String   @map("sponsor_user_id")
+  placed_at           DateTime @default(now()) @map("placed_at")
+
+  root_user   User                   @relation("VisionaryRoot", fields: [root_user_id], references: [id], onDelete: Cascade)
+  member_user User                   @relation("VisionaryMember", fields: [member_user_id], references: [id])
+  parent      VisionaryTreePosition?  @relation("TreeParent", fields: [parent_position_id], references: [id], onDelete: SetNull)
+  children    VisionaryTreePosition[] @relation("TreeParent")
+
+  @@index([root_user_id, level_depth])
+  @@map("visionary_tree_positions")
 }
 
 // ==========================================
@@ -731,53 +811,9 @@ model SystemConfiguration {
   @@map("system_configurations")
 }
 
-// ==========================================
-// 21. BOOSTER WALLETS
-// ==========================================
-
-model BoosterWallet {
-  id                        String   @id @default(uuid())
-  user_id                   String   @unique @map("user_id")
-  starter_resubscribe_fund  Decimal  @default(0) @map("starter_resubscribe_fund") @db.Decimal(20, 8)
-  builder_activation_fund   Decimal  @default(0) @map("builder_activation_fund") @db.Decimal(20, 8)
-  builder_resubscribe_fund  Decimal  @default(0) @map("builder_resubscribe_fund") @db.Decimal(20, 8)
-  leader_activation_fund    Decimal  @default(0) @map("leader_activation_fund") @db.Decimal(20, 8)
-  leader_resubscribe_fund   Decimal  @default(0) @map("leader_resubscribe_fund") @db.Decimal(20, 8)
-  champion_activation_fund  Decimal  @default(0) @map("champion_activation_fund") @db.Decimal(20, 8)
-  champion_resubscribe_fund Decimal  @default(0) @map("champion_resubscribe_fund") @db.Decimal(20, 8)
-  b_titan_reserve_fund      Decimal  @default(0) @map("b_titan_reserve_fund") @db.Decimal(20, 8)
-  main_plan_reserve_fund    Decimal  @default(0) @map("main_plan_reserve_fund") @db.Decimal(20, 8)
-  income_wallet             Decimal  @default(0) @map("income_wallet") @db.Decimal(20, 8)
-  
-  current_highest_pool      String   @default("STARTER") @map("current_highest_pool") @db.VarChar(32)
-
-  starter_cycle             Int      @default(1) @map("starter_cycle")
-  builder_cycle             Int      @default(1) @map("builder_cycle")
-  leader_cycle              Int      @default(1) @map("leader_cycle")
-  champion_cycle            Int      @default(1) @map("champion_cycle")
-  
-  starter_members_count     Int      @default(0) @map("starter_members_count")
-  builder_members_count     Int      @default(0) @map("builder_members_count")
-  leader_members_count      Int      @default(0) @map("leader_members_count")
-  champion_members_count    Int      @default(0) @map("champion_members_count")
-
-  created_at                DateTime @default(now()) @map("created_at")
-  updated_at                DateTime @updatedAt @map("updated_at")
-
-  user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
-
-  @@map("booster_wallets")
-}
-
-// ==========================================
-// 22. ADMIN WALLETS
-// ==========================================
-
-model AdminWallet {
-  id            String   @id @default("ADMIN")
-  total_income  Decimal  @default(0) @map("total_income") @db.Decimal(20, 8)
-  created_at    DateTime @default(now()) @map("created_at")
-  updated_at    DateTime @updatedAt @map("updated_at")
-
-  @@map("admin_wallets")
-}
+// BoosterWallet and AdminWallet models (formerly "21. BOOSTER WALLETS" / "22. ADMIN WALLETS")
+// were removed here — they backed only the orphaned System B fund-splitting code
+// (BoosterService.buyStarterPlan/processPoolDistribution/etc, zero live callers, contradictory
+// math vs the live MatrixRewardService), deleted in the same change. See the migration that
+// drops booster_wallets/admin_wallets for the required zero-row verification before applying
+// this to any environment with real data.

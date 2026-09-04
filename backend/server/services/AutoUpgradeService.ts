@@ -14,6 +14,140 @@ export interface AutoUpgradeResult {
 
 export class AutoUpgradeService {
   /**
+   * Shared activation sequence: upserts UpgradeHistory, sets the user's current_level_id,
+   * upserts UserLevel, creates the target tier's Cycle #1 (matrix-width-aware), and notifies.
+   * Used by both qualification-gated auto-upgrade (below) and PartialActivationService's
+   * money-threshold-triggered activation — both ultimately activate a tier the same way, they
+   * just differ in what CONDITION triggers the activation.
+   *
+   * Caller must have already decided the user IS eligible/funded — this method does not
+   * evaluate eligibility itself. Idempotent on `idempotencyKey`.
+   */
+  static async activateLevel(
+    tx: any,
+    userId: string,
+    targetLevel: { id: string; name: string; slug: string; levelOrder: number; joiningAmount: number; upgradeAmount: number; matrixSize: number; cappingEnabled: boolean },
+    upgradeType: 'AUTOMATIC' | 'PAID',
+    idempotencyKey: string,
+    eligibilitySnapshot: Record<string, any>,
+    sourceCycleId?: string
+  ): Promise<{ upgradeHistory: any; userLevel: any; newMatrixCycle: any }> {
+    const user = await tx.user.findUnique({ where: { id: userId }, include: { current_level: true } });
+    if (!user) {
+      throw new Error(`User ${userId} not found`);
+    }
+
+    const now = new Date();
+
+    const upgradeHistory = await tx.upgradeHistory.upsert({
+      where: { idempotency_key: idempotencyKey },
+      create: {
+        user_id: userId,
+        from_level_id: user.current_level_id,
+        to_level_id: targetLevel.id,
+        upgrade_type: upgradeType,
+        status: 'COMPLETED',
+        amount: new Prisma.Decimal(targetLevel.joiningAmount),
+        eligibility_snapshot: eligibilitySnapshot,
+        idempotency_key: idempotencyKey,
+        upgraded_at: now,
+      },
+      update: {
+        status: 'COMPLETED',
+        upgraded_at: now,
+        eligibility_snapshot: eligibilitySnapshot,
+      },
+    });
+
+    await tx.user.update({
+      where: { id: userId },
+      data: { current_level_id: targetLevel.id },
+    });
+
+    const userLevelId = `ul-${userId}-${targetLevel.id}`;
+    const userLevel = await tx.userLevel.upsert({
+      where: { id: userLevelId },
+      create: {
+        id: userLevelId,
+        user_id: userId,
+        level_configuration_id: targetLevel.id,
+        status: 'ACTIVE',
+        activated_at: now,
+        configuration_snapshot: {
+          id: targetLevel.id,
+          name: targetLevel.name,
+          slug: targetLevel.slug,
+          levelOrder: targetLevel.levelOrder,
+          joiningAmount: targetLevel.joiningAmount,
+          upgradeAmount: targetLevel.upgradeAmount,
+        },
+      },
+      update: {
+        status: 'ACTIVE',
+        activated_at: now,
+      },
+    });
+
+    const firstCycleId = `mc-${userId}-${targetLevel.id}-c1`;
+    const targetMatrixSize = targetLevel.matrixSize || 5;
+    const newMatrixCycle = await tx.matrixCycle.upsert({
+      where: { id: firstCycleId },
+      create: {
+        id: firstCycleId,
+        user_id: userId,
+        level_configuration_id: targetLevel.id,
+        cycle_number: 1,
+        total_positions: targetMatrixSize,
+        filled_positions: 0,
+        status: 'ACTIVE',
+        configuration_snapshot: {
+          id: targetLevel.id,
+          name: targetLevel.name,
+          slug: targetLevel.slug,
+          joining_amount: targetLevel.joiningAmount,
+          matrix_size: targetMatrixSize,
+          capping_enabled: targetLevel.cappingEnabled,
+        },
+        started_at: now,
+      },
+      update: {
+        status: 'ACTIVE',
+      },
+    });
+
+    await tx.notification.create({
+      data: {
+        user_id: userId,
+        type: 'LEVEL_UPGRADED',
+        title: upgradeType === 'PAID' ? `Booster Activated: ${targetLevel.name}!` : `Booster Auto-Upgraded to ${targetLevel.name}!`,
+        message: `Congratulations! You have been ${upgradeType === 'PAID' ? 'activated' : 'automatically upgraded'} to ${targetLevel.name} Booster (Level ${targetLevel.levelOrder}). Your new Cycle #1 matrix is active!`,
+        data: {
+          targetLevelId: targetLevel.id,
+          targetLevelName: targetLevel.name,
+          targetLevelSlug: targetLevel.slug,
+          levelOrder: targetLevel.levelOrder,
+          matrixCycleId: newMatrixCycle.id,
+          sourceCycleId: sourceCycleId || null,
+        },
+      },
+    });
+
+    logger.info(
+      {
+        userId,
+        fromLevelId: user.current_level_id,
+        toLevelId: targetLevel.id,
+        toLevelName: targetLevel.name,
+        matrixCycleId: newMatrixCycle.id,
+        upgradeType,
+      },
+      `[AutoUpgradeService] Activated user ${userId} from ${user.current_level?.name || 'Unknown'} to ${targetLevel.name} (Level ${targetLevel.levelOrder}, ${upgradeType})`
+    );
+
+    return { upgradeHistory, userLevel, newMatrixCycle };
+  }
+
+  /**
    * Evaluates and executes an automated Booster level upgrade upon matrix cycle completion.
    * Runs in a strict database transaction, locks user level records, enforces idempotency,
    * preserves old level matrix history, creates next-level matrix cycle, and notifies the user.
@@ -28,7 +162,6 @@ export class AutoUpgradeService {
     db: any = prisma
   ): Promise<AutoUpgradeResult> {
     const executeAutoUpgrade = async (tx: any) => {
-      // 1. Lock user record for update / check
       const user = await tx.user.findUnique({
         where: { id: userId },
         include: { current_level: true },
@@ -38,7 +171,7 @@ export class AutoUpgradeService {
         throw new Error(`User ${userId} not found`);
       }
 
-      // 2. Evaluate eligibility on the backend
+      // Evaluate eligibility on the backend
       const eligibility = await UpgradeEligibilityService.evaluateEligibility(userId, undefined, tx);
 
       if (!eligibility.eligible || !eligibility.targetLevel) {
@@ -59,7 +192,7 @@ export class AutoUpgradeService {
       const targetLevel = eligibility.targetLevel;
       const idempotencyKey = `autoupgrade-user-${userId}-level-${targetLevel.id}`;
 
-      // 3. Idempotency Check
+      // Idempotency Check
       const existingUpgrade = await tx.upgradeHistory.findUnique({
         where: { idempotency_key: idempotencyKey },
       });
@@ -79,115 +212,14 @@ export class AutoUpgradeService {
         };
       }
 
-      const now = new Date();
-
-      // 4. Create/Update Upgrade History
-      const upgradeHistory = await tx.upgradeHistory.upsert({
-        where: { idempotency_key: idempotencyKey },
-        create: {
-          user_id: userId,
-          from_level_id: user.current_level_id,
-          to_level_id: targetLevel.id,
-          upgrade_type: 'AUTOMATIC',
-          status: 'COMPLETED',
-          amount: new Prisma.Decimal(targetLevel.joiningAmount),
-          eligibility_snapshot: eligibility.eligibilitySnapshot,
-          idempotency_key: idempotencyKey,
-          upgraded_at: now,
-        },
-        update: {
-          status: 'COMPLETED',
-          upgraded_at: now,
-          eligibility_snapshot: eligibility.eligibilitySnapshot,
-        },
-      });
-
-      // 5. Update User's Current Level in `users`
-      await tx.user.update({
-        where: { id: userId },
-        data: {
-          current_level_id: targetLevel.id,
-        },
-      });
-
-      // 6. Upsert `user_levels` record for target level
-      const userLevelId = `ul-${userId}-${targetLevel.id}`;
-      const userLevel = await tx.userLevel.upsert({
-        where: { id: userLevelId },
-        create: {
-          id: userLevelId,
-          user_id: userId,
-          level_configuration_id: targetLevel.id,
-          status: 'ACTIVE',
-          activated_at: now,
-          configuration_snapshot: {
-            id: targetLevel.id,
-            name: targetLevel.name,
-            slug: targetLevel.slug,
-            levelOrder: targetLevel.levelOrder,
-            joiningAmount: targetLevel.joiningAmount,
-            upgradeAmount: targetLevel.upgradeAmount,
-          },
-        },
-        update: {
-          status: 'ACTIVE',
-          activated_at: now,
-        },
-      });
-
-      // 7. Create Next Level Matrix Cycle #1 (Preserving old level matrix history)
-      const firstCycleId = `mc-${userId}-${targetLevel.id}-c1`;
-      const newMatrixCycle = await tx.matrixCycle.upsert({
-        where: { id: firstCycleId },
-        create: {
-          id: firstCycleId,
-          user_id: userId,
-          level_configuration_id: targetLevel.id,
-          cycle_number: 1,
-          total_positions: 5,
-          filled_positions: 0,
-          status: 'ACTIVE',
-          configuration_snapshot: {
-            id: targetLevel.id,
-            name: targetLevel.name,
-            slug: targetLevel.slug,
-            joiningAmount: targetLevel.joiningAmount,
-            matrix_size: 5,
-          },
-          started_at: now,
-        },
-        update: {
-          status: 'ACTIVE',
-        },
-      });
-
-      // 8. Create Notification
-      await tx.notification.create({
-        data: {
-          user_id: userId,
-          type: 'LEVEL_UPGRADED',
-          title: `Booster Auto-Upgraded to ${targetLevel.name}!`,
-          message: `Congratulations! You have been automatically upgraded to ${targetLevel.name} Booster (Level ${targetLevel.levelOrder}). Your new Cycle #1 matrix is active!`,
-          data: {
-            targetLevelId: targetLevel.id,
-            targetLevelName: targetLevel.name,
-            targetLevelSlug: targetLevel.slug,
-            levelOrder: targetLevel.levelOrder,
-            matrixCycleId: newMatrixCycle.id,
-            sourceCycleId: sourceCycleId || null,
-          },
-        },
-      });
-
-      logger.info(
-        {
-          userId,
-          fromLevelId: user.current_level_id,
-          toLevelId: targetLevel.id,
-          toLevelName: targetLevel.name,
-          matrixCycleId: newMatrixCycle.id,
-        },
-        `[AutoUpgradeService] UPGRADE MODS: Auto-upgraded user ${userId} from ${user.current_level?.name || 'Unknown'} to ${targetLevel.name} (Level ${targetLevel.levelOrder})`
+      const { upgradeHistory, userLevel, newMatrixCycle } = await this.activateLevel(
+        tx,
+        userId,
+        targetLevel,
+        'AUTOMATIC',
+        idempotencyKey,
+        eligibility.eligibilitySnapshot,
+        sourceCycleId
       );
 
       return {

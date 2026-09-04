@@ -161,10 +161,7 @@ export class BoosterController {
       res.json({
         success: true,
         data: {
-          calculation: {
-            projectedDailyIncomeUsdt: result.mainPlan?.perLevelIncome || 0,
-            ...result,
-          },
+          calculation: result,
           ...result,
         },
       });

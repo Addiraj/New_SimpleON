@@ -15,6 +15,19 @@ const abi = [
   "event MainPlanActivated(address indexed user, uint256 totalAmount)"
 ];
 
+// The deployed SimpleOnBooster contract's BoosterTier enum is fixed forever (no redeploy
+// planned — see off-chain-only decision): NONE=0, STARTER=1, BUILDER=2, LEADER=3, CHAMPION=4,
+// MAIN_PLAN=5. This numbering is intentionally decoupled from LevelConfiguration.level_order,
+// which now starts at Launch=1 and can be renumbered freely without affecting on-chain event
+// handling. MAIN_PLAN is the contract's name for what the product now calls Visionary.
+const CONTRACT_TIER_TO_SLUG: Record<number, string> = {
+  1: 'starter',
+  2: 'builder',
+  3: 'leader',
+  4: 'champion',
+  5: 'visionary',
+};
+
 export class BlockchainListenerService {
   private provider: ethers.WebSocketProvider | ethers.JsonRpcProvider | null = null;
   private contract: ethers.Contract | null = null;
@@ -63,9 +76,11 @@ export class BlockchainListenerService {
     }
   }
 
-  private async getLevelIdByOrder(order: number): Promise<string | null> {
+  private async getLevelIdByContractTier(contractTier: number): Promise<string | null> {
+    const slug = CONTRACT_TIER_TO_SLUG[contractTier];
+    if (!slug) return null;
     const plans = await BoosterRepository.getAllActiveLevelConfigs();
-    const plan = plans.find(p => p.level_order === order);
+    const plan = plans.find(p => p.slug === slug);
     return plan ? plan.id : null;
   }
 
@@ -141,7 +156,8 @@ export class BlockchainListenerService {
 
   private async activateLevelFromChain(params: {
     walletAddress: string;
-    levelOrder: number;
+    /** The deployed contract's fixed BoosterTier enum value (1=STARTER..5=MAIN_PLAN) — see CONTRACT_TIER_TO_SLUG. */
+    contractTier: number;
     amount: bigint;
     eventName: 'UserRegistered' | 'BoosterUpgraded' | 'MainPlanActivated';
     event: any;
@@ -172,12 +188,15 @@ export class BlockchainListenerService {
         update: { status: 'PROCESSING' },
       });
 
-      const level = await tx.levelConfiguration.findFirst({
-        where: { level_order: params.levelOrder, status: 'ACTIVE' },
-        orderBy: { version: 'desc' },
-      });
+      const targetSlug = CONTRACT_TIER_TO_SLUG[params.contractTier];
+      const level = targetSlug
+        ? await tx.levelConfiguration.findFirst({
+            where: { slug: targetSlug, status: 'ACTIVE' },
+            orderBy: { version: 'desc' },
+          })
+        : null;
       if (!level) {
-        throw new Error(`No active level found for order ${params.levelOrder}`);
+        throw new Error(`No active level found for contract tier ${params.contractTier}`);
       }
 
       let sponsorId: string | null = null;
@@ -222,9 +241,9 @@ export class BlockchainListenerService {
           id: userLevelId,
           user_id: user.id,
           level_configuration_id: level.id,
-          status: params.levelOrder === 1 ? 'COMPLETED' : 'ACTIVE',
+          status: params.contractTier === 1 ? 'COMPLETED' : 'ACTIVE',
           activated_at: now,
-          completed_at: params.levelOrder === 1 ? now : null,
+          completed_at: params.contractTier === 1 ? now : null,
           configuration_snapshot: {
             id: level.id,
             name: level.name,
@@ -235,21 +254,21 @@ export class BlockchainListenerService {
           },
         },
         update: {
-          status: params.levelOrder === 1 ? 'COMPLETED' : 'ACTIVE',
+          status: params.contractTier === 1 ? 'COMPLETED' : 'ACTIVE',
           activated_at: now,
         },
       });
 
       const eventAmount = Number(ethers.formatUnits(params.amount || 0n, 18));
       const configuredAmount =
-        params.levelOrder === 1
+        params.contractTier === 1
           ? parseFloat(level.joining_amount.toString())
           : parseFloat(level.upgrade_amount.toString());
       const amount = Number.isFinite(eventAmount) && eventAmount > 0 ? eventAmount : configuredAmount;
       const transaction = await tx.transaction.create({
         data: {
           user_id: user.id,
-          transaction_type: params.levelOrder === 1 ? 'PLAN_JOIN' : 'UPGRADE',
+          transaction_type: params.contractTier === 1 ? 'PLAN_JOIN' : 'UPGRADE',
           amount: new Prisma.Decimal(Number.isFinite(amount) ? amount : 0),
           currency: 'USDT',
           blockchain_transaction_hash: eventIdentity.txReference,
@@ -261,7 +280,7 @@ export class BlockchainListenerService {
             transactionHash: eventIdentity.txHash,
             logIndex: eventIdentity.logIndex,
             blockNumber: eventIdentity.blockNumber,
-            levelOrder: params.levelOrder,
+            contractTier: params.contractTier,
           },
           completed_at: now,
         },
@@ -272,7 +291,7 @@ export class BlockchainListenerService {
         create: {
           user_id: user.id,
           transaction_id: transaction.id,
-          entry_type: params.levelOrder === 1 ? 'PLAN_JOIN' : 'UPGRADE_DEBIT',
+          entry_type: params.contractTier === 1 ? 'PLAN_JOIN' : 'UPGRADE_DEBIT',
           direction: 'DEBIT',
           amount: new Prisma.Decimal(Number.isFinite(amount) ? amount : 0),
           status: 'COMPLETED',
@@ -288,7 +307,7 @@ export class BlockchainListenerService {
         update: {},
       });
 
-      if (params.levelOrder > 1) {
+      if (params.contractTier > 1) {
         await tx.upgradeHistory.upsert({
           where: { idempotency_key: `upgrade-${eventIdentity.key}` },
           create: {
@@ -301,7 +320,7 @@ export class BlockchainListenerService {
             eligibility_snapshot: {
               source: 'BLOCKCHAIN_EVENT',
               eventKey: eventIdentity.key,
-              levelOrder: params.levelOrder,
+              contractTier: params.contractTier,
             },
             transaction_id: transaction.id,
             idempotency_key: `upgrade-${eventIdentity.key}`,
@@ -371,7 +390,7 @@ export class BlockchainListenerService {
       const result = await this.activateLevelFromChain({
         walletAddress,
         sponsorAddress: referrerAddress,
-        levelOrder: 1,
+        contractTier: 1,
         amount: 0n,
         eventName: 'UserRegistered',
         event,
@@ -397,7 +416,7 @@ export class BlockchainListenerService {
     try {
       const result = await this.activateLevelFromChain({
         walletAddress,
-        levelOrder: newTier,
+        contractTier: newTier,
         amount,
         eventName: 'BoosterUpgraded',
         event,
@@ -427,17 +446,17 @@ export class BlockchainListenerService {
         return;
       }
 
-      const mainPlanId = await this.getLevelIdByOrder(5); // Assuming 5 is MAIN PLAN
-      if (mainPlanId) {
-        await AuthRepository.updateUser(user.id, { current_level_id: mainPlanId });
+      const visionaryId = await this.getLevelIdByContractTier(5); // contract's MAIN_PLAN slot === Visionary
+      if (visionaryId) {
+        await AuthRepository.updateUser(user.id, { current_level_id: visionaryId });
       }
 
       try {
         await NotificationService.createNotification({
           userId: user.id,
           type: NotificationType.PLAN_ACTIVATED,
-          title: 'Main Plan Activated',
-          message: `Your Main Plan is now active!`,
+          title: 'Visionary Activated',
+          message: `Your Visionary tier is now active!`,
           data: { amount: ethers.formatUnits(amount, 18) },
         });
       } catch (e) {}

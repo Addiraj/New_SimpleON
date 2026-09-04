@@ -14,7 +14,8 @@ describe('36-47. X5 Matrix Cycle & Placement Unit Tests', () => {
     const testWallet = createTestWallet();
     const user = await AuthRepository.createUser({ walletAddress: testWallet.address });
     const levelConfigs = await BoosterRepository.getAllActiveLevelConfigs();
-    const level1 = levelConfigs.find((l) => l.level_order === 1)!;
+    // Starter (X5) specifically — not level_order===1, which is now Launch (X3) post-renumbering.
+    const level1 = levelConfigs.find((l) => l.slug === 'starter')!;
 
     const cycle = await MatrixCycleService.ensureUserActiveCycle(user.id, level1.id);
 
@@ -29,7 +30,8 @@ describe('36-47. X5 Matrix Cycle & Placement Unit Tests', () => {
     const sponsorWallet = createTestWallet();
     const sponsor = await AuthRepository.createUser({ walletAddress: sponsorWallet.address });
     const levelConfigs = await BoosterRepository.getAllActiveLevelConfigs();
-    const level1 = levelConfigs.find((l) => l.level_order === 1)!;
+    // Starter (X5) specifically — not level_order===1, which is now Launch (X3) post-renumbering.
+    const level1 = levelConfigs.find((l) => l.slug === 'starter')!;
 
     await MatrixCycleService.ensureUserActiveCycle(sponsor.id, level1.id);
 
@@ -47,7 +49,8 @@ describe('36-47. X5 Matrix Cycle & Placement Unit Tests', () => {
     const sponsorWallet = createTestWallet();
     const sponsor = await AuthRepository.createUser({ walletAddress: sponsorWallet.address });
     const levelConfigs = await BoosterRepository.getAllActiveLevelConfigs();
-    const level1 = levelConfigs.find((l) => l.level_order === 1)!;
+    // Starter (X5) specifically — not level_order===1, which is now Launch (X3) post-renumbering.
+    const level1 = levelConfigs.find((l) => l.slug === 'starter')!;
 
     await MatrixCycleService.ensureUserActiveCycle(sponsor.id, level1.id);
     const member = await AuthRepository.createUser({ walletAddress: createTestWallet().address, sponsorId: sponsor.id });
@@ -63,7 +66,8 @@ describe('36-47. X5 Matrix Cycle & Placement Unit Tests', () => {
     const sponsorWallet = createTestWallet();
     const sponsor = await AuthRepository.createUser({ walletAddress: sponsorWallet.address });
     const levelConfigs = await BoosterRepository.getAllActiveLevelConfigs();
-    const level1 = levelConfigs.find((l) => l.level_order === 1)!;
+    // Starter (X5) specifically — not level_order===1, which is now Launch (X3) post-renumbering.
+    const level1 = levelConfigs.find((l) => l.slug === 'starter')!;
 
     await MatrixCycleService.ensureUserActiveCycle(sponsor.id, level1.id);
 
@@ -85,7 +89,8 @@ describe('36-47. X5 Matrix Cycle & Placement Unit Tests', () => {
     const sponsorWallet = createTestWallet();
     const sponsor = await AuthRepository.createUser({ walletAddress: sponsorWallet.address });
     const levelConfigs = await BoosterRepository.getAllActiveLevelConfigs();
-    const level1 = levelConfigs.find((l) => l.level_order === 1)!;
+    // Starter (X5) specifically — not level_order===1, which is now Launch (X3) post-renumbering.
+    const level1 = levelConfigs.find((l) => l.slug === 'starter')!;
 
     await MatrixCycleService.ensureUserActiveCycle(sponsor.id, level1.id);
 

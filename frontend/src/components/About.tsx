@@ -1,13 +1,21 @@
 import React from 'react';
 import { motion } from 'motion/react';
 import { Network, ArrowUpRight, Zap, Target, Sparkles, CheckCircle } from 'lucide-react';
+import { getBoosterTierConfig } from '../data/boosterPlan';
 
 export default function About() {
+  const launch = getBoosterTierConfig('launch')!;
+  const starter = getBoosterTierConfig('starter')!;
+  const builder = getBoosterTierConfig('builder')!;
+  const leader = getBoosterTierConfig('leader')!;
+  const champion = getBoosterTierConfig('champion')!;
+  const visionary = getBoosterTierConfig('visionary')!;
+
   const steps = [
     {
       number: '01',
-      title: 'Enter with 1 USDT',
-      description: 'Subscribe to the Starter Booster Plan for just 10 USDT base plan. This unlocks your Starter matrix position.'
+      title: `Enter with ${launch.subscriptionAmount} USDT`,
+      description: `Subscribe to the Launch Booster tier for just ${launch.subscriptionAmount} USDT. This unlocks your Launch X3 matrix position.`
     },
     {
       number: '02',
@@ -17,12 +25,12 @@ export default function About() {
     {
       number: '03',
       title: 'Booster Upgrades',
-      description: 'Automatically advance from Starter (10) to Builder (40), Leader (80), and Champion (320) tiers as team members scale up.'
+      description: `Automatically advance from Starter (${starter.subscriptionAmount}) to Builder (${builder.subscriptionAmount}), Leader (${leader.subscriptionAmount}), and Champion (${champion.subscriptionAmount}) tiers as team members scale up.`
     },
     {
       number: '04',
-      title: 'Trigger Main Plan (Coming Soon)',
-      description: 'Upgrade from Champion into the Main Plan (500 USDT). Unlock the 15% X5 split, 65% 13-Level Pool, and 20% X4 Spillover modules.'
+      title: 'Reach Visionary',
+      description: `Champion automatically funds your Visionary activation (${visionary.subscriptionAmount} USDT) — the ladder's top tier. It splits into a ${visionary.visionaryPart1Amount} USDT X3 recycling matrix and a ${visionary.visionaryPart2Amount} USDT forced 3-wide, 20-level matrix.`
     }
   ];
 
@@ -144,17 +152,17 @@ export default function About() {
                 <span>Modern Matrix Technology</span>
               </span>
               <h3 id="about-intro-title" className="text-2xl font-black text-prime md:text-3xl">
-                The X5 / X4 Dual Matrix Advantage
+                The X3 / X5 Matrix Advantage
               </h3>
               <p id="about-intro-p1" className="text-sm md:text-base text-sub leading-relaxed">
-                SimpleOn splits rewards in real-time, eliminating the bottleneck of typical MLM structures. Our booster plan handles fast upgrades and re-topups, while the Main Plan implements a global forced matrix with deep placement spillovers.
+                SimpleOn splits rewards in real-time, eliminating the bottleneck of typical MLM structures. Our booster plan handles fast upgrades and re-topups, while Visionary — the ladder's top tier — adds a forced 3-wide, 20-level matrix for deeper placement spillovers.
               </p>
 
               <div id="about-list-group" className="grid sm:grid-cols-2 gap-4">
                 {[
                   '100% Peer-to-Peer Distribution',
                   'Unlimited Retopup Cycles',
-                  '13 levels of structured forced matrix',
+                  'Visionary: 3-wide, 20-level forced matrix',
                   'Transparent, unalterable rules',
                   'Dynamic referral-linked limits',
                   'Secure smart contract security'
@@ -193,7 +201,7 @@ export default function About() {
                     {/* Tooltip */}
                     <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-40 bg-neutral-900 text-white text-[10px] p-2 rounded-lg opacity-0 group-hover:opacity-100 pointer-events-none transition-all duration-200 shadow-md z-30 text-center font-bold">
                       Your Root Position<br />
-                      <span className="text-accent-red font-mono">13-Level Forced Matrix</span>
+                      <span className="text-accent-red font-mono">3-Wide Recycling Matrix</span>
                     </div>
                   </div>
 
@@ -339,7 +347,7 @@ export default function About() {
                 </div>
 
                 <div id="about-disclaimer" className="text-[10px] text-center text-sub leading-normal">
-                  Placement follows forced 3×3/2×2 parameters: top-to-bottom and left-to-right spillover.
+                  Placement follows forced 3-wide matrix parameters: top-to-bottom and left-to-right spillover.
                 </div>
               </div>
             </div>

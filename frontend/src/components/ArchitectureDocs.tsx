@@ -84,8 +84,8 @@ graph TD
 
     subgraph ServiceLayer ["Service & Business Logic Engine"]
         AuthSvc["Auth Service (SIWE Verification)"]
-        BoosterSvc["Booster Engine (5-Partner Tier Rules)"]
-        MatrixSvc["Matrix Engine (13-Level Forced & X5 Split)"]
+        BoosterSvc["Booster Engine (3/5-Partner Tier Rules)"]
+        MatrixSvc["Matrix Engine (X3/X5 Booster + Visionary Dual-Leg)"]
     end
 
     subgraph BlockchainLayer ["Blockchain Network (BNB Smart Chain)"]
@@ -179,7 +179,7 @@ sequenceDiagram
             MatrixSvc->>DB: Record Tier Upgrade & Update Status
         end
     end
-    MatrixSvc->>DB: Allocate 65% Main Plan (13-Level 3x3), 15% X5 Split, 20% X4 Spillover
+    MatrixSvc->>DB: On reaching Visionary, split 500 USDT into 200 USDT X3 recycling leg + 300 USDT forced 3-wide, 20-level leg
   `;
 
   const erDiagramMermaid = `
@@ -200,7 +200,7 @@ erDiagram
     BOOSTER_SUBSCRIPTION {
         string id PK
         string userId FK
-        string tierName "STARTER|BUILDER|LEADER|CHAMPION"
+        string tierName "LAUNCH|STARTER|BUILDER|LEADER|CHAMPION|VISIONARY"
         float costUSDT
         int cycleNumber
         int activePartnersCount "0 to 5"
@@ -211,8 +211,8 @@ erDiagram
     MATRIX_POSITION {
         string id PK
         string userId FK
-        string matrixType "X5|FORCED_3X3|X4_SPILLOVER"
-        int level "1 to 13"
+        string matrixType "X3|X5|HYBRID"
+        int level "1 to 20 (Visionary Part 2 only)"
         string parentPositionId FK
         datetime placedAt
     }
@@ -420,11 +420,11 @@ erDiagram
               </div>
               <div className="p-3 rounded-xl bg-slate-950 border border-slate-800">
                 <span className="text-accent-red font-bold">BoosterSubscription Table</span>
-                <p className="mt-1 text-slate-300">id, userId, tierName (STARTER|BUILDER...), costUSDT, activePartners, isUpgraded</p>
+                <p className="mt-1 text-slate-300">id, userId, tierName (LAUNCH|STARTER|BUILDER...|VISIONARY), costUSDT, activePartners, isUpgraded</p>
               </div>
               <div className="p-3 rounded-xl bg-slate-950 border border-slate-800">
                 <span className="text-accent-red font-bold">MatrixPosition Table</span>
-                <p className="mt-1 text-slate-300">id, userId, matrixType (FORCED_3X3|X5|X4), level (1-13), parentPositionId</p>
+                <p className="mt-1 text-slate-300">id, userId, matrixType (X3|X5|HYBRID), level (1-20), parentPositionId</p>
               </div>
               <div className="p-3 rounded-xl bg-slate-950 border border-slate-800">
                 <span className="text-accent-red font-bold">LedgerTransaction Table</span>
@@ -452,12 +452,12 @@ erDiagram
               <div className="p-4 rounded-xl bg-surface-elevated border border-border-theme">
                 <span className="text-xs font-mono font-bold text-accent-red uppercase">Service 2</span>
                 <h4 className="text-sm font-bold text-prime mt-1">Booster & Upgrade Engine</h4>
-                <p className="text-xs text-sub mt-2 leading-relaxed">Computes 5-partner tier subscriptions, auto re-topup reserves, and automatic tier upgrades.</p>
+                <p className="text-xs text-sub mt-2 leading-relaxed">Computes 3- and 5-partner tier subscriptions, auto re-topup reserves, and automatic tier upgrades through Visionary.</p>
               </div>
               <div className="p-4 rounded-xl bg-surface-elevated border border-border-theme">
                 <span className="text-xs font-mono font-bold text-accent-red uppercase">Service 3</span>
                 <h4 className="text-sm font-bold text-prime mt-1">Matrix Placement Engine</h4>
-                <p className="text-xs text-sub mt-2 leading-relaxed">Executes 13-Level 3×3 forced matrix placements, X5 split logic, and X4 spillover queues.</p>
+                <p className="text-xs text-sub mt-2 leading-relaxed">Executes X3/X5 booster matrix placements and Visionary's dual-leg matrix logic (X3 recycling + forced 3-wide, 20-level).</p>
               </div>
               <div className="p-4 rounded-xl bg-surface-elevated border border-border-theme">
                 <span className="text-xs font-mono font-bold text-accent-red uppercase">Service 4</span>

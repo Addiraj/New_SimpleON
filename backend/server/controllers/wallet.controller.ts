@@ -39,6 +39,36 @@ export class WalletController {
   }
 
   /**
+   * GET /api/wallet/bititan
+   * Returns the user's Bititan Wallet reserve — deliberately separate from getSummary(),
+   * never merged with the Income Wallet.
+   */
+  static async getBititanSummary(req: Request, res: Response) {
+    try {
+      const userId = (req as any).userId || (req.query.userId as string);
+      if (!userId) {
+        return res.status(401).json({
+          status: 'error',
+          message: 'Authentication required to view Bititan Wallet summary',
+        });
+      }
+
+      const summary = await WalletService.getBititanSummary(userId);
+
+      return res.status(200).json({
+        status: 'success',
+        data: summary,
+      });
+    } catch (err: any) {
+      logger.error({ error: err.message }, '[WalletController] Error fetching Bititan wallet summary');
+      return res.status(err.statusCode || 500).json({
+        status: 'error',
+        message: err.message || 'Failed to fetch Bititan wallet summary',
+      });
+    }
+  }
+
+  /**
    * GET /api/wallet/ledger
    * Returns paginated wallet ledger audit entries.
    */
@@ -161,26 +191,31 @@ export class WalletController {
         }
       }
 
-      // 3. Check Demo Balance
+      // 3. Resolve the actual entry tier (level_order 1 — Launch) dynamically, never hardcoded,
+      // so this demo flow can't silently drift from whatever the real entry-tier price is.
+      const activePlans = await BoosterRepository.getAllActiveLevelConfigs();
+      const entryLevel = activePlans.find((p) => p.level_order === 1) || activePlans[0];
+      const entryAmount = parseFloat(entryLevel.joining_amount);
+
       const summary = await WalletService.getSummary(userId);
-      if (summary.availableBalance < 10) {
+      if (summary.availableBalance < entryAmount) {
         return res.status(400).json({
           status: 'error',
           message: 'Insufficient Demo Coins. Claim 500 USDT from the Dashboard first.',
         });
       }
 
-      // 4. Deduct 10 USDT
+      // 4. Deduct the entry tier's real price
       await WalletService.addLedgerEntry({
         userId,
         entryType: 'PLAN_JOIN',
         direction: 'DEBIT',
-        amount: 10,
+        amount: entryAmount,
         idempotencyKey: `demo_activate_${userId}_${Date.now()}`,
         sourceType: 'BOOSTER_PLAN',
         sourceId: 'demo_join',
         status: 'COMPLETED',
-        metadata: { isDemo: true, description: 'Demo Starter Plan Activation' },
+        metadata: { isDemo: true, description: `Demo ${entryLevel.name} Plan Activation` },
       });
 
       // 5. Create and Confirm Intent
@@ -199,7 +234,7 @@ export class WalletController {
 
       return res.status(200).json({
         status: 'success',
-        message: 'Successfully activated Demo Starter Plan',
+        message: `Successfully activated Demo ${entryLevel.name} Plan`,
         data: result,
       });
     } catch (err: any) {

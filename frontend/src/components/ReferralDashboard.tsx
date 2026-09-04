@@ -8,7 +8,7 @@ import {
 } from 'lucide-react';
 import QRCode from 'qrcode';
 import { useWeb3Store } from '../store/useWeb3Store';
-import { referralApi } from '../services/api';
+import { referralApi, walletApi } from '../services/api';
 import { buildReferralUrl } from '../utils/referral';
 import { BOOSTER_TIER_CONFIGS, BoosterTierCode, getBoosterTierConfig } from '../data/boosterPlan';
 
@@ -17,7 +17,7 @@ interface ReferralMember {
   id: string;
   address: string;
   level: number; // 1 = Direct, 2+ = Indirect
-  tier: 'STARTER' | 'BUILDER' | 'LEADER' | 'CHAMPION';
+  tier: 'LAUNCH' | 'STARTER' | 'BUILDER' | 'LEADER' | 'CHAMPION' | 'VISIONARY';
   tierAmount: number;
   status: 'ACTIVE' | 'INACTIVE' | 'SPILLOVER';
   joinedDate: string;
@@ -57,8 +57,8 @@ export default function ReferralDashboard() {
   const [showInviteModal, setShowInviteModal] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [levelFilter, setLevelFilter] = useState<'ALL' | 'DIRECT' | 'INDIRECT'>('ALL');
-  const [tierFilter, setTierFilter] = useState<'ALL' | 'STARTER' | 'BUILDER' | 'LEADER' | 'CHAMPION'>('ALL');
-  const [selectedPlanTier, setSelectedPlanTier] = useState<BoosterTierCode>('starter');
+  const [tierFilter, setTierFilter] = useState<'ALL' | 'LAUNCH' | 'STARTER' | 'BUILDER' | 'LEADER' | 'CHAMPION' | 'VISIONARY'>('ALL');
+  const [selectedPlanTier, setSelectedPlanTier] = useState<BoosterTierCode>('launch');
   const [selectedNodeDetails, setSelectedNodeDetails] = useState<ReferralMember | null>(null);
   const [customInviteMsg, setCustomInviteMsg] = useState('Hey! Join my SimpleOn Web3 Matrix team on BNB Smart Chain and track your Booster-qualified team growth.');
 
@@ -244,10 +244,7 @@ export default function ReferralDashboard() {
     setAssignMsg(null);
 
     try {
-      // @ts-ignore
-      const { walletApi } = await import('../services/api');
-      // @ts-ignore
-      await walletApi.demoActivate(assignInput.trim());
+      await walletApi.demoActivate({ referralCode: assignInput.trim() });
       await fetchProfile();
       setAssignMsg({ type: 'success', text: 'Sponsor Assigned & Demo Tier Activated!' });
       
@@ -468,7 +465,7 @@ export default function ReferralDashboard() {
         <div>
           <span className="text-[10px] font-mono font-bold uppercase text-sub">Team Plan Scope</span>
           <div className="text-sm font-black text-prime">
-            {getBoosterTierConfig(selectedPlanTier)?.name || 'Starter Pool'}
+            {getBoosterTierConfig(selectedPlanTier)?.name || 'Launch'}
           </div>
         </div>
         <select
@@ -741,10 +738,11 @@ export default function ReferralDashboard() {
               className="px-3 py-2 rounded-xl bg-surface-elevated border border-border-theme text-xs font-mono font-bold text-prime focus:outline-none"
             >
               <option value="ALL">All Tiers</option>
-              <option value="STARTER">Starter (10 USDT)</option>
-              <option value="BUILDER">Builder (40 USDT)</option>
-              <option value="LEADER">Leader (80 USDT)</option>
-              <option value="CHAMPION">Champion (320 USDT)</option>
+              {BOOSTER_TIER_CONFIGS.map((tier) => (
+                <option key={tier.code} value={tier.code.toUpperCase()}>
+                  {tier.name.replace(' Pool', '')} ({tier.subscriptionAmount} USDT)
+                </option>
+              ))}
             </select>
           </div>
         </div>

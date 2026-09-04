@@ -75,6 +75,9 @@ export class MatrixCompletionService {
         auto_upgrade_enabled: levelConfig?.auto_upgrade_enabled ?? true,
         daily_cap: levelConfig?.daily_cap?.toString() || '50',
         matrix_size: levelConfig?.matrix_size || 5,
+        capping_enabled: levelConfig?.capping_enabled ?? true,
+        bititan_amount: levelConfig?.bititan_amount?.toString() ?? null,
+        matrix_type: levelConfig?.matrix_type || 'STANDARD',
         captured_at: new Date().toISOString(),
       };
 

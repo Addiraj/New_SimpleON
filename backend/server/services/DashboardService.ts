@@ -54,12 +54,13 @@ export class DashboardService {
         referralCode: '',
         referralLink: targetAddress ? `${protocol}://${host}/?ref=${targetAddress}` : '',
         currentLevel: 'None',
-        nextLevel: 'Starter ($10)',
+        nextLevel: 'Launch ($5)',
         levelProgress: 0,
         currentPlan: 'None',
         activeMatrixCycle: 0,
         matrixPositionsFilled: 0,
         matrixPositionsRemaining: 0,
+        matrixSize: 3, // Launch (the entry tier) is X3
         completedCycles: 0,
         directReferrals: 0,
         indirectReferrals: 0,
@@ -117,7 +118,7 @@ export class DashboardService {
           status: 'ACTIVE',
           referred: {
             current_level: {
-              level_order: { gte: 2 },
+              level_order: { gte: 3 },
             },
           },
         },
@@ -143,11 +144,14 @@ export class DashboardService {
     const activeMatrixCycle = activeCycle ? activeCycle.cycle_number : (matrixCycles.length > 0 ? matrixCycles[0].cycle_number : 0);
     const matrixPositionsFilled = activeCycle ? activeCycle.filled_positions : 0;
     const matrixPositionsRemaining = activeCycle ? Math.max(0, activeCycle.total_positions - activeCycle.filled_positions) : 0;
+    // Matrix width is per-tier (3 for Launch/Visionary's X3 leg, 5 for Starter-Champion) — never
+    // assume 5. Falls back to the user's current tier's configured size if no cycle exists yet.
+    const matrixSize = activeCycle?.total_positions || user.current_level?.matrix_size || 5;
 
     // Current & Next Level / Plan calculations
     let currentLevelName = 'None';
     let currentPlanName = 'None';
-    let nextLevelName = 'Starter ($10)';
+    let nextLevelName = 'Launch ($5)';
     let levelProgress = 0;
     let dailyCap = 0;
 
@@ -220,6 +224,7 @@ export class DashboardService {
       activeMatrixCycle,
       matrixPositionsFilled,
       matrixPositionsRemaining,
+      matrixSize,
       completedCycles: completedCyclesCount,
       directReferrals: directCount,
       indirectReferrals: indirectCount,

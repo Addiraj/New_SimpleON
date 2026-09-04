@@ -1,8 +1,11 @@
 import React from 'react';
 import { motion } from 'motion/react';
 import { Wallet, Layers, Users, RefreshCw, ArrowRight, Sparkles } from 'lucide-react';
+import { getBoosterTierConfig } from '../data/boosterPlan';
 
 export default function HowItWorksSection() {
+  const launch = getBoosterTierConfig('launch')!;
+
   const steps = [
     {
       num: '01',
@@ -14,21 +17,21 @@ export default function HowItWorksSection() {
     {
       num: '02',
       title: 'Select Booster Plan',
-      desc: 'Subscribe starting at $100 USDT (Starter Booster). Approve USDT transfer and sign the smart contract deposit transaction.',
+      desc: `Subscribe starting at ${launch.subscriptionAmount} USDT (Launch Booster). Approve USDT transfer and sign the smart contract deposit transaction.`,
       icon: <Layers className="text-accent-blue" size={24} />,
       badge: 'Step 2'
     },
     {
       num: '03',
-      title: '5-Partner Cycle Placement',
-      desc: 'Your position fills through 5 direct referrals or team spillovers. Receive instant 20% direct commissions and 65% matrix allocations.',
+      title: 'Cycle Placement & Spillovers',
+      desc: 'Your position fills through direct referrals or team spillovers — 3 partners per cycle on Launch, 5 on Starter through Champion — funding automatic re-subscriptions, tier upgrades, and instant income payouts.',
       icon: <Users className="text-accent-orange" size={24} />,
       badge: 'Step 3'
     },
     {
       num: '04',
-      title: 'Infinite Re-Topup & Main Plan Entry',
-      desc: 'Upon 5th partner completion, system executes auto re-topup and reserves funds to auto-upgrade you into higher matrix pools.',
+      title: 'Infinite Re-Topup & Visionary Entry',
+      desc: 'Upon cycle completion, the system executes auto re-topup and reserves funds to auto-upgrade you through Starter, Builder, Leader, Champion, and ultimately Visionary.',
       icon: <RefreshCw className="text-accent-purple" size={24} />,
       badge: 'Step 4'
     }
@@ -68,7 +71,7 @@ export default function HowItWorksSection() {
             Works
           </h2>
           <p className="mt-4 text-base text-sub leading-relaxed">
-            Four transparent steps to activate your position, earn direct referral bonuses, and scale through 13 matrix levels.
+            Four transparent steps to activate your position, earn direct referral bonuses, and climb the Launch-to-Visionary booster ladder.
           </p>
         </div>
 

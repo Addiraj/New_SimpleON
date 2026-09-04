@@ -1,17 +1,13 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { motion } from 'motion/react';
-import { 
-  Trophy, Users, TrendingUp, ShieldCheck, ExternalLink, 
-  RefreshCw, BarChart2, PieChart, Activity, Clock, DollarSign,
+import {
+  Trophy, Users, TrendingUp, ShieldCheck, ExternalLink,
+  RefreshCw, BarChart2, Activity, Clock, DollarSign,
   Layers, Award, UserCheck, Flame, Sparkles, CheckCircle2, Zap, Wallet
 } from 'lucide-react';
-import { 
-  ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid, 
-  PieChart as RePieChart, Pie, Cell 
-} from 'recharts';
 import { useWeb3Store } from '../store/useWeb3Store';
 import { LoadingSkeletonCard, LoadingSkeletonTable, ErrorStateAlert } from './StateComponents';
-import { dashboardApi } from '../services/api';
+import { dashboardApi, walletApi } from '../services/api';
 
 export interface RealDashboardData {
   walletAddress: string;
@@ -25,6 +21,7 @@ export interface RealDashboardData {
   activeMatrixCycle: number;
   matrixPositionsFilled: number;
   matrixPositionsRemaining: number;
+  matrixSize: number;
   completedCycles: number;
   directReferrals: number;
   indirectReferrals: number;
@@ -53,6 +50,9 @@ export default function Dashboard() {
   const [dashboardData, setDashboardData] = useState<RealDashboardData | null>(null);
   const [isDataLoading, setIsDataLoading] = useState<boolean>(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  // Bititan Wallet reserve (Builder tier) — real data, deliberately fetched and displayed
+  // separately from totalEarnings, never merged into the Income Wallet figure.
+  const [bititanReserve, setBititanReserve] = useState<number>(0);
 
   // Transaction Filter State
   const [txFilter, setTxFilter] = useState<'All' | 'Commission' | 'Matrix' | 'Deposit'>('All');
@@ -73,6 +73,14 @@ export default function Dashboard() {
     } finally {
       setIsDataLoading(false);
     }
+
+    try {
+      const bititanRes = await walletApi.getBititanSummary();
+      const bititanData = bititanRes.data || bititanRes;
+      setBititanReserve(bititanData?.totalBititanReserve || 0);
+    } catch (err) {
+      // Non-critical: leave at 0 rather than block the rest of the dashboard.
+    }
   }, [address]);
 
   useEffect(() => {
@@ -90,25 +98,6 @@ export default function Dashboard() {
       window.removeEventListener('upgrade_completed', handleRefresh);
     };
   }, [fetchDashboardData]);
-
-  // Derive charts data
-  const totalEarned = dashboardData?.totalEarnings || 0;
-  const earningsTrendData = [
-    { day: 'Day 1', earnings: Math.round(totalEarned * 0.10) },
-    { day: 'Day 5', earnings: Math.round(totalEarned * 0.25) },
-    { day: 'Day 10', earnings: Math.round(totalEarned * 0.40) },
-    { day: 'Day 15', earnings: Math.round(totalEarned * 0.60) },
-    { day: 'Day 20', earnings: Math.round(totalEarned * 0.75) },
-    { day: 'Day 25', earnings: Math.round(totalEarned * 0.90) },
-    { day: 'Day 30', earnings: Math.round(totalEarned * 1.00) },
-  ];
-
-  const revenueDistributionData = [
-    { name: 'Direct Sponsor (20%)', value: 20, color: '#FF2E2E' },
-    { name: '13-Level Matrix (65%)', value: 65, color: '#2563EB' },
-    { name: 'X5 Matrix Split (15%)', value: 15, color: '#F59E0B' },
-    { name: 'X4 Passive Spillover', value: 10, color: '#8B5CF6' },
-  ];
 
   // Derive transactions list & apply filter
   const transactionsList = dashboardData?.recentTransactions || [];
@@ -369,7 +358,7 @@ export default function Dashboard() {
                         {dashboardData.activeMatrixCycle > 0 ? `Cycle #${dashboardData.activeMatrixCycle}` : 'No Active Cycle'}
                       </div>
                       <p className="text-[11px] text-sub mt-1">
-                        {dashboardData.matrixPositionsFilled} / 5 Slots Filled ({dashboardData.completedCycles} Completed)
+                        {dashboardData.matrixPositionsFilled} / {dashboardData.matrixSize || 5} Slots Filled ({dashboardData.completedCycles} Completed)
                       </p>
                     </motion.div>
 
@@ -383,7 +372,7 @@ export default function Dashboard() {
                         <Zap size={16} className="text-accent-red" />
                       </div>
                       <div className="text-xl font-black font-mono text-accent-red truncate">
-                        {dashboardData.currentPlan || 'Starter ($10)'}
+                        {dashboardData.currentPlan || 'Launch ($5)'}
                       </div>
                       <p className="text-[11px] text-sub mt-1">
                         Daily Cap: ${dashboardData.dailyCap}/day
@@ -443,7 +432,7 @@ export default function Dashboard() {
                         />
                       </div>
                       <p className="text-[10px] text-sub font-mono mt-1 truncate">
-                        Next: {dashboardData.nextLevel || 'Builder ($40)'}
+                        Next: {dashboardData.nextLevel || 'Launch ($5)'}
                       </p>
                     </motion.div>
 
@@ -453,90 +442,14 @@ export default function Dashboard() {
 
               {/* SECTION 2: CHARTS & ANALYTICS (Analytics View & All View) */}
               {(activeSidebarTab === 'analytics' || activeSidebarTab === 'all') && (
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                  
-                  {/* Chart 1: 30-Day Earnings & Referral Growth Area Chart */}
-                  <div className="lg:col-span-2 p-6 rounded-3xl bg-surface border border-border-theme shadow-md space-y-4">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <h3 className="text-base font-extrabold text-prime flex items-center space-x-2">
-                          <BarChart2 size={18} className="text-accent-red" />
-                          <span>30-Day Earnings & Referral Growth</span>
-                        </h3>
-                        <p className="text-xs text-sub">Cumulative USDT payouts across Booster cycles</p>
-                      </div>
-                      <span className="text-xs font-mono font-bold text-emerald-500 bg-emerald-500/10 px-3 py-1 rounded-full border border-emerald-500/20">
-                        Live Metrics
-                      </span>
-                    </div>
-
-                    <div className="h-64 w-full">
-                      <ResponsiveContainer width="100%" height="100%">
-                        <AreaChart data={earningsTrendData}>
-                          <defs>
-                            <linearGradient id="earningsColor" x1="0" y1="0" x2="0" y2="1">
-                              <stop offset="5%" stopColor="#FF2E2E" stopOpacity={0.4}/>
-                              <stop offset="95%" stopColor="#FF2E2E" stopOpacity={0}/>
-                            </linearGradient>
-                          </defs>
-                          <CartesianGrid strokeDasharray="3 3" stroke="var(--border-color)" />
-                          <XAxis dataKey="day" stroke="var(--text-secondary)" tick={{ fontSize: 11 }} />
-                          <YAxis stroke="var(--text-secondary)" tick={{ fontSize: 11 }} />
-                          <Tooltip
-                            contentStyle={{
-                              backgroundColor: 'var(--bg-surface)',
-                              borderColor: 'var(--border-color)',
-                              borderRadius: '16px',
-                              color: 'var(--text-primary)'
-                            }}
-                          />
-                          <Area type="monotone" dataKey="earnings" stroke="#FF2E2E" strokeWidth={3} fillOpacity={1} fill="url(#earningsColor)" />
-                        </AreaChart>
-                      </ResponsiveContainer>
-                    </div>
-                  </div>
-
-                  {/* Chart 2: Revenue Breakdown Donut Chart */}
-                  <div className="p-6 rounded-3xl bg-surface border border-border-theme shadow-md space-y-4">
-                    <div>
-                      <h3 className="text-base font-extrabold text-prime flex items-center space-x-2">
-                        <PieChart size={18} className="text-accent-blue" />
-                        <span>Revenue Breakdown</span>
-                      </h3>
-                      <p className="text-xs text-sub">Smart contract payout distribution</p>
-                    </div>
-
-                    <div className="h-48 w-full flex items-center justify-center">
-                      <ResponsiveContainer width="100%" height="100%">
-                        <RePieChart>
-                          <Pie
-                            data={revenueDistributionData}
-                            cx="50%"
-                            cy="50%"
-                            innerRadius={45}
-                            outerRadius={70}
-                            paddingAngle={4}
-                            dataKey="value"
-                          >
-                            {revenueDistributionData.map((entry, index) => (
-                              <Cell key={`cell-${index}`} fill={entry.color} />
-                            ))}
-                          </Pie>
-                          <Tooltip />
-                        </RePieChart>
-                      </ResponsiveContainer>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-2 text-[11px] text-sub pt-2 border-t border-border-theme">
-                      {revenueDistributionData.map((item) => (
-                        <div key={item.name} className="flex items-center space-x-1.5">
-                          <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: item.color }} />
-                          <span className="truncate">{item.name}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
+                <div className="p-10 rounded-3xl bg-surface border border-border-theme shadow-md flex flex-col items-center justify-center text-center space-y-2">
+                  <BarChart2 size={28} className="text-sub" />
+                  <h3 className="text-base font-extrabold text-prime">Historical Analytics Coming Soon</h3>
+                  <p className="text-xs text-sub max-w-md">
+                    Earnings-trend and reward-category breakdown charts require historical time-series
+                    data the backend doesn't expose yet — this section will populate once that's available,
+                    rather than show placeholder figures.
+                  </p>
                 </div>
               )}
 
@@ -624,54 +537,36 @@ export default function Dashboard() {
                 </div>
               )}
 
-              {/* SECTION 4: RECENT REWARDS BREAKDOWN (Rewards View & All View) */}
+              {/* SECTION 4: WALLET BREAKDOWN (Rewards View & All View) — real balances only */}
               {(activeSidebarTab === 'rewards' || activeSidebarTab === 'all') && (
                 <div className="p-6 rounded-3xl bg-surface border border-border-theme shadow-md space-y-4">
                   <div className="pb-3 border-b border-border-theme">
                     <h3 className="text-base font-extrabold text-prime flex items-center space-x-2">
                       <Award size={18} className="text-emerald-500" />
-                      <span>Recent Rewards Breakdown</span>
+                      <span>Wallet Breakdown</span>
                     </h3>
-                    <p className="text-xs text-sub">Allocations by reward pool mechanism</p>
+                    <p className="text-xs text-sub">Your Income Wallet and (Builder tier) Bititan Wallet — tracked separately, never merged</p>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 font-mono text-xs">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 font-mono text-xs">
                     <div className="p-4 rounded-2xl bg-surface-elevated border border-border-theme flex flex-col justify-between space-y-2">
                       <div className="space-y-0.5">
-                        <div className="font-bold text-prime">Direct Sponsor Bonus (20%)</div>
-                        <div className="text-[10px] text-sub">Instant partner commissions</div>
+                        <div className="font-bold text-prime">Income Wallet</div>
+                        <div className="text-[10px] text-sub">Total credited net income across all cycles</div>
                       </div>
                       <span className="font-extrabold text-emerald-500 text-lg">
-                        ${((dashboardData.totalEarnings || 0) * 0.20).toFixed(2)}
+                        ${(dashboardData.totalEarnings || 0).toFixed(2)}
                       </span>
                     </div>
 
                     <div className="p-4 rounded-2xl bg-surface-elevated border border-border-theme flex flex-col justify-between space-y-2">
                       <div className="space-y-0.5">
-                        <div className="font-bold text-prime">13-Level Matrix Pool (65%)</div>
-                        <div className="text-[10px] text-sub">Forced matrix tree allocation</div>
+                        <div className="font-bold text-prime">Bititan Wallet Reserve</div>
+                        <div className="text-[10px] text-sub">Builder-tier reserve, kept separate from Income Wallet</div>
                       </div>
-                      <span className="font-extrabold text-accent-blue text-lg">
-                        ${((dashboardData.totalEarnings || 0) * 0.65).toFixed(2)}
+                      <span className="font-extrabold text-accent-purple text-lg">
+                        ${bititanReserve.toFixed(2)}
                       </span>
-                    </div>
-
-                    <div className="p-4 rounded-2xl bg-surface-elevated border border-border-theme flex flex-col justify-between space-y-2">
-                      <div className="space-y-0.5">
-                        <div className="font-bold text-prime">X5 Matrix Split (15%)</div>
-                        <div className="text-[10px] text-sub">Auto re-topup cycle pool</div>
-                      </div>
-                      <span className="font-extrabold text-amber-500 text-lg">
-                        ${((dashboardData.totalEarnings || 0) * 0.15).toFixed(2)}
-                      </span>
-                    </div>
-
-                    <div className="p-4 rounded-2xl bg-surface-elevated border border-border-theme flex flex-col justify-between space-y-2">
-                      <div className="space-y-0.5">
-                        <div className="font-bold text-prime">X4 Passive Spillover</div>
-                        <div className="text-[10px] text-sub">Global team pool allocation</div>
-                      </div>
-                      <span className="font-extrabold text-accent-purple text-lg">$150.00</span>
                     </div>
                   </div>
                 </div>

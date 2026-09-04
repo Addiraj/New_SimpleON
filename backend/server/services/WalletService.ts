@@ -71,10 +71,22 @@ export class WalletService {
     let totalDebits = 0;
     let totalPaid = 0;
 
+    // Structural/internal fund allocations — never the user's own spendable income. Excluded
+    // from availableBalance/totalEarned entirely (not locked, not pending: this money was never
+    // theirs to begin with — it's Builder's Bititan reserve, or funding routed toward their own
+    // next-tier activation). See MatrixRewardService's explicit-destination ledger entries and
+    // getBititanSummary() below for a dedicated read surface on the Bititan portion.
+    const STRUCTURAL_ENTRY_TYPES = new Set(['NEXT_TIER_ACTIVATION_FUNDING', 'BITITAN_CREDIT', 'PARTIAL_ACTIVATION_CREDIT']);
+
     for (const item of ledgers) {
       const amt = parseFloat(item.amount.toString());
       const isCredit = item.direction === 'CREDIT';
       const isDebit = item.direction === 'DEBIT';
+      const isStructural = STRUCTURAL_ENTRY_TYPES.has(item.entry_type);
+
+      if (isStructural) {
+        continue;
+      }
 
       if (item.status === 'AVAILABLE' || item.status === 'COMPLETED') {
         if (isCredit) {
@@ -119,6 +131,7 @@ export class WalletService {
         user_id: userId,
         direction: 'CREDIT',
         status: { in: ['AVAILABLE', 'COMPLETED'] },
+        entry_type: { notIn: Array.from(STRUCTURAL_ENTRY_TYPES) },
         created_at: {
           gte: startUtc,
           lte: endUtc,
@@ -140,6 +153,20 @@ export class WalletService {
       totalPaid: parseFloat(totalPaid.toFixed(2)),
       todaysEarnings: parseFloat(todaysEarnings.toFixed(2)),
     };
+  }
+
+  /**
+   * Dedicated read surface for a user's Bititan Wallet reserve (Builder tier only).
+   * Deliberately separate from getSummary()'s availableBalance/totalEarned — per spec,
+   * the Bititan Wallet must never be merged with the user's Income Wallet.
+   */
+  static async getBititanSummary(userId: string, db: any = prisma): Promise<{ totalBititanReserve: number }> {
+    const result = await db.walletLedger.aggregate({
+      where: { user_id: userId, entry_type: 'BITITAN_CREDIT' },
+      _sum: { amount: true },
+    });
+    const totalBititanReserve = result._sum.amount ? parseFloat(result._sum.amount.toString()) : 0;
+    return { totalBititanReserve: parseFloat(totalBititanReserve.toFixed(2)) };
   }
 
   /**
