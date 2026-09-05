@@ -244,49 +244,6 @@ export class AuthService {
   }
 
   /**
-   * Compatibility helper for internal service queries
-   */
-  static getUser(address: string) {
-    if (!address) return null;
-    const cleanAddress = address.toLowerCase();
-    return {
-      address: cleanAddress,
-      tier: 'STARTER',
-      basePlanAmount: 1.0,
-      totalEarningsUsdt: 156.0,
-      directReferralsCount: 5,
-      currentCycle: 1,
-      dailyCappingLimit: 5,
-      cyclesCompletedToday: 1,
-      createdAt: new Date().toISOString(),
-      referrerAddress: '0x0000000000000000000000000000000000000000',
-    };
-  }
-
-  static getAllUsers() {
-    return [
-      {
-        address: '0x71c7656ec7ab88b098defb751b7401b5f6d8976f',
-        tier: 'STARTER',
-        referrerAddress: '0x0000000000000000000000000000000000000000',
-        totalEarningsUsdt: 156.0,
-        createdAt: new Date().toISOString(),
-      },
-      {
-        address: '0x8f3c490e12d3456789012345678901234567890a',
-        tier: 'PRO',
-        referrerAddress: '0x71c7656ec7ab88b098defb751b7401b5f6d8976f',
-        totalEarningsUsdt: 420.0,
-        createdAt: new Date().toISOString(),
-      },
-    ];
-  }
-
-  static saveUser(user: any) {
-    return user;
-  }
-
-  /**
    * Helper to format User Record for API responses
    */
   private static formatUser(user: UserRecord) {

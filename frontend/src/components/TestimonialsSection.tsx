@@ -25,7 +25,7 @@ const testimonials: Testimonial[] = [
     role: 'Champion Tier Partner',
     address: '0x3c44...d293',
     earnings: '$38,900 USDT',
-    quote: 'The 13-Level forced matrix spillover creates real team momentum. I received $325 USDT matrix level bonuses from spillover nodes I didn’t even recruit directly!',
+    quote: 'The Booster matrix spillover creates real team momentum. I received $325 USDT matrix bonuses from spillover cycles I didn’t even recruit directly!',
     txHash: '0x9d2b1f8e6a5c4d3b2a109876543210abcdef1234567890abcdef1234567890ab'
   },
   {

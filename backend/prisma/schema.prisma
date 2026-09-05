@@ -65,6 +65,7 @@ enum PaymentType {
   JOIN
   UPGRADE
   RETOPUP
+  PARTIAL_UPGRADE
 }
 
 enum PaymentIntentStatus {

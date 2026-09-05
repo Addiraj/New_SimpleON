@@ -7,6 +7,13 @@ export const createPaymentIntentSchema = z.object({
   idempotencyKey: z.string().optional(),
 });
 
+export const createPartialUpgradeIntentSchema = z.object({
+  levelSlug: z.string().optional(),
+  levelOrder: z.coerce.number().optional(),
+  levelId: z.string().optional(),
+  amount: z.coerce.number().positive('Amount must be greater than zero'),
+});
+
 export const getPaymentByReferenceSchema = {
   params: z.object({
     reference: z.string().min(1, 'Payment reference is required'),

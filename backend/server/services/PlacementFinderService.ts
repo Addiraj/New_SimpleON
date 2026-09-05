@@ -50,18 +50,24 @@ export class PlacementFinderService {
       }
     }
 
-    // STEP 1: Prefer Direct Sponsor's Active Cycle
+    // STEP 1: Prefer Direct Sponsor's Active Cycle.
+    // Normally a user has at most one ACTIVE cycle per level at a time (a single linear chain),
+    // but Visionary's X3 pool progression can leave TWO simultaneously active cycles for the
+    // same sponsor (a re-subscription cycle and a pool-doubling advance cycle — see
+    // VisionaryPoolService) — so this checks every active cycle for room, oldest first, rather
+    // than assuming a single one exists.
     if (sponsorUserId) {
-      const sponsorCycle = await db.matrixCycle.findFirst({
+      const sponsorCycles = await db.matrixCycle.findMany({
         where: {
           user_id: sponsorUserId,
           level_configuration_id: levelConfigId,
           status: 'ACTIVE',
         },
-        orderBy: { cycle_number: 'desc' },
+        orderBy: { cycle_number: 'asc' },
       });
+      const sponsorCycle = sponsorCycles.find((c: any) => c.filled_positions < c.total_positions);
 
-      if (sponsorCycle && sponsorCycle.filled_positions < sponsorCycle.total_positions) {
+      if (sponsorCycle) {
         logger.info(
           { memberUserId, sponsorUserId, cycleId: sponsorCycle.id },
           '[PlacementFinder] Found available slot in direct sponsor active cycle'

@@ -86,6 +86,30 @@ export class PaymentController {
   }
 
   /**
+   * POST /api/payments/partial-upgrade-intent
+   */
+  static async createPartialUpgradeIntent(req: Request, res: Response, next: NextFunction) {
+    try {
+      const userId = (req as any).userId;
+      const { levelSlug, levelOrder, levelId, amount } = req.body || {};
+
+      const intent = await PaymentService.createPartialUpgradeIntent(userId, Number(amount), {
+        levelSlug,
+        levelOrder,
+        levelId,
+      });
+
+      res.status(201).json({
+        success: true,
+        message: 'Partial upgrade payment intent created successfully',
+        data: intent,
+      });
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  /**
    * POST /api/payments/retopup-intent
    */
   static async createRetopupIntent(req: Request, res: Response, next: NextFunction) {

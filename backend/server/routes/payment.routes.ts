@@ -4,6 +4,7 @@ import { authenticateWeb3Token } from '../middlewares/authMiddleware.js';
 import { validateRequest } from '../middlewares/validateRequest.js';
 import {
   createPaymentIntentSchema,
+  createPartialUpgradeIntentSchema,
   getPaymentByIdSchema,
   getPaymentByReferenceSchema,
   verifyPaymentSchema,
@@ -22,6 +23,7 @@ router.post('/intent', PaymentController.createGenericIntent);
 router.post('/create-intent', PaymentController.createGenericIntent);
 router.post('/join-intent', validateRequest(createPaymentIntentSchema), PaymentController.createJoinIntent);
 router.post('/upgrade-intent', validateRequest(createPaymentIntentSchema), PaymentController.createUpgradeIntent);
+router.post('/partial-upgrade-intent', validateRequest(createPartialUpgradeIntentSchema), PaymentController.createPartialUpgradeIntent);
 router.post('/retopup-intent', validateRequest(createPaymentIntentSchema), PaymentController.createRetopupIntent);
 
 // Query payment intents by Reference or ID

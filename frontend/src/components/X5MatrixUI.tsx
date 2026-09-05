@@ -630,7 +630,7 @@ export default function X5MatrixUI() {
                           {item.status}
                         </span>
                       </td>
-                      <td className="py-3.5 px-4 text-prime font-bold">{item.filledSlots} / {item.totalSlots || 5} Slots</td>
+                      <td className="py-3.5 px-4 text-prime font-bold">{item.filledSlots} / {item.totalSlots || matrixSize} Slots</td>
                       <td className="py-3.5 px-4 font-bold text-emerald-500">{formatUsdtPlain(item.earnings || 0)} USDT</td>
                       <td className="py-3.5 px-4 text-sub">{item.dateStarted || 'N/A'}</td>
                       <td className="py-3.5 px-4 text-sub">{item.dateCompleted || 'In Progress'}</td>

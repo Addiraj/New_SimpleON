@@ -72,7 +72,10 @@ describe('Daily Capping Concurrency & Race Condition Test Suite', () => {
   });
 
   it('A. Sequential test: 5 cycles to participant, 6th cycle to sponsor', async () => {
-    for (let i = 1; i <= 6; i++) {
+    // Cycle #1 always has zero income for Starter (first-cycle funds re-topup + next-tier
+    // activation, per spec) and is never capping-evaluated — so 7 total cycles are needed for
+    // 5 income-bearing completions (cycles 2-6) plus a 6th income-bearing, capped cycle (cycle 7).
+    for (let i = 1; i <= 7; i++) {
       const cycle = await prisma.matrixCycle.create({
         data: {
           user_id: userId,
@@ -96,9 +99,10 @@ describe('Daily Capping Concurrency & Race Condition Test Suite', () => {
     expect(cappingRecord?.completed_cycle_count).toBe(5);
     expect(cappingRecord?.capped_cycle_count).toBe(1);
 
-    // Verify 5 transactions for participant, 1 transaction for sponsor
-    const userTxCount = await prisma.transaction.count({ where: { user_id: userId } });
-    const sponsorTxCount = await prisma.transaction.count({ where: { user_id: sponsorId } });
+    // Verify 5 MATRIX_REWARD transactions for participant, 1 for sponsor (cycle #1's unrelated
+    // NEXT_TIER_ACTIVATION_FUNDING extra — always created for Starter's first cycle — is excluded).
+    const userTxCount = await prisma.transaction.count({ where: { user_id: userId, transaction_type: 'MATRIX_REWARD' } });
+    const sponsorTxCount = await prisma.transaction.count({ where: { user_id: sponsorId, transaction_type: 'MATRIX_REWARD' } });
 
     expect(userTxCount).toBe(5);
     expect(sponsorTxCount).toBe(1);
@@ -148,8 +152,10 @@ describe('Daily Capping Concurrency & Race Condition Test Suite', () => {
   });
 
   it('C. Ten concurrent cycles at count=0, limit=5: exactly 5 participant credits, 5 sponsor credits', async () => {
+    // Cycle #1 has zero income (never capping-evaluated) — 11 cycles are created so that 10
+    // income-bearing cycles (2-11) genuinely compete for the 5 daily slots.
     const cycles = [];
-    for (let i = 1; i <= 10; i++) {
+    for (let i = 1; i <= 11; i++) {
       cycles.push(
         await prisma.matrixCycle.create({
           data: { user_id: userId, level_configuration_id: levelConfigId, cycle_number: i, status: 'COMPLETED' },
@@ -171,16 +177,19 @@ describe('Daily Capping Concurrency & Race Condition Test Suite', () => {
     expect(cappingRecord?.completed_cycle_count).toBe(5);
     expect(cappingRecord?.capped_cycle_count).toBe(5);
 
-    const userTxCount = await prisma.transaction.count({ where: { user_id: userId } });
-    const sponsorTxCount = await prisma.transaction.count({ where: { user_id: sponsorId } });
+    // MATRIX_REWARD only — cycle #1's unrelated NEXT_TIER_ACTIVATION_FUNDING extra is excluded.
+    const userTxCount = await prisma.transaction.count({ where: { user_id: userId, transaction_type: 'MATRIX_REWARD' } });
+    const sponsorTxCount = await prisma.transaction.count({ where: { user_id: sponsorId, transaction_type: 'MATRIX_REWARD' } });
 
     expect(userTxCount).toBe(5);
     expect(sponsorTxCount).toBe(5);
   });
 
   it('D. Same-cycle idempotency: multiple concurrent submissions of SAME cycleId -> 1 ledger credit', async () => {
+    // Use a subsequent (income-bearing) cycle — cycle #1 has zero income for Starter, so it
+    // never reaches the primary MATRIX_REWARD ledger write this test is exercising.
     const cycle = await prisma.matrixCycle.create({
-      data: { user_id: userId, level_configuration_id: levelConfigId, cycle_number: 1, status: 'COMPLETED' },
+      data: { user_id: userId, level_configuration_id: levelConfigId, cycle_number: 2, status: 'COMPLETED' },
     });
 
     // Run same cycle 5 times concurrently
@@ -212,8 +221,10 @@ describe('Daily Capping Concurrency & Race Condition Test Suite', () => {
         },
       });
 
+      // Cycle #1 has zero income (never capping-evaluated) — 11 cycles per iteration so 10
+      // income-bearing cycles (2-11) genuinely compete for the 5 daily slots.
       const cycles = [];
-      for (let c = 1; c <= 10; c++) {
+      for (let c = 1; c <= 11; c++) {
         cycles.push(
           await prisma.matrixCycle.create({
             data: { user_id: iterUser.id, level_configuration_id: levelConfigId, cycle_number: c, status: 'COMPLETED' },
@@ -234,7 +245,8 @@ describe('Daily Capping Concurrency & Race Condition Test Suite', () => {
       expect(record?.completed_cycle_count).toBe(5);
       expect(record?.capped_cycle_count).toBe(5);
 
-      const uCount = await prisma.transaction.count({ where: { user_id: iterUser.id } });
+      // MATRIX_REWARD only — cycle #1's unrelated NEXT_TIER_ACTIVATION_FUNDING extra is excluded.
+      const uCount = await prisma.transaction.count({ where: { user_id: iterUser.id, transaction_type: 'MATRIX_REWARD' } });
       expect(uCount).toBe(5);
     }
   }, 30000); // 30 second timeout for 20 iterations

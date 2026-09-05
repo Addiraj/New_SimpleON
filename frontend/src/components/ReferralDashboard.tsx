@@ -318,7 +318,7 @@ export default function ReferralDashboard() {
             <div className="flex flex-wrap items-center gap-2 mb-1">
               <div className="inline-flex items-center space-x-2 rounded-full bg-accent-red/10 px-3.5 py-1 text-xs font-bold text-accent-red border border-accent-red/20">
                 <Users size={14} />
-                <span>13-Level Forced Matrix Affiliate Center</span>
+                <span>Booster Plan Affiliate Center</span>
               </div>
               {summaryData?.sponsor && (
                 <div className="inline-flex items-center space-x-2 rounded-full bg-emerald-500/10 px-3.5 py-1 text-xs font-bold text-emerald-500 border border-emerald-500/20">

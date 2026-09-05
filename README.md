@@ -1,6 +1,6 @@
 # SimpleOn Web3 Booster Plan Platform
 
-SimpleOn is a enterprise-grade Web3 Booster Plan and Matrix Income Platform built on BNB Smart Chain. It features 4 sequential Booster Tiers (Starter, Builder, Leader, Champion) and a 100x Main Plan Matrix featuring a 13-Level 3×3 Forced Matrix (65%), X5 Matrix Split (15%), and X4 Passive 2×2 Spillover Matrix (20%).
+SimpleOn is a enterprise-grade Web3 Booster Plan and Matrix Income Platform built on BNB Smart Chain. It features a 6-tier Booster ladder (Launch, Starter, Builder, Leader, Champion, Visionary) that auto-cycles through X3/X5 matrices with automatic re-topup, culminating in Visionary's hybrid structure — an uncapped X3 pool plus a 20-level 3×3 matrix.
 
 ---
 
@@ -24,7 +24,7 @@ The repository follows clean MVC (Model-View-Controller) architecture, SOLID sof
 │   │   ├── auth.controller.ts       # SIWE Nonce & Signature verification
 │   │   ├── booster.controller.ts    # Booster math & tier upgrades
 │   │   ├── contract.controller.ts   # Contract address & ABI info
-│   │   ├── matrix.controller.ts     # 13-Level forced matrix calculations
+│   │   ├── matrix.controller.ts     # Matrix cycle summary, tree & position queries
 │   │   ├── stats.controller.ts      # Global stats & network counters
 │   │   └── user.controller.ts       # Web3 Profile & referral links
 │   ├── middlewares/                 # Auth JWT, validation & Error Handling
@@ -42,7 +42,7 @@ The repository follows clean MVC (Model-View-Controller) architecture, SOLID sof
 │   │   ├── ApiDocs.tsx              # Interactive REST API console
 │   │   ├── ContractDocs.tsx         # Smart contract inspector & ABI viewer
 │   │   ├── Dashboard.tsx            # Live Web3 User Dashboard
-│   │   ├── MatrixVisualizer.tsx     # 13-Level matrix & X5/X4 visualizer
+│   │   ├── MatrixVisualizer.tsx     # Visionary hybrid X3 + 3x3 matrix visualizer
 │   │   ├── Navbar.tsx               # Web3 Wallet button & Navigation
 │   │   ├── Plans.tsx                # Booster tiers and plan activation UI
 │   │   └── WalletModal.tsx          # MetaMask, WalletConnect, Trust Wallet modal
@@ -71,7 +71,7 @@ The repository follows clean MVC (Model-View-Controller) architecture, SOLID sof
 ### 3. Backend MVC Services
 - **`AuthService`**: Manages Web3 wallet nonces and verifies cryptographic signatures.
 - **`BoosterService`**: Calculates exact 5-partner tier collections, re-subscriptions, auto-upgrades, and net earnings.
-- **`MatrixService`**: Generates 13-Level 3×3 Forced Matrix trees and calculates X5/X4 splits.
+- **`MatrixCycleService` / `MatrixPlacementService` / `MatrixCompletionService`**: Manage X3/X5 Booster matrix cycle placement, completion, and automatic re-topup.
 
 ---
 
