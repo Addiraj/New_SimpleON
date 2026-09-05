@@ -10,6 +10,11 @@ import apiRouter from './routes/index.js';
 import { errorHandler } from './middlewares/errorHandler.js';
 import { notFoundHandler } from './middlewares/notFound.js';
 
+// Global BigInt serialization support for JSON response payloads
+(BigInt.prototype as any).toJSON = function () {
+  return this.toString();
+};
+
 const app: Express = express();
 
 // Security Headers

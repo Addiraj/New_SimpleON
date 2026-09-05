@@ -217,7 +217,8 @@ describe('1-10 & 63. Auth & Identity Unit Tests', () => {
   it('63. Suspended user is restricted from accessing protected endpoints', async () => {
     const testWallet = createTestWallet();
     const user = await AuthRepository.createUser({ walletAddress: testWallet.address });
-    user.status = 'SUSPENDED';
+    const { prisma } = await import('../../server/config/database.js');
+    await prisma.user.update({ where: { id: user.id }, data: { status: 'SUSPENDED' } });
 
     const token = JwtUtil.generateAccessToken({ userId: user.id, walletAddress: user.wallet_address });
 

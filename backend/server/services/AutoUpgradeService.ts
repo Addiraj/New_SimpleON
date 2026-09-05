@@ -61,7 +61,7 @@ export class AutoUpgradeService {
 
     await tx.user.update({
       where: { id: userId },
-      data: { current_level_id: targetLevel.id },
+      data: { current_level_id: targetLevel.id, status: 'ACTIVE' },
     });
 
     const userLevelId = `ul-${userId}-${targetLevel.id}`;

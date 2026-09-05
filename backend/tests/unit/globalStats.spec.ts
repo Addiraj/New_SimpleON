@@ -3,6 +3,7 @@ import { prisma } from '../../server/config/database.js';
 import { MatrixRewardService } from '../../server/services/MatrixRewardService.js';
 import { StatsController } from '../../server/controllers/stats.controller.js';
 import { TransactionType } from '@prisma/client';
+import { seedFullLadder } from '../helpers/testUtils.js';
 
 describe('Global Stats API & Double Counting Test Suite', () => {
   let sponsorId: string;
@@ -14,29 +15,9 @@ describe('Global Stats API & Double Counting Test Suite', () => {
     await prisma.$executeRawUnsafe(`TRUNCATE TABLE daily_cappings, daily_earnings, wallet_ledgers, transactions, matrix_cycles, referral_relations, users, level_configurations CASCADE;`);
 
     // 2. Seed Level Configuration
-    const levelConfig = await prisma.levelConfiguration.create({
-      data: {
-        id: 'cfg-starter-v1',
-        name: 'Starter Pool',
-        slug: 'starter',
-        level_order: 1,
-        joining_amount: 10,
-        upgrade_amount: 40,
-        matrix_size: 5,
-        income_per_position: 2,
-        cycle_reward: 10,
-        retopup_amount: 10,
-        daily_cap: 0,
-        daily_cycle_limit: 5,
-        required_direct_referrals: 0,
-        required_qualified_builders: 0,
-        auto_upgrade_enabled: true,
-        retopup_enabled: true,
-        status: 'ACTIVE',
-        version: 1,
-      },
-    });
-    levelConfigId = levelConfig.id;
+    await seedFullLadder(prisma);
+    const levelConfig = await prisma.levelConfiguration.findFirst({ where: { slug: 'starter' } });
+    levelConfigId = levelConfig!.id;
 
     // 3. Create Sponsor & Participant
     const sponsor = await prisma.user.create({
@@ -76,7 +57,7 @@ describe('Global Stats API & Double Counting Test Suite', () => {
       data: {
         user_id: userId,
         level_configuration_id: levelConfigId,
-        cycle_number: 1,
+        cycle_number: 2,
         status: 'COMPLETED',
       },
     });
@@ -99,7 +80,7 @@ describe('Global Stats API & Double Counting Test Suite', () => {
 
     const tx = await prisma.transaction.findFirst();
     expect(tx?.user_id).toBe(userId);
-    expect(Number(tx?.amount)).toBe(10);
+    expect(Number(tx?.amount)).toBe(40);
   });
 
   it('2. One capped cycle = exactly one qualifying MATRIX_REWARD Transaction to Sponsor', async () => {
@@ -112,8 +93,8 @@ describe('Global Stats API & Double Counting Test Suite', () => {
         completed_cycle_count: 5, // Capped!
         capped_cycle_count: 0,
         daily_cycle_limit: 5,
-        gross_earning: 50,
-        allowed_earning: 50,
+        gross_earning: 200,
+        allowed_earning: 200,
         excess_earning: 0,
       },
     });
@@ -122,7 +103,7 @@ describe('Global Stats API & Double Counting Test Suite', () => {
       data: {
         user_id: userId,
         level_configuration_id: levelConfigId,
-        cycle_number: 6,
+        cycle_number: 7,
         status: 'COMPLETED',
       },
     });
@@ -145,7 +126,7 @@ describe('Global Stats API & Double Counting Test Suite', () => {
 
     const tx = await prisma.transaction.findFirst();
     expect(tx?.user_id).toBe(sponsorId);
-    expect(Number(tx?.amount)).toBe(10);
+    expect(Number(tx?.amount)).toBe(40);
   });
 
   it('3. Stats endpoint correctly aggregates data without fake offsets', async () => {

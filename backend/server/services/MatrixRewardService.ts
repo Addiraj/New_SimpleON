@@ -238,26 +238,36 @@ export class MatrixRewardService {
           },
         });
 
-        ledgerEntry = await db.walletLedger.create({
-          data: {
-            user_id: recipientUserId,
-            transaction_id: transaction.id,
-            entry_type: 'MATRIX_REWARD',
-            direction: 'CREDIT',
-            amount: new Prisma.Decimal(grossReward),
-            available_amount: new Prisma.Decimal(grossReward),
-            status: 'AVAILABLE',
-            idempotency_key: idempotencyKey,
-            source_type: 'MATRIX_CYCLE',
-            source_id: cycleId,
-            metadata: {
-              cycle_number: cycleNumber,
-              tier_code: tierConfig.code,
-              is_capped_redirect: isRedirectedToSponsor,
-              original_participant_id: userId,
+        try {
+          ledgerEntry = await db.walletLedger.create({
+            data: {
+              user_id: recipientUserId,
+              transaction_id: transaction.id,
+              entry_type: 'MATRIX_REWARD',
+              direction: 'CREDIT',
+              amount: new Prisma.Decimal(grossReward),
+              available_amount: new Prisma.Decimal(grossReward),
+              status: 'AVAILABLE',
+              idempotency_key: idempotencyKey,
+              source_type: 'MATRIX_CYCLE',
+              source_id: cycleId,
+              metadata: {
+                cycle_number: cycleNumber,
+                tier_code: tierConfig.code,
+                is_capped_redirect: isRedirectedToSponsor,
+                original_participant_id: userId,
+              },
             },
-          },
-        });
+          });
+        } catch (err: any) {
+          if (err.code === 'P2002' || err.message?.includes('idempotency_key')) {
+            ledgerEntry = await db.walletLedger.findUnique({
+              where: { idempotency_key: idempotencyKey },
+            });
+          } else {
+            throw err;
+          }
+        }
 
         logger.info(
           { recipientUserId, originalUserId: userId, cycleId, amount: grossReward, isRedirectedToSponsor },
@@ -307,25 +317,36 @@ export class MatrixRewardService {
         },
       });
 
-      const extraLedgerEntry = await db.walletLedger.create({
-        data: {
-          user_id: userId,
-          transaction_id: extraTransaction.id,
-          entry_type: extra.entryType,
-          direction: 'CREDIT',
-          amount: extra.amount,
-          available_amount: D(0), // structural allocation, not spendable — excluded from balance summaries
-          status: 'COMPLETED',
-          idempotency_key: extraIdempotencyKey,
-          source_type: 'MATRIX_CYCLE',
-          source_id: cycleId,
-          metadata: {
-            cycle_number: cycleNumber,
-            tier_code: tierConfig.code,
-            ...extra.metadata,
+      let extraLedgerEntry: any;
+      try {
+        extraLedgerEntry = await db.walletLedger.create({
+          data: {
+            user_id: userId,
+            transaction_id: extraTransaction.id,
+            entry_type: extra.entryType,
+            direction: 'CREDIT',
+            amount: extra.amount,
+            available_amount: D(0), // structural allocation, not spendable — excluded from balance summaries
+            status: 'COMPLETED',
+            idempotency_key: extraIdempotencyKey,
+            source_type: 'MATRIX_CYCLE',
+            source_id: cycleId,
+            metadata: {
+              cycle_number: cycleNumber,
+              tier_code: tierConfig.code,
+              ...extra.metadata,
+            },
           },
-        },
-      });
+        });
+      } catch (err: any) {
+        if (err.code === 'P2002' || err.message?.includes('idempotency_key')) {
+          extraLedgerEntry = await db.walletLedger.findUnique({
+            where: { idempotency_key: extraIdempotencyKey },
+          });
+        } else {
+          throw err;
+        }
+      }
 
       logger.info(
         { userId, cycleId, entryType: extra.entryType, amount: extra.amount.toString() },

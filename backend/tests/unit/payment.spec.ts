@@ -6,9 +6,14 @@ import { PaymentRepository } from '../../server/repositories/PaymentRepository.j
 import { JwtUtil } from '../../server/utils/jwt.util.js';
 import { createTestWallet, resetAllTestStores } from '../helpers/testUtils.js';
 
+import { prisma } from '../../server/config/database.js';
+import { seedFullLadder } from '../helpers/testUtils.js';
+
 describe('23-35. Payment Intent & Blockchain Verification Unit Tests', () => {
-  beforeEach(() => {
+  beforeEach(async () => {
     resetAllTestStores();
+    await prisma.$executeRawUnsafe(`TRUNCATE TABLE payment_verifications, payment_intents, wallet_ledgers, transactions, matrix_cycles, referral_relations, users, level_configurations CASCADE;`);
+    await seedFullLadder(prisma);
   });
 
   it('23. Payment-intent creation creates PENDING intent with expected amount and payment reference', async () => {
@@ -75,7 +80,7 @@ describe('23-35. Payment Intent & Blockchain Verification Unit Tests', () => {
 
     const intentId = intentRes.body.data.intent.id;
 
-    const mockTxHash = `0xmock${Date.now().toString(16)}${Math.random().toString(16).slice(2)}`;
+    const mockTxHash = `0x${'a'.repeat(64)}`;
 
     const verifyRes = await request(app)
       .post('/api/payment/verify')
@@ -97,7 +102,7 @@ describe('23-35. Payment Intent & Blockchain Verification Unit Tests', () => {
       .send({ paymentType: 'JOIN', levelOrder: 1 });
 
     const intentId1 = intentRes1.body.data.intent.id;
-    const mockTxHash = `0xmockdup${Date.now().toString(16)}`;
+    const mockTxHash = `0x${'b'.repeat(64)}`;
 
     // First verification succeeds
     const verifyRes1 = await request(app)
@@ -139,7 +144,7 @@ describe('23-35. Payment Intent & Blockchain Verification Unit Tests', () => {
       .send({ paymentType: 'JOIN', levelOrder: 1 });
 
     const intentId = intentRes.body.data.intent.id;
-    const mockTxHash = `0xmockact${Date.now().toString(16)}`;
+    const mockTxHash = `0x${'c'.repeat(64)}`;
 
     await request(app)
       .post('/api/payment/verify')

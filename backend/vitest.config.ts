@@ -8,7 +8,13 @@ export default defineConfig({
     include: ['tests/**/*.test.ts', 'tests/**/*.spec.ts'],
     testTimeout: 20000,
     hookTimeout: 20000,
-    isolate: true,
+    isolate: false,
+    fileParallelism: false,
+    maxConcurrency: 1,
+    pool: 'threads',
+    poolOptions: {
+      threads: { singleThread: true },
+    },
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json', 'html'],
