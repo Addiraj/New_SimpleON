@@ -57,7 +57,6 @@ interface Web3State {
   fetchUnreadCount: () => Promise<void>;
   upgradeTier: (targetTier: string) => Promise<string>;
   registerAndActivate: (referrer?: string) => Promise<string>;
-  activateMainPlan: () => Promise<string>;
   activateViaTransfer: (amount: string | number, receiverAddress: string, tokenAddress: string) => Promise<string>;
   switchChain: (targetChainId: number) => Promise<void>;
 }
@@ -426,44 +425,6 @@ export const useWeb3Store = create<Web3State>((set, get) => ({
       return tx.hash;
     } catch (err: any) {
       console.error('Direct transfer activation error:', err.message);
-      throw err;
-    }
-  },
-
-  activateMainPlan: async () => {
-    try {
-      const { provider, basePlan } = get();
-      if (!provider) throw new Error('Wallet not connected or provider unavailable');
-
-      const signer = await provider.getSigner();
-      const usdtAddress = import.meta.env.VITE_USDT_ADDRESS || import.meta.env.VITE_USDT_CONTRACT_ADDRESS;
-      const boosterAddress = import.meta.env.VITE_CONTRACT_ADDRESS || import.meta.env.VITE_SIMPLEON_CONTRACT_ADDRESS;
-
-      if (!usdtAddress || !boosterAddress) {
-        throw new Error('Contract addresses not configured in environment');
-      }
-
-      const usdtAbi = ["function approve(address spender, uint256 amount) external returns (bool)"];
-      const boosterAbi = ["function activateMainPlan() external"];
-
-      const usdtContract = new ethers.Contract(usdtAddress, usdtAbi, signer);
-      const boosterContract = new ethers.Contract(boosterAddress, boosterAbi, signer);
-
-      const amountToApprove = ethers.parseUnits((basePlan * 100).toString(), 18); // Main Plan is 100x basePlan
-
-      console.log('Requesting USDT approval...');
-      const approveTx = await usdtContract.approve(boosterAddress, amountToApprove);
-      await approveTx.wait();
-
-      console.log('Requesting activate Main Plan...');
-      const tx = await boosterContract.activateMainPlan();
-      await tx.wait();
-
-      console.log('Main plan activated on blockchain');
-      await get().fetchCalculations(get().basePlan);
-      return tx.hash;
-    } catch (err: any) {
-      console.error('Activate Main Plan error:', err.message);
       throw err;
     }
   },

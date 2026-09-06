@@ -4,17 +4,17 @@ import { AuthRepository } from '../../server/repositories/AuthRepository.js';
 import { BoosterRepository } from '../../server/repositories/BoosterRepository.js';
 import { PartialActivationService } from '../../server/services/PartialActivationService.js';
 import { createTestWallet, resetAllTestStores } from '../helpers/testUtils.js';
+import { seedFullLadder } from '../helpers/seedLadder.js';
 
 /**
- * PartialActivationService is a standalone, independently-tested accumulator engine — NOT wired
- * into the live matrix-placement crediting flow (see the service's own doc comment for why:
- * the client spec is ambiguous about whether reaching the funding threshold bypasses or must
- * coexist with the existing qualification-gated AutoUpgradeService). These tests exercise the
- * engine in isolation, calling recordContribution() directly.
+ * PartialActivationService is now wired into the live payment-intake flow (see
+ * PaymentService.createPartialUpgradeIntent / verifyPayment) — these tests exercise the
+ * accumulator engine directly, independent of the payment/HTTP layer.
  */
-describe('PartialActivationService — standalone accumulator engine (not yet wired)', () => {
-  beforeEach(() => {
+describe('PartialActivationService — accumulator engine', () => {
+  beforeEach(async () => {
     resetAllTestStores();
+    await seedFullLadder();
   });
 
   async function getBuilderLevel() {

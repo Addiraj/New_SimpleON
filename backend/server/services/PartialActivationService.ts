@@ -15,15 +15,13 @@ export interface PartialActivationResult {
  * contribution splits 2 reactivation + 8 toward Builder, accumulating across multiple such
  * contributions until Builder's 40 USDT threshold is reached).
  *
- * IMPORTANT — NOT WIRED INTO THE LIVE CREDITING FLOW YET. This is deliberate. The client spec's
- * "accumulate until the required next-tier activation amount is reached" is genuinely ambiguous
- * about whether reaching the funding threshold activates the next tier outright, or whether the
- * existing qualification-gated AutoUpgradeService (direct-referral / qualified-builder counts —
- * already required, and already enforced today for every tier) must ALSO still be satisfied.
- * Wiring this into MatrixPlacementService without that answer risks silently bypassing the
- * referral-qualification gates that already exist for Builder/Leader/Champion. Per the approved
- * plan (Gap #1), this engine is built and independently testable now; the call site is wired
- * only once that's confirmed.
+ * Wired into the live crediting flow via PaymentService.createPartialUpgradeIntent /
+ * PaymentRepository's payment-verification paths (both the real blockchain-verified flow and the
+ * dev-mode mock-confirm flow) — a user pays a sub-full-price amount toward a target tier, and
+ * reaching the threshold activates that tier directly via AutoUpgradeService.activateLevel,
+ * bypassing the qualification gates (direct-referral / qualified-builder counts) that otherwise
+ * gate Builder/Leader/Champion — resolving the ambiguity in the client spec in favor of "funding
+ * the full amount is itself sufficient", per the confirmed remediation plan.
  */
 export class PartialActivationService {
   /**

@@ -9,11 +9,12 @@ import { NotificationService } from './NotificationService.js';
 import { AppError } from '../utils/AppError.js';
 import { env } from '../config/env.js';
 import { logger } from '../config/logger.js';
+import { prisma } from '../config/database.js';
 
 export interface FormattedPaymentIntent {
   id: string;
   paymentReference: string;
-  paymentType: 'JOIN' | 'UPGRADE' | 'RETOPUP';
+  paymentType: 'JOIN' | 'UPGRADE' | 'RETOPUP' | 'PARTIAL_UPGRADE';
   expectedAmount: string;
   tokenAddress: string;
   receiverAddress: string;
@@ -228,6 +229,82 @@ export class PaymentService {
         toLevelOrder: targetLevel.level_order,
         planName: targetLevel.name,
         planSlug: targetLevel.slug,
+      },
+    });
+
+    return this.formatIntentResponse(newIntent, targetLevel);
+  }
+
+  /**
+   * 2b. Create Partial-Upgrade Payment Intent — accepts a caller-supplied amount LESS than the
+   * target tier's full price, to be accumulated toward it via PartialActivationService (e.g.
+   * Starter's 10 USDT = 2 reactivation + 8 toward Builder). Validated against the remaining
+   * threshold so a user can never contribute more than what's still needed.
+   */
+  static async createPartialUpgradeIntent(
+    userId: string,
+    amount: number,
+    options?: { levelSlug?: string; levelOrder?: number; levelId?: string }
+  ): Promise<FormattedPaymentIntent> {
+    const user = await AuthRepository.findUserById(userId);
+    if (!user) {
+      throw new AppError('User not found', 404);
+    }
+
+    if (!amount || amount <= 0) {
+      throw new AppError('Partial upgrade amount must be greater than zero', 400);
+    }
+
+    const targetLevel = await this.resolveLevelConfig(options);
+
+    const existing = await prisma.partialActivation.findUnique({
+      where: {
+        user_id_target_level_configuration_id: {
+          user_id: userId,
+          target_level_configuration_id: targetLevel.id,
+        },
+      },
+    });
+
+    const threshold = existing ? parseFloat(existing.threshold_amount.toString()) : parseFloat(targetLevel.joining_amount.toString());
+    const accumulated = existing ? parseFloat(existing.accumulated_amount.toString()) : 0;
+    const remaining = threshold - accumulated;
+
+    if (existing?.status === 'COMPLETED' || remaining <= 0) {
+      throw new AppError(`${targetLevel.name} activation is already fully funded`, 400);
+    }
+    if (amount > remaining) {
+      throw new AppError(`Amount exceeds remaining balance needed (${remaining} USDT) toward ${targetLevel.name}`, 400);
+    }
+
+    const existingIntent = await PaymentRepository.findActiveIntent(userId, 'PARTIAL_UPGRADE', targetLevel.id);
+    if (existingIntent && parseFloat(existingIntent.expected_amount) === amount) {
+      logger.info({ userId, intentId: existingIntent.id }, 'Returning active existing PARTIAL_UPGRADE payment intent');
+      return this.formatIntentResponse(existingIntent, targetLevel);
+    }
+
+    const tokenAddress = env.MOCK_USDT_ADDRESS;
+    const receiverAddress = env.SIMPLEON_BOOSTER_ADDRESS;
+    const networkId = '97';
+
+    const randomHex = crypto.randomBytes(3).toString('hex').toUpperCase();
+    const paymentReference = `PAY-PARTIAL-${userId.slice(0, 6).toUpperCase()}-${Date.now().toString(36).toUpperCase()}-${randomHex}`;
+    const expiresAt = new Date(Date.now() + 30 * 60 * 1000);
+
+    const newIntent = await PaymentRepository.createIntent({
+      userId,
+      levelConfigurationId: targetLevel.id,
+      paymentReference,
+      paymentType: 'PARTIAL_UPGRADE',
+      expectedAmount: amount.toString(),
+      tokenAddress,
+      receiverAddress,
+      networkId,
+      expiresAt,
+      metadata: {
+        planName: targetLevel.name,
+        planSlug: targetLevel.slug,
+        remainingBeforeThisContribution: remaining,
       },
     });
 

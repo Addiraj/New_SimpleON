@@ -74,13 +74,13 @@ export default function LedgerTransactions({ hideHeader = false }: LedgerTransac
       const res = await walletApi.getSummary();
       if (res) {
         setSummary({
-          availableBalance: res.availableBalance ?? 0,
-          pendingBalance: res.pendingBalance ?? 0,
-          lockedBalance: res.lockedBalance ?? 0,
-          totalEarned: res.totalEarned ?? 0,
-          totalDebits: res.totalDebits ?? 0,
-          totalPaid: res.totalPaid ?? 0,
-          todaysEarnings: res.todaysEarnings ?? 0,
+          availableBalance: Number(res.availableBalance ?? 0),
+          pendingBalance: Number(res.pendingBalance ?? 0),
+          lockedBalance: Number(res.lockedBalance ?? 0),
+          totalEarned: Number(res.totalEarned ?? 0),
+          totalDebits: Number(res.totalDebits ?? 0),
+          totalPaid: Number(res.totalPaid ?? 0),
+          todaysEarnings: Number(res.todaysEarnings ?? 0),
         });
       }
     } catch (err) {
@@ -106,7 +106,7 @@ export default function LedgerTransactions({ hideHeader = false }: LedgerTransac
           txHash: tx.blockchainTransactionHash || tx.txHash || tx.id,
           type: tx.type || 'PLAN_JOIN',
           tier: tx.metadata?.tier || tx.tier || 'STARTER',
-          amountUsdt: tx.amountUsdt ?? tx.amount ?? 0,
+          amountUsdt: Number(tx.amountUsdt ?? tx.amount ?? 0),
           amount: tx.amount ?? 0,
           currency: tx.currency || 'USDT',
           fromAddress: tx.fromAddress || 'Unknown',

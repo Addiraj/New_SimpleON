@@ -2,68 +2,10 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import { prisma } from '../../server/config/database.js';
 import { AuthRepository } from '../../server/repositories/AuthRepository.js';
 import { BoosterRepository } from '../../server/repositories/BoosterRepository.js';
-import { BoosterConfigService, BOOSTER_TIER_CONFIGS } from '../../server/services/BoosterConfigService.js';
 import { MatrixCycleService } from '../../server/services/MatrixCycleService.js';
 import { MatrixPlacementService } from '../../server/services/MatrixPlacementService.js';
 import { createTestWallet, resetAllTestStores } from '../helpers/testUtils.js';
-
-const LEVEL_ORDER: Record<string, number> = {
-  launch: 1, starter: 2, builder: 3, leader: 4, champion: 5, visionary: 6,
-};
-
-/**
- * Re-seeds the full 6-tier ladder before every test, independent of what other spec files
- * (e.g. dailyCappingConcurrency.spec.ts, globalStats.spec.ts) TRUNCATE/replace it with — this
- * suite must not depend on run order against the shared real-Postgres test DB. Derived from
- * BOOSTER_TIER_CONFIGS, the same single source of truth prisma/seed.ts uses.
- */
-async function seedFullLadder() {
-  // Other spec files sharing this real-Postgres test DB (dailyCappingConcurrency.spec.ts,
-  // globalStats.spec.ts) TRUNCATE level_configurations and insert their own single-row fixture
-  // with a colliding level_order. Clear it fully (CASCADE, matching those files' own convention)
-  // before rebuilding the canonical 6-tier ladder, rather than upserting on top of unknown
-  // leftover state or risking FK-restrict failures from a plain deleteMany.
-  await prisma.$executeRawUnsafe(
-    `TRUNCATE TABLE daily_cappings, daily_earnings, wallet_ledgers, transactions, matrix_cycles, referral_relations, users, level_configurations CASCADE;`
-  );
-
-  for (const tier of BOOSTER_TIER_CONFIGS) {
-    await prisma.levelConfiguration.upsert({
-      where: { slug_version: { slug: tier.code, version: 1 } },
-      update: {
-        level_order: LEVEL_ORDER[tier.code],
-        joining_amount: tier.subscriptionAmount,
-        upgrade_amount: tier.upgradeAmount ?? 0,
-        matrix_size: tier.slotsPerCycle,
-        retopup_amount: tier.resubscribeAmount,
-        capping_enabled: tier.cappingEnabled,
-        bititan_amount: tier.reserveAmount ?? null,
-        required_direct_referrals: tier.requiredDirectReferrals,
-        required_qualified_builders: tier.requiredQualifiedBuilders,
-      },
-      create: {
-        name: tier.name,
-        slug: tier.code,
-        level_order: LEVEL_ORDER[tier.code],
-        joining_amount: tier.subscriptionAmount,
-        upgrade_amount: tier.upgradeAmount ?? 0,
-        matrix_size: tier.slotsPerCycle,
-        income_per_position: 0,
-        cycle_reward: 0,
-        retopup_amount: tier.resubscribeAmount,
-        daily_cap: 0,
-        daily_cycle_limit: tier.defaultDailyCapping,
-        required_direct_referrals: tier.requiredDirectReferrals,
-        required_qualified_builders: tier.requiredQualifiedBuilders,
-        capping_enabled: tier.cappingEnabled,
-        bititan_amount: tier.reserveAmount ?? null,
-        matrix_type: 'STANDARD',
-        status: 'ACTIVE',
-        version: 1,
-      },
-    });
-  }
-}
+import { seedFullLadder } from '../helpers/seedLadder.js';
 
 /**
  * Financial-invariant tests for the final Launch->Visionary Booster ladder.
@@ -190,18 +132,103 @@ describe('Final Booster Flow — Financial Invariants', () => {
     expect(totalOf(cycle2Ledgers)).toBe(1600);
   });
 
-  it('Visionary X3: first cycle credits only the 200 re-subscription leg (400 "next pool" leg intentionally uncredited — Gap #2, not invented); subsequent 600 = 200(re-subscription) + 400(income)', async () => {
-    const { cycle1Ledgers, cycle2Ledgers } = await completeTwoCycles('visionary');
+  it('Visionary X3 pool progression: 600 = 200(re-subscription) + 400(advance) first cycle, never any income; doubles again on the next generation (200->400->800)', async () => {
+    const levelConfigs = await BoosterRepository.getAllActiveLevelConfigs();
+    const visionary = levelConfigs.find((l) => l.slug === 'visionary')!;
 
+    const sponsorWallet = createTestWallet();
+    const sponsor = await AuthRepository.createUser({ walletAddress: sponsorWallet.address });
+    await AuthRepository.updateUser(sponsor.id, { current_level_id: visionary.id });
+    const cycle1 = await MatrixCycleService.ensureUserActiveCycle(sponsor.id, visionary.id);
+
+    // Fill cycle 1 (3 members @ 200 = 600 collected).
+    for (let i = 1; i <= 3; i++) {
+      const member = await AuthRepository.createUser({ walletAddress: createTestWallet().address, sponsorId: sponsor.id });
+      await MatrixPlacementService.placeUserInMatrix(member.id, visionary.id, sponsor.id);
+    }
+
+    const cycle1Ledgers = await prisma.walletLedger.findMany({ where: { source_id: cycle1.id } });
+    // 600 = 200 (re-subscription, RETOPUP_DEBIT) + 400 (advance, NEXT_TIER_ACTIVATION_FUNDING) —
+    // both now explicitly credited by VisionaryPoolService; never any MATRIX_REWARD income.
     expect(amountOf(cycle1Ledgers, 'RETOPUP_DEBIT')).toBe(200);
+    expect(amountOf(cycle1Ledgers, 'NEXT_TIER_ACTIVATION_FUNDING')).toBe(400);
     expect(amountOf(cycle1Ledgers, 'MATRIX_REWARD')).toBe(0);
-    expect(amountOf(cycle1Ledgers, 'NEXT_TIER_ACTIVATION_FUNDING')).toBe(0);
-    // Deliberately NOT 600 — see comment above.
-    expect(totalOf(cycle1Ledgers)).toBe(200);
+    expect(totalOf(cycle1Ledgers)).toBe(600);
 
-    expect(amountOf(cycle2Ledgers, 'RETOPUP_DEBIT')).toBe(200);
-    expect(amountOf(cycle2Ledgers, 'MATRIX_REWARD')).toBe(400);
-    expect(totalOf(cycle2Ledgers)).toBe(600);
+    // Cycle 1 fans out into exactly two children: a re-subscription cycle (pool stays 200) and
+    // an advance cycle (pool doubles to 400) — both active, both discoverable via previous_cycle_id.
+    const children = await prisma.matrixCycle.findMany({ where: { previous_cycle_id: cycle1.id } });
+    expect(children.length).toBe(2);
+    const resubCycle = children.find((c: any) => (c.configuration_snapshot as any)?.visionary_pool_unit_amount === 200);
+    const advanceCycle = children.find((c: any) => (c.configuration_snapshot as any)?.visionary_pool_unit_amount === 400);
+    expect(resubCycle).toBeDefined();
+    expect(advanceCycle).toBeDefined();
+    expect(resubCycle.total_positions).toBe(3);
+    expect(advanceCycle.total_positions).toBe(3);
+    expect(resubCycle.status).toBe('ACTIVE');
+    expect(advanceCycle.status).toBe('ACTIVE');
+
+    // Placement always fills whichever active cycle has the LOWEST cycle_number first (see
+    // PlacementFinderService) — that's the re-subscription cycle (created one number before the
+    // advance cycle), so the next 3 members complete IT first, not the advance cycle directly.
+    for (let i = 1; i <= 3; i++) {
+      const member = await AuthRepository.createUser({ walletAddress: createTestWallet().address, sponsorId: sponsor.id });
+      await MatrixPlacementService.placeUserInMatrix(member.id, visionary.id, sponsor.id);
+    }
+    const resubLedgers = await prisma.walletLedger.findMany({ where: { source_id: resubCycle.id } });
+    // Re-subscription cycle's own pool stayed 200, so IT progresses to 200(resub) + 400(advance) too.
+    expect(amountOf(resubLedgers, 'RETOPUP_DEBIT')).toBe(200);
+    expect(amountOf(resubLedgers, 'NEXT_TIER_ACTIVATION_FUNDING')).toBe(400);
+    expect(amountOf(resubLedgers, 'MATRIX_REWARD')).toBe(0);
+    expect(totalOf(resubLedgers)).toBe(600);
+
+    // The original advance cycle (400) is still the oldest remaining active cycle, so the NEXT
+    // 3 members complete it — proving the doubling genuinely continues (200->400->800).
+    for (let i = 1; i <= 3; i++) {
+      const member = await AuthRepository.createUser({ walletAddress: createTestWallet().address, sponsorId: sponsor.id });
+      await MatrixPlacementService.placeUserInMatrix(member.id, visionary.id, sponsor.id);
+    }
+    const advanceLedgers = await prisma.walletLedger.findMany({ where: { source_id: advanceCycle.id } });
+    expect(amountOf(advanceLedgers, 'RETOPUP_DEBIT')).toBe(400);
+    expect(amountOf(advanceLedgers, 'NEXT_TIER_ACTIVATION_FUNDING')).toBe(800);
+    expect(amountOf(advanceLedgers, 'MATRIX_REWARD')).toBe(0);
+    expect(totalOf(advanceLedgers)).toBe(1200);
+
+    const grandchildren = await prisma.matrixCycle.findMany({ where: { previous_cycle_id: advanceCycle.id } });
+    expect(grandchildren.length).toBe(2);
+    expect(grandchildren.some((c: any) => (c.configuration_snapshot as any)?.visionary_pool_unit_amount === 400)).toBe(true);
+    expect(grandchildren.some((c: any) => (c.configuration_snapshot as any)?.visionary_pool_unit_amount === 800)).toBe(true);
+  });
+
+  it('Visionary X3 pool has no daily cycle cap: completing 6 generations in a row never redirects income to a sponsor (there is never any income to redirect)', async () => {
+    const levelConfigs = await BoosterRepository.getAllActiveLevelConfigs();
+    const visionary = levelConfigs.find((l) => l.slug === 'visionary')!;
+
+    const sponsorWallet = createTestWallet();
+    const sponsor = await AuthRepository.createUser({ walletAddress: sponsorWallet.address });
+    await AuthRepository.updateUser(sponsor.id, { current_level_id: visionary.id });
+    await MatrixCycleService.ensureUserActiveCycle(sponsor.id, visionary.id);
+
+    // Each generation, 3 new members complete whichever active cycle the placement engine picks
+    // (always some active cycle exists — a completion immediately spawns two more) — 6
+    // generations x 3 members exercises many rounds of pool progression regardless of exactly
+    // which branch is filled each time.
+    for (let gen = 1; gen <= 6; gen++) {
+      for (let i = 1; i <= 3; i++) {
+        const member = await AuthRepository.createUser({ walletAddress: createTestWallet().address, sponsorId: sponsor.id });
+        await MatrixPlacementService.placeUserInMatrix(member.id, visionary.id, sponsor.id);
+      }
+    }
+
+    const sponsorRedirects = await prisma.transaction.count({
+      where: { user_id: sponsor.id, description: { contains: 'Spill-up from capped user' } },
+    });
+    expect(sponsorRedirects).toBe(0);
+
+    const dailyCapping = await prisma.dailyCapping.findFirst({
+      where: { user_id: sponsor.id, level_configuration_id: visionary.id },
+    });
+    expect(dailyCapping).toBeNull();
   });
 
   it('Launch has no daily cycle cap: 6 sequential cycles for the same sponsor all credit in full, none redirected to sponsor', async () => {

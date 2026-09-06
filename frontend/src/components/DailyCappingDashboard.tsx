@@ -28,16 +28,20 @@ export default function DailyCappingDashboard() {
       }
 
       if (historyRes && Array.isArray(historyRes.data?.history)) {
-        const formattedLogs = historyRes.data.history.map((log: any) => ({
-          id: log.id,
-          time: log.finalizedAt
-            ? new Date(log.finalizedAt).toLocaleTimeString()
-            : log.businessDate,
-          type: log.levelName ? `${log.levelName.toUpperCase()}_CAPPING` : 'DAILY_CYCLE_CAPPING',
-          amount: `+${log.allowedEarning?.toFixed(2)} USDT`,
-          capApplied: log.excessEarning > 0 ? `Capped (-${log.excessEarning.toFixed(2)} USDT to Upline)` : 'Pass (Limit Active)',
-          status: log.allowedEarning > 0 ? 'APPROVED' : 'CAPPED',
-        }));
+        const formattedLogs = historyRes.data.history.map((log: any) => {
+          const allowedEarning = Number(log.allowedEarning ?? 0);
+          const excessEarning = Number(log.excessEarning ?? 0);
+          return {
+            id: log.id,
+            time: log.finalizedAt
+              ? new Date(log.finalizedAt).toLocaleTimeString()
+              : log.businessDate,
+            type: log.levelName ? `${log.levelName.toUpperCase()}_CAPPING` : 'DAILY_CYCLE_CAPPING',
+            amount: `+${allowedEarning.toFixed(2)} USDT`,
+            capApplied: excessEarning > 0 ? `Capped (-${excessEarning.toFixed(2)} USDT to Upline)` : 'Pass (Limit Active)',
+            status: allowedEarning > 0 ? 'APPROVED' : 'CAPPED',
+          };
+        });
         setCappingLog(formattedLogs);
       }
     } catch (err: any) {
@@ -149,7 +153,7 @@ export default function DailyCappingDashboard() {
               <div className="pt-2 border-t border-border-theme/50 flex justify-between items-center text-[11px]">
                 <div className="text-sub">
                   <span className="block text-[9px] uppercase">Credited</span>
-                  <span className="font-mono font-bold text-emerald-500">${pool.creditedEarnings.toFixed(2)}</span>
+                  <span className="font-mono font-bold text-emerald-500">${Number(pool.creditedEarnings ?? 0).toFixed(2)}</span>
                 </div>
                 {pool.cappedCycleCount > 0 && (
                   <div className="text-right text-sub">

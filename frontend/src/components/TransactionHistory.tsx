@@ -55,7 +55,7 @@ export default function TransactionHistory() {
           id: tx.id,
           txHash: tx.blockchainTransactionHash || tx.txHash || tx.id,
           type: tx.type || tx.transactionType || 'UNKNOWN',
-          amountUsdt: tx.amountUsdt ?? tx.amount ?? 0,
+          amountUsdt: Number(tx.amountUsdt ?? tx.amount ?? 0),
           amount: tx.amount ?? 0,
           currency: tx.currency || 'USDT',
           fromAddress: tx.fromAddress || 'Unknown',

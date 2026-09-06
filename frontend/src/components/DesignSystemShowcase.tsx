@@ -179,12 +179,12 @@ export default function DesignSystemShowcase() {
               <div className="space-y-3">
                 <label className="text-[11px] font-mono font-bold text-sub block uppercase tracking-wider">Dropdown Select</label>
                 <select className="w-full px-4 py-3.5 rounded-xl bg-surface-sunken border border-border-subtle text-prime text-[13px] font-mono font-bold focus:outline-none focus:border-accent-red transition-colors">
-                  <option>Launch Tier ($5.00 USDT)</option>
+                  <option>Launch Booster Tier ($5.00 USDT)</option>
                   <option>Starter Booster Tier ($10.00 USDT)</option>
                   <option>Builder Booster Tier ($40.00 USDT)</option>
                   <option>Leader Booster Tier ($80.00 USDT)</option>
                   <option>Champion Booster Tier ($320.00 USDT)</option>
-                  <option>Visionary Tier ($500.00 USDT)</option>
+                  <option>Visionary Booster Tier ($500.00 USDT)</option>
                 </select>
               </div>
 

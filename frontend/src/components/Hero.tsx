@@ -181,18 +181,18 @@ export default function Hero({ onCtaClick, onConnectWallet }: HeroProps) {
                   </div>
                 </div>
 
-                {/* Right Column: 13-Level Matrix Node Visualizer Preview */}
+                {/* Right Column: Booster Matrix Node Visualizer Preview */}
                 <div className="lg:col-span-7 p-6 rounded-2xl bg-surface-elevated border border-border-theme relative flex flex-col justify-between min-h-[260px]">
                   <div className="flex justify-between items-center mb-4">
                     <div>
                       <h4 className="text-sm font-bold text-prime flex items-center space-x-1.5">
                         <Network size={16} className="text-accent-red" />
-                        <span>13-Level Forced Matrix Topology</span>
+                        <span>Booster Matrix Topology</span>
                       </h4>
-                      <p className="text-[11px] text-sub">3x3 Auto-Spillover Position Allocation</p>
+                      <p className="text-[11px] text-sub">X3 / X5 Auto-Cycle Position Allocation</p>
                     </div>
                     <span className="px-2.5 py-1 rounded-full bg-accent-red/10 text-accent-red text-[10px] font-mono font-bold">
-                      65% Level Pool
+                      Auto-Cycling Pool
                     </span>
                   </div>
 
@@ -260,8 +260,8 @@ export default function Hero({ onCtaClick, onConnectWallet }: HeroProps) {
             {
               icon: <Layers size={24} />,
               iconWrap: 'bg-gradient-to-br from-accent-orange/20 to-accent-orange/5 text-accent-orange',
-              title: '13-Level Matrix',
-              desc: '65% of revenue allocated into deep 3x3 forced spillover pools.'
+              title: '6-Tier Ladder',
+              desc: 'Launch through Visionary auto-cycle through X3/X5 matrices with automatic re-topup.'
             },
             {
               icon: <ShieldCheck size={24} />,

@@ -79,7 +79,7 @@ export default function Navbar({ theme, toggleTheme, activeTab, setActiveTab }: 
               Simple<span className="text-accent-red">On</span>
               {userProfile?.status === 'ACTIVE' && (
                 <span className="badge badge-brand text-[9px] py-0.5 hidden sm:inline-flex">
-                  {userProfile.tier || 'Starter'}
+                  {userProfile.tier || 'Launch'}
                 </span>
               )}
             </span>

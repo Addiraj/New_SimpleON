@@ -12,7 +12,7 @@ const faqs: FaqItem[] = [
   {
     category: 'General',
     question: 'What is SimpleOn and how does it work?',
-    answer: 'SimpleOn is a 100% decentralized Web3 smart contract income engine running on BNB Smart Chain. It combines a 5-partner fast booster plan with a 13-Level forced 3x3 matrix to distribute USDT earnings peer-to-peer with zero platform retention.'
+    answer: 'SimpleOn is a 100% decentralized Web3 smart contract income engine running on BNB Smart Chain. It runs a 6-tier Booster ladder — Launch, Starter, Builder, Leader, Champion, and Visionary — through auto-cycling X3/X5 matrices to distribute USDT earnings peer-to-peer with zero platform retention.'
   },
   {
     category: 'Payouts',
@@ -31,8 +31,8 @@ const faqs: FaqItem[] = [
   },
   {
     category: 'Matrix',
-    question: 'What is the 13-Level Forced Matrix Spillover?',
-    answer: 'When upline sponsors or team members refer additional partners beyond their top 3 direct positions, those new positions automatically spill over into the next available slot down the tree, earning level bonuses for everyone above them.'
+    question: 'What happens when a Booster Tier reaches its daily cycle cap?',
+    answer: 'Starter through Champion each allow up to 5 completed cycles per rolling 24 hours (Launch is uncapped). Once a tier is capped for the day, that cycle\'s reward automatically routes to your immediate sponsor instead of being lost.'
   },
   {
     category: 'General',

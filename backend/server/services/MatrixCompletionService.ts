@@ -2,7 +2,9 @@ import { prisma } from '../config/database.js';
 import { logger } from '../config/logger.js';
 import { MatrixRewardService } from './MatrixRewardService.js';
 import { RetopupService } from './RetopupService.js';
+import { VisionaryPoolService } from './VisionaryPoolService.js';
 import { AutoUpgradeService } from './AutoUpgradeService.js';
+import { BoosterConfigService } from './BoosterConfigService.js';
 
 export interface CompletionProcessResult {
   completedCycle: any;
@@ -27,7 +29,12 @@ export class MatrixCompletionService {
     db: any = prisma
   ): Promise<CompletionProcessResult> {
     const executeCompletion = async (tx: any) => {
-      // 1. Lock and fetch the matrix cycle with level configuration and positions
+      // 1a. Row-lock the cycle first so two concurrent completions of the SAME cycleId
+      // (a retried webhook, a duplicate queue delivery) serialize instead of both passing
+      // the idempotency check below and racing on WalletLedger.idempotency_key.
+      await tx.$queryRaw`SELECT id FROM matrix_cycles WHERE id = ${cycleId} FOR UPDATE`;
+
+      // 1b. Lock and fetch the matrix cycle with level configuration and positions
       const cycle = await tx.matrixCycle.findUnique({
         where: { id: cycleId },
         include: {
@@ -100,12 +107,27 @@ export class MatrixCompletionService {
         },
       });
 
-      // 6. Evaluate re-topup rules & create next cycle (Cycle N+1)
-      const retopupResult = await RetopupService.processRetopupAndNextCycle(
-        updatedCycle,
-        configSnapshot,
-        tx
-      );
+      // 6. Evaluate re-topup rules & create next cycle(s).
+      // Visionary's X3 leg branches into two next cycles per completion (re-subscription +
+      // pool-doubling advance) instead of the generic single-linear-chain retopup — see
+      // VisionaryPoolService for the full rationale.
+      const tierConfig = BoosterConfigService.getTierConfig(configSnapshot?.slug);
+      let retopupResult: any;
+      if (tierConfig?.code === 'visionary') {
+        const poolResult = await VisionaryPoolService.processPoolProgression(updatedCycle, configSnapshot, tx);
+        retopupResult = {
+          retopupDeducted: true,
+          retopupAmount: poolResult.reSubscriptionAmount,
+          debitLedger: null,
+          nextCycle: poolResult.advanceCycle,
+        };
+      } else {
+        retopupResult = await RetopupService.processRetopupAndNextCycle(
+          updatedCycle,
+          configSnapshot,
+          tx
+        );
+      }
 
       // 7. Trigger Auto-Upgrade Evaluation
       try {

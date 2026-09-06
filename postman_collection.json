@@ -109,16 +109,16 @@
       "name": "Matrix Engine",
       "item": [
         {
-          "name": "Get 13-Level Forced Matrix Tree",
+          "name": "Get Matrix Tree",
           "request": {
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "http://localhost:3000/api/matrix/13-level-tree?address=0x71C7656EC7ab88b098defB751B7401B5f6d8976F",
+              "raw": "http://localhost:3000/api/matrix/tree?address=0x71C7656EC7ab88b098defB751B7401B5f6d8976F",
               "protocol": "http",
               "host": ["localhost"],
               "port": "3000",
-              "path": ["api", "matrix", "13-level-tree"],
+              "path": ["api", "matrix", "tree"],
               "query": [
                 {
                   "key": "address",

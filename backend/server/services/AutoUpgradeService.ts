@@ -2,6 +2,7 @@ import { Prisma } from '@prisma/client';
 import { prisma } from '../config/database.js';
 import { logger } from '../config/logger.js';
 import { UpgradeEligibilityService, EligibilityResult } from './UpgradeEligibilityService.js';
+import { VisionaryTreeService } from './VisionaryTreeService.js';
 
 export interface AutoUpgradeResult {
   upgraded: boolean;
@@ -114,6 +115,15 @@ export class AutoUpgradeService {
         status: 'ACTIVE',
       },
     });
+
+    // Visionary Part 2 (300 USDT / 3x3 / 20-level matrix): the client spec never defines a
+    // placement trigger for this leg, so — mirroring how every other matrix in this codebase
+    // places a new member under their sponsor — a user activating Visionary is placed into
+    // their own sponsor's Part-2 tree. No reward/recycle logic is added (spec defines none).
+    if (targetLevel.slug === 'visionary' && user.sponsor_id) {
+      await VisionaryTreeService.ensureLevelProgressInitialized(user.sponsor_id, tx);
+      await VisionaryTreeService.placeInTree(user.sponsor_id, userId, user.sponsor_id, tx);
+    }
 
     await tx.notification.create({
       data: {

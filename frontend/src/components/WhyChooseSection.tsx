@@ -24,7 +24,7 @@ export default function WhyChooseSection() {
     },
     {
       feature: 'Matrix Spillover Depth',
-      simpleOn: '13-Level Forced 3x3 Auto Spillover Matrix',
+      simpleOn: '6-Tier Booster Ladder with X3/X5 Auto Spillover + Visionary Hybrid Matrix',
       traditional: 'Shallow 2-3 Level Unilevel or Rigid Binary Pools',
       simpleOnGood: true
     },

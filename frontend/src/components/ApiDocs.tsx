@@ -24,7 +24,7 @@ export default function ApiDocs() {
     {
       id: 'matrixTree',
       method: 'GET',
-      path: '/api/matrix/13-level-tree?address=0x71C7656EC7ab88b098defB751B7401B5f6d8976F',
+      path: '/api/matrix/tree',
       description: 'Fetch booster matrix hierarchy and earnings breakdown.'
     },
     {

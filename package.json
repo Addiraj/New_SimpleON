@@ -21,9 +21,6 @@
     "deploy:testnet": "npx hardhat run scripts/deploy.js --network bscTestnet",
     "deploy:mainnet": "npx hardhat run scripts/deploy.js --network bscMainnet"
   },
-  "prisma": {
-    "seed": "tsx prisma/seed.ts"
-  },
   "dependencies": {
     "@google/genai": "^2.4.0",
     "@prisma/client": "^6.19.3",

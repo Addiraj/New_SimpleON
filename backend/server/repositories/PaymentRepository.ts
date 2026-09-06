@@ -4,13 +4,14 @@ import { logger } from '../config/logger.js';
 import { BoosterRepository, LevelConfigRecord } from './BoosterRepository.js';
 import { AuthRepository } from './AuthRepository.js';
 import { NotificationService } from '../services/NotificationService.js';
+import { PartialActivationService } from '../services/PartialActivationService.js';
 
 export interface PaymentIntentRecord {
   id: string;
   user_id: string;
   level_configuration_id: string | null;
   payment_reference: string;
-  payment_type: 'JOIN' | 'UPGRADE' | 'RETOPUP';
+  payment_type: 'JOIN' | 'UPGRADE' | 'RETOPUP' | 'PARTIAL_UPGRADE';
   expected_amount: string; // Serialized string representation of Decimal
   token_address: string | null;
   receiver_address: string | null;
@@ -71,7 +72,7 @@ export class PaymentRepository {
    */
   static async findActiveIntent(
     userId: string,
-    paymentType: 'JOIN' | 'UPGRADE' | 'RETOPUP',
+    paymentType: 'JOIN' | 'UPGRADE' | 'RETOPUP' | 'PARTIAL_UPGRADE',
     levelConfigurationId?: string | null
   ): Promise<PaymentIntentRecord | null> {
     await this.expireOldIntents(userId);
@@ -201,7 +202,7 @@ export class PaymentRepository {
     userId: string;
     levelConfigurationId?: string | null;
     paymentReference: string;
-    paymentType: 'JOIN' | 'UPGRADE' | 'RETOPUP';
+    paymentType: 'JOIN' | 'UPGRADE' | 'RETOPUP' | 'PARTIAL_UPGRADE';
     expectedAmount: string;
     tokenAddress: string;
     receiverAddress: string;
@@ -279,6 +280,24 @@ export class PaymentRepository {
           where: { id: intentId },
           data: { status: 'CONFIRMED', updated_at: now },
         });
+
+        if (intent.payment_type === 'PARTIAL_UPGRADE') {
+          // A partial-upgrade intent's level_configuration_id is the TARGET tier being funded,
+          // not yet earned — record the contribution instead of activating the user outright.
+          // recordContribution itself calls AutoUpgradeService.activateLevel once the
+          // accumulated threshold is reached.
+          if (intent.level_configuration_id) {
+            await PartialActivationService.recordContribution(
+              intent.user_id,
+              intent.level_configuration_id,
+              parseFloat(intent.expected_amount),
+              'PAYMENT_INTENT',
+              intent.id,
+              tx
+            );
+          }
+          return;
+        }
 
         // 2. Update User status & current level
         await tx.user.update({
@@ -450,7 +469,7 @@ export class PaymentRepository {
         const txType =
           params.intent.payment_type === 'JOIN'
             ? 'PLAN_JOIN'
-            : params.intent.payment_type === 'UPGRADE'
+            : params.intent.payment_type === 'UPGRADE' || params.intent.payment_type === 'PARTIAL_UPGRADE'
             ? 'UPGRADE'
             : 'RETOPUP';
 
@@ -631,6 +650,23 @@ export class PaymentRepository {
             });
 
             planActionResult = { action: 'RETOPUP_COMPLETED', newCycle };
+          }
+        } else if (params.intent.payment_type === 'PARTIAL_UPGRADE') {
+          if (params.intent.level_configuration_id) {
+            const result = await PartialActivationService.recordContribution(
+              params.intent.user_id,
+              params.intent.level_configuration_id,
+              parseFloat(params.confirmedAmount),
+              'PAYMENT_INTENT',
+              params.intent.id,
+              tx
+            );
+            planActionResult = {
+              action: 'PARTIAL_ACTIVATION_RECORDED',
+              accumulated: result.accumulated,
+              threshold: result.threshold,
+              activated: result.activated,
+            };
           }
         }
       });

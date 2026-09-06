@@ -18,9 +18,9 @@ export interface TreePlacementResult {
  * here without an explicit, client-confirmed rule.
  *
  * Uses a logical/count-based representation: VisionaryLevelProgress holds exactly 20 aggregate
- * rows per participant regardless of downline size (capacity = 3^depth, up to ~3.49B at depth 20)
- * — VisionaryTreePosition materializes only actually-occupied nodes, never the full theoretical
- * tree.
+ * rows per participant regardless of downline size (capacity = 3^(depth-1), up to ~1.16B at depth
+ * 20) — VisionaryTreePosition materializes only actually-occupied nodes, never the full
+ * theoretical tree.
  */
 export class VisionaryTreeService {
   static readonly MAX_DEPTH = 20;
@@ -31,7 +31,8 @@ export class VisionaryTreeService {
    */
   static async ensureLevelProgressInitialized(rootUserId: string, db: any = prisma): Promise<void> {
     for (let depth = 1; depth <= this.MAX_DEPTH; depth++) {
-      const capacity = (3n ** BigInt(depth)).toString();
+      // Level n = 3^(n-1): Level 1 = 1, Level 2 = 3, ..., Level 20 = 3^19 = 1,162,261,467.
+      const capacity = (3n ** BigInt(depth - 1)).toString();
       await db.$executeRaw`
         INSERT INTO visionary_level_progress (id, user_id, level_depth, capacity, filled_count, status, created_at, updated_at)
         VALUES (gen_random_uuid(), ${rootUserId}, ${depth}, ${capacity}::bigint, 0, 'OPEN', NOW(), NOW())

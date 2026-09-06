@@ -77,7 +77,7 @@ export default function Dashboard() {
     try {
       const bititanRes = await walletApi.getBititanSummary();
       const bititanData = bititanRes.data || bititanRes;
-      setBititanReserve(bititanData?.totalBititanReserve || 0);
+      setBititanReserve(Number(bititanData?.totalBititanReserve || 0));
     } catch (err) {
       // Non-critical: leave at 0 rather than block the rest of the dashboard.
     }
@@ -324,7 +324,7 @@ export default function Dashboard() {
                         ${(dashboardData.todaysEarnings || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USDT
                       </div>
                       <p className="text-[11px] text-sub mt-1">
-                        Remaining cap: ${(dashboardData.remainingDailyCap || 0).toFixed(2)}
+                        Remaining cap: ${Number(dashboardData.remainingDailyCap || 0).toFixed(2)}
                       </p>
                     </motion.div>
 
@@ -555,7 +555,7 @@ export default function Dashboard() {
                         <div className="text-[10px] text-sub">Total credited net income across all cycles</div>
                       </div>
                       <span className="font-extrabold text-emerald-500 text-lg">
-                        ${(dashboardData.totalEarnings || 0).toFixed(2)}
+                        ${Number(dashboardData.totalEarnings || 0).toFixed(2)}
                       </span>
                     </div>
 

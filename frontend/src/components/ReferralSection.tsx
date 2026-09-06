@@ -68,9 +68,9 @@ export default function ReferralSection() {
         >
           {[
             { icon: Users, label: '20% Direct', title: 'Direct Sponsor Bonus', desc: 'Earn 20% instant Web-20 USDT commission on every partner who joins directly via your referral link.', color: 'text-accent-orange', bg: 'bg-accent-orange/10', borderHover: 'hover:border-accent-orange/30' },
-            { icon: Network, label: '65% Matrix', title: '13-Level Forced Pool', desc: '65% of revenue fuels the 13-level forced 3x3 matrix pool with automatic team spillover placements.', color: 'text-accent-blue', bg: 'bg-accent-blue/10', borderHover: 'hover:border-accent-blue/30' },
-            { icon: PieChart, label: '15% X5 Split', title: 'X5 Matrix Split', desc: '15% allocated to the active 5-partner booster cycle engine to trigger automated slot re-topups.', color: 'text-accent-purple', bg: 'bg-accent-purple/10', borderHover: 'hover:border-accent-purple/30' },
-            { icon: Sparkles, label: '20% X4 Spill', title: 'X4 Passive Spillover', desc: 'Global top-to-bottom matrix spillovers from upline team momentum reward non-recruiting positions.', color: 'text-accent-green', bg: 'bg-accent-green/10', borderHover: 'hover:border-accent-green/30' }
+            { icon: Network, label: 'Auto-Cycle Matrix', title: 'Booster Matrix Pool', desc: 'Every completed X3/X5 matrix cycle automatically re-tops up your position and funds your next Booster Tier activation.', color: 'text-accent-blue', bg: 'bg-accent-blue/10', borderHover: 'hover:border-accent-blue/30' },
+            { icon: PieChart, label: 'X5 Split', title: 'X5 Matrix Split', desc: 'Builder through Champion run a 5-partner booster cycle engine that triggers automated slot re-topups.', color: 'text-accent-purple', bg: 'bg-accent-purple/10', borderHover: 'hover:border-accent-purple/30' },
+            { icon: Sparkles, label: 'Visionary Hybrid', title: 'Visionary Dual Matrix', desc: 'The top Visionary Tier splits into an uncapped X3 pool and a 20-level 3x3 matrix once you reach Champion.', color: 'text-accent-green', bg: 'bg-accent-green/10', borderHover: 'hover:border-accent-green/30' }
           ].map((pillar, idx) => {
             const Icon = pillar.icon;
             return (
